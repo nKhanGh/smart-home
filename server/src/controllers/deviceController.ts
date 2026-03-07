@@ -141,7 +141,7 @@ export const sendCommand = async (req: AuthRequest, res: Response): Promise<void
       actor      : req.user?.username ?? "App",
     }).catch((err) => console.error("[Log] Lưu log thất bại:", err));
 
-    res.status(200).json({ code: "200", msg: "Đã gửi lệnh." });
+    res.status(200).json({ code: "200", msg: "Đã gửi lệnh " + action + " đến " + device.name + "." });
   } catch (err: any) {
     res.status(500).json({ code: "500", msg: err.message });
   }
