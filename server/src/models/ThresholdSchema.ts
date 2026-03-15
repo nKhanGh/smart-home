@@ -21,5 +21,7 @@ export const UpdateThresholdSchema = z.object({
   })
 });
 
+export type UpdateThresholdInput = z.infer<typeof UpdateThresholdSchema>;
+
 export default model<IThreshold>("Threshold", ThresholdSchema);
 

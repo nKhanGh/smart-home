@@ -12,6 +12,8 @@ import { SYSTEM_FEEDS, SystemFeedKey } from "../types";
 import Device from "../models/DeviceSchema";
 import Data from "../models/DataSchema";
 import ActionLog from "../models/ActionLogSchema";
+import Threshold from "../models/ThresholdSchema";
+import SensorAlert from "../models/SensorAlertSchema";
 // import { SystemConfig } from "../models/SystemConfigSchema";
 
 type MqttHandler = (feedKey: string, value: string) => void;
@@ -135,6 +137,15 @@ class MqttService {
           value,
           type: device?.type
         });
+        const threshold = await Threshold.findOne({ deviceId: device?._id });
+        if (threshold && Number.parseFloat(value) > threshold.value) {
+          await SensorAlert.create({
+            deviceId: device?._id,
+            value: Number.parseFloat(value),
+            threshold: threshold.value,
+            createdAt: Date.now(),
+          });
+        }
       } else if (value.endsWith(":local")){
           await ActionLog.create({
             deviceId: device?._id,

@@ -24,7 +24,6 @@ import { adafruitAPI } from "../adafruit";
 import mqttService from "../services/mqttService";
 import { AuthRequest } from "../types";
 import { Types } from "mongoose";
-import { on } from "events";
 
 // ─── GET /api/devices ─────────────────────────────────────────────
 export const getDevices = async (

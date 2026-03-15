@@ -1,5 +1,4 @@
 import { Response } from "express";
-import { validationResult } from "express-validator";
 import Room, { AddRoomInput } from "../models/RoomSchema";
 import { AuthRequest } from "../types";
 import { adafruitAPI } from "../adafruit";

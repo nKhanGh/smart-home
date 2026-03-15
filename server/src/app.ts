@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoutes   from "./routes/auth";
 import deviceRoutes from "./routes/devices";
 import roomRoutes   from "./routes/rooms";
+import thresholdRoutes from "./routes/threshold";
 // import configRoutes from "./routes/config";
 
 import swaggerUi from "swagger-ui-express";
@@ -22,7 +23,7 @@ app.use((req, _res, next) => {
 app.use("/api/auth",    authRoutes);
 app.use("/api/devices", deviceRoutes);
 app.use("/api/rooms",   roomRoutes);
-// app.use("/api/config",  configRoutes);
+app.use("/api/devices/:id/threshold", thresholdRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get("/", (_req, res) =>
