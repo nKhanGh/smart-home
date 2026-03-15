@@ -6,14 +6,10 @@ import {
   addDevice, updateDevice, deleteDevice,
   sendCommand, getLogs,
 } from "../controllers/deviceController";
+import validate from "../middleware/validateMiddleware";
+import { AddDeviceSchema, UpdateDeviceSchema } from "../models/DeviceSchema";
 
 const router = Router();
-
-const addRules = [
-  check("device_id",  "device_id không được trống").notEmpty(),
-  check("name",       "name không được trống").notEmpty(),
-  check("room_name",  "room_name không được trống").notEmpty(),
-];
 
 /**
  * @swagger
@@ -92,19 +88,25 @@ router.get("/:id/data", verifyToken, getDeviceData);
  *         description: device_id
  *         schema:
  *           type: string
- *       - name: page
+ *       - name: startDate
  *         in: query
+ *         required: false
  *         schema:
- *           type: integer
- *           example: 1
- *       - name: limit
+ *           type: string
+ *           format: date
+ *           example: "2024-01-01"
+ *       - name: endDate
  *         in: query
+ *         required: false
  *         schema:
- *           type: integer
- *           example: 20
+ *           type: string
+ *           format: date
+ *           example: "2024-12-31"
  *     responses:
  *       200:
  *         description: Danh sách log
+ *       404:
+ *         description: Device not found
  */
 router.get("/:id/logs", verifyToken, getLogs);
 
@@ -123,29 +125,29 @@ router.get("/:id/logs", verifyToken, getLogs);
  *           schema:
  *             type: object
  *             required:
- *               - device_id
  *               - name
- *               - room_name
+ *               - roomId
+ *               - type
  *             properties:
- *               device_id:
- *                 type: string
- *                 example: led_room1
  *               name:
  *                 type: string
  *                 example: Đèn phòng khách
  *               description:
  *                 type: string
  *                 example: Đèn LED phòng khách
- *               room_name:
+ *               roomId:
  *                 type: string
- *                 example: living_room
+ *                 example: room1
+ *               type:
+ *                 type: string
+ *                 example: light
  *     responses:
  *       201:
  *         description: Thêm thiết bị thành công
  *       400:
  *         description: Dữ liệu không hợp lệ
  */
-router.post("/", verifyToken, addRules, addDevice);
+router.post("/", verifyToken, validate(AddDeviceSchema), addDevice);
 
 /**
  * @swagger
@@ -170,13 +172,21 @@ router.post("/", verifyToken, addRules, addDevice);
  *             properties:
  *               name:
  *                 type: string
+ *                 example: Đèn phòng khách
+ *               roomId:
+ *                 type: string
+ *                 example: room1
+ *               mode:
+ *                 type: string
+ *                 example: manual
  *               description:
  *                 type: string
+ *                 example: Đèn LED phòng khách
  *     responses:
  *       200:
  *         description: Cập nhật thành công
  */
-router.put("/:id", verifyToken, updateDevice);
+router.put("/:id", verifyToken, validate(UpdateDeviceSchema), updateDevice);
 
 /**
  * @swagger
@@ -203,13 +213,20 @@ router.delete("/:id", verifyToken, deleteDevice);
 
 /**
  * @swagger
- * /api/devices/command:
+ * /api/devices/command/{id}:
  *   post:
  *     summary: Gửi lệnh điều khiển thiết bị
  *     description: App -> Backend -> MQTT -> Adafruit -> YoloBit
  *     tags: [Devices]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: led_room1
  *     requestBody:
  *       required: true
  *       content:
@@ -217,21 +234,17 @@ router.delete("/:id", verifyToken, deleteDevice);
  *           schema:
  *             type: object
  *             required:
- *               - device_id
  *               - action
  *             properties:
- *               device_id:
- *                 type: string
- *                 example: led_room1
  *               action:
  *                 type: string
- *                 example: ON
+ *                 example: on
  *     responses:
  *       200:
  *         description: Đã gửi lệnh điều khiển
  *       404:
  *         description: Device not found
  */
-router.post("/command", verifyToken, sendCommand);
+router.post("/command/:id", verifyToken, sendCommand);
 
 export default router;

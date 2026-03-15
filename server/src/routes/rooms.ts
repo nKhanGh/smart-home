@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { check } from "express-validator";
 import { verifyToken } from "../middleware/authMiddleware";
 import { getRooms, addRoom, deleteRoom } from "../controllers/roomController";
+import validate from "../middleware/validateMiddleware";
+import { AddRoomSchema } from "../models/RoomSchema";
 
 const router = Router();
 
@@ -65,14 +66,13 @@ router.get("/", verifyToken, getRooms);
  *             type: object
  *             required:
  *               - name
- *               - key
  *             properties:
  *               name:
  *                 type: string
  *                 example: Phòng ngủ
- *               key:
+ *               backgroundName:
  *                 type: string
- *                 example: bedroom
+ *                 example: bedroom.jpg
  *     responses:
  *       201:
  *         description: Thêm phòng thành công
@@ -84,10 +84,7 @@ router.get("/", verifyToken, getRooms);
 router.post(
   "/",
   verifyToken,
-  [
-    check("name", "Tên phòng không được trống").notEmpty(),
-    check("key", "Key phòng không được trống").notEmpty(),
-  ],
+  validate(AddRoomSchema),
   addRoom
 );
 
