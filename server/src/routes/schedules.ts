@@ -1,14 +1,7 @@
 import { Router } from "express";
 import { verifyToken } from "../middleware/authMiddleware";
 import validate from "../middleware/validateMiddleware";
-import {
-  addSchedule,
-  deleteSchedule,
-  getScheduleById,
-  getSchedulesByDeviceId,
-  getSchedules,
-  updateSchedule,
-} from "../controllers/scheduleController";
+import scheduleController from "../controllers/schedule.controller";
 import {
   AddScheduleSchema,
   UpdateScheduleSchema,
@@ -25,7 +18,7 @@ const router = Router();
  *     security:
  *       - bearerAuth: []
  */
-router.get("/", verifyToken, getSchedules);
+router.get("/", verifyToken, scheduleController.getSchedules);
 
 /**
  * @swagger
@@ -36,7 +29,11 @@ router.get("/", verifyToken, getSchedules);
  *     security:
  *       - bearerAuth: []
  */
-router.get("/device/:deviceId", verifyToken, getSchedulesByDeviceId);
+router.get(
+  "/device/:deviceId",
+  verifyToken,
+  scheduleController.getSchedulesByDeviceId,
+);
 
 /**
  * @swagger
@@ -47,7 +44,7 @@ router.get("/device/:deviceId", verifyToken, getSchedulesByDeviceId);
  *     security:
  *       - bearerAuth: []
  */
-router.get("/:id", verifyToken, getScheduleById);
+router.get("/:id", verifyToken, scheduleController.getScheduleById);
 
 /**
  * @swagger
@@ -64,7 +61,12 @@ router.get("/:id", verifyToken, getScheduleById);
  *           schema:
  *             $ref: "#/components/schemas/AddSchedule"
  */
-router.post("/", verifyToken, validate(AddScheduleSchema), addSchedule);
+router.post(
+  "/",
+  verifyToken,
+  validate(AddScheduleSchema),
+  scheduleController.addSchedule,
+);
 
 /**
  * @swagger
@@ -81,7 +83,12 @@ router.post("/", verifyToken, validate(AddScheduleSchema), addSchedule);
  *           schema:
  *             $ref: "#/components/schemas/UpdateSchedule"
  */
-router.put("/:id", verifyToken, validate(UpdateScheduleSchema), updateSchedule);
+router.put(
+  "/:id",
+  verifyToken,
+  validate(UpdateScheduleSchema),
+  scheduleController.updateSchedule,
+);
 
 /**
  * @swagger
@@ -98,6 +105,6 @@ router.put("/:id", verifyToken, validate(UpdateScheduleSchema), updateSchedule);
  *           schema:
  *             $ref: "#/components/schemas/DeleteSchedule"
  */
-router.delete("/:id", verifyToken, deleteSchedule);
+router.delete("/:id", verifyToken, scheduleController.deleteSchedule);
 
 export default router;

@@ -1,11 +1,6 @@
 import { Router } from "express";
-import { check } from "express-validator";
 import { verifyToken } from "../middleware/authMiddleware";
-import {
-  getDevices, getDeviceById, getDeviceData,
-  addDevice, updateDevice, deleteDevice,
-  sendCommand, getLogs,
-} from "../controllers/deviceController";
+import deviceController from "../controllers/device.controller";
 import validate from "../middleware/validateMiddleware";
 import { AddDeviceSchema, UpdateDeviceSchema } from "../models/DeviceSchema";
 
@@ -23,7 +18,7 @@ const router = Router();
  *       200:
  *         description: Danh sách thiết bị
  */
-router.get("/", verifyToken, getDevices);
+router.get("/", verifyToken, deviceController.getDevices);
 
 /**
  * @swagger
@@ -47,7 +42,7 @@ router.get("/", verifyToken, getDevices);
  *       404:
  *         description: Device not found
  */
-router.get("/:id", verifyToken, getDeviceById);
+router.get("/:id", verifyToken, deviceController.getDeviceById);
 
 /**
  * @swagger
@@ -71,7 +66,7 @@ router.get("/:id", verifyToken, getDeviceById);
  *       404:
  *         description: Device not found
  */
-router.get("/:id/data", verifyToken, getDeviceData);
+router.get("/:id/data", verifyToken, deviceController.getDeviceData);
 
 /**
  * @swagger
@@ -108,7 +103,7 @@ router.get("/:id/data", verifyToken, getDeviceData);
  *       404:
  *         description: Device not found
  */
-router.get("/:id/logs", verifyToken, getLogs);
+router.get("/:id/logs", verifyToken, deviceController.getLogs);
 
 /**
  * @swagger
@@ -147,7 +142,12 @@ router.get("/:id/logs", verifyToken, getLogs);
  *       400:
  *         description: Dữ liệu không hợp lệ
  */
-router.post("/", verifyToken, validate(AddDeviceSchema), addDevice);
+router.post(
+  "/",
+  verifyToken,
+  validate(AddDeviceSchema),
+  deviceController.addDevice,
+);
 
 /**
  * @swagger
@@ -186,7 +186,12 @@ router.post("/", verifyToken, validate(AddDeviceSchema), addDevice);
  *       200:
  *         description: Cập nhật thành công
  */
-router.put("/:id", verifyToken, validate(UpdateDeviceSchema), updateDevice);
+router.put(
+  "/:id",
+  verifyToken,
+  validate(UpdateDeviceSchema),
+  deviceController.updateDevice,
+);
 
 /**
  * @swagger
@@ -209,7 +214,7 @@ router.put("/:id", verifyToken, validate(UpdateDeviceSchema), updateDevice);
  *       404:
  *         description: Device not found
  */
-router.delete("/:id", verifyToken, deleteDevice);
+router.delete("/:id", verifyToken, deviceController.deleteDevice);
 
 /**
  * @swagger
@@ -245,6 +250,6 @@ router.delete("/:id", verifyToken, deleteDevice);
  *       404:
  *         description: Device not found
  */
-router.post("/command/:id", verifyToken, sendCommand);
+router.post("/command/:id", verifyToken, deviceController.sendCommand);
 
 export default router;

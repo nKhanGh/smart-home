@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { register, login, getMe } from "../controllers/authController";
+import authController from "../controllers/auth.controller";
 import { verifyToken } from "../middleware/authMiddleware";
 import { LoginSchema, RegisterSchema } from "../models/UserSchema";
 import validate from "../middleware/validateMiddleware";
@@ -21,7 +21,7 @@ const router = Router();
  *             required:
  *               - username
  *               - password
- *               - full_name
+ *               - fullName
  *             properties:
  *               username:
  *                 type: string
@@ -29,7 +29,7 @@ const router = Router();
  *               password:
  *                 type: string
  *                 example: 123456
- *               full_name:
+ *               fullName:
  *                 type: string
  *                 example: Nguyen Huu Khang
  *     responses:
@@ -38,7 +38,7 @@ const router = Router();
  *       400:
  *         description: Dữ liệu không hợp lệ
  */
-router.post("/register", validate(RegisterSchema), register);
+router.post("/register", validate(RegisterSchema), authController.register);
 
 /**
  * @swagger
@@ -65,7 +65,7 @@ router.post("/register", validate(RegisterSchema), register);
  *       401:
  *         description: Sai username hoặc password
  */
-router.post("/login", validate(LoginSchema), login);
+router.post("/login", validate(LoginSchema), authController.login);
 
 /**
  * @swagger
@@ -81,6 +81,6 @@ router.post("/login", validate(LoginSchema), login);
  *       401:
  *         description: Token không hợp lệ hoặc hết hạn
  */
-router.get("/me", verifyToken, getMe);
+router.get("/me", verifyToken, authController.getMe);
 
 export default router;

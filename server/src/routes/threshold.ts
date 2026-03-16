@@ -2,7 +2,7 @@ import { Router } from "express";
 import validate from "../middleware/validateMiddleware";
 import { verifyToken } from "../middleware/authMiddleware";
 import { UpdateThresholdSchema } from "../models/ThresholdSchema";
-import { getThreshold, updateThreshold } from "../controllers/thresholdController";
+import thresholdController from "../controllers/threshold.controller";
 
 const router = Router({ mergeParams: true });
 
@@ -41,7 +41,12 @@ const router = Router({ mergeParams: true });
  *       500:
  *         description: Server Error
  */
-router.put("", verifyToken, validate(UpdateThresholdSchema), updateThreshold);
+router.put(
+  "",
+  verifyToken,
+  validate(UpdateThresholdSchema),
+  thresholdController.updateThreshold,
+);
 
 /**
  * @swagger
@@ -66,6 +71,6 @@ router.put("", verifyToken, validate(UpdateThresholdSchema), updateThreshold);
  *       500:
  *         description: Server Error
  */
-router.get("", verifyToken, getThreshold);
+router.get("", verifyToken, thresholdController.getThreshold);
 
 export default router;

@@ -1,10 +1,6 @@
 import { Router } from "express";
 import { verifyToken } from "../middleware/authMiddleware";
-import {
-  getSensorAlertById,
-  getSensorAlertsByDeviceId,
-  getSensorAlerts,
-} from "../controllers/sensorAlertController";
+import sensorAlertController from "../controllers/sensorAlert.controller";
 
 const router = Router();
 
@@ -17,7 +13,7 @@ const router = Router();
  *     security:
  *       - bearerAuth: []
  */
-router.get("/", verifyToken, getSensorAlerts);
+router.get("/", verifyToken, sensorAlertController.getSensorAlerts);
 
 /**
  * @swagger
@@ -28,7 +24,11 @@ router.get("/", verifyToken, getSensorAlerts);
  *     security:
  *       - bearerAuth: []
  */
-router.get("/device/:deviceId", verifyToken, getSensorAlertsByDeviceId);
+router.get(
+  "/device/:deviceId",
+  verifyToken,
+  sensorAlertController.getSensorAlertsByDeviceId,
+);
 
 /**
  * @swagger
@@ -39,6 +39,6 @@ router.get("/device/:deviceId", verifyToken, getSensorAlertsByDeviceId);
  *     security:
  *       - bearerAuth: []
  */
-router.get("/:id", verifyToken, getSensorAlertById);
+router.get("/:id", verifyToken, sensorAlertController.getSensorAlertById);
 
 export default router;

@@ -1,10 +1,6 @@
 import { Router } from "express";
 import { verifyToken } from "../middleware/authMiddleware";
-import {
-  getDataByDeviceId,
-  getDataById,
-  getDataList,
-} from "../controllers/dataController";
+import dataController from "../controllers/data.controller";
 
 const router = Router();
 
@@ -17,7 +13,7 @@ const router = Router();
  *     security:
  *       - bearerAuth: []
  */
-router.get("/", verifyToken, getDataList);
+router.get("/", verifyToken, dataController.getDataList);
 
 /**
  * @swagger
@@ -28,7 +24,7 @@ router.get("/", verifyToken, getDataList);
  *     security:
  *       - bearerAuth: []
  */
-router.get("/device/:deviceId", verifyToken, getDataByDeviceId);
+router.get("/device/:deviceId", verifyToken, dataController.getDataByDeviceId);
 
 /**
  * @swagger
@@ -39,6 +35,6 @@ router.get("/device/:deviceId", verifyToken, getDataByDeviceId);
  *     security:
  *       - bearerAuth: []
  */
-router.get("/:id", verifyToken, getDataById);
+router.get("/:id", verifyToken, dataController.getDataById);
 
 export default router;

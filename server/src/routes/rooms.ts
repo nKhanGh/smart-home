@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyToken } from "../middleware/authMiddleware";
-import { getRooms, addRoom, deleteRoom } from "../controllers/roomController";
+import roomController from "../controllers/room.controller";
 import validate from "../middleware/validateMiddleware";
 import { AddRoomSchema } from "../models/RoomSchema";
 
@@ -48,7 +48,7 @@ const router = Router();
  *       500:
  *         description: Server Error
  */
-router.get("/", verifyToken, getRooms);
+router.get("/", verifyToken, roomController.getRooms);
 
 /**
  * @swagger
@@ -81,12 +81,7 @@ router.get("/", verifyToken, getRooms);
  *       500:
  *         description: Server Error
  */
-router.post(
-  "/",
-  verifyToken,
-  validate(AddRoomSchema),
-  addRoom
-);
+router.post("/", verifyToken, validate(AddRoomSchema), roomController.addRoom);
 
 /**
  * @swagger
@@ -112,6 +107,6 @@ router.post(
  *       500:
  *         description: Server Error
  */
-router.delete("/:id", verifyToken, deleteRoom);
+router.delete("/:id", verifyToken, roomController.deleteRoom);
 
 export default router;
