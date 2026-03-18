@@ -10,7 +10,11 @@
 import mqtt, { MqttClient } from "mqtt";
 import { SYSTEM_FEEDS, SystemFeedKey } from "../types";
 import Device from "../models/DeviceSchema";
-import { SystemConfig } from "../models/SystemConfigSchema";
+import Data from "../models/DataSchema";
+import ActionLog from "../models/ActionLogSchema";
+import Threshold from "../models/ThresholdSchema";
+import SensorAlert from "../models/SensorAlertSchema";
+// import { SystemConfig } from "../models/SystemConfigSchema";
 
 type MqttHandler = (feedKey: string, value: string) => void;
 
@@ -70,6 +74,15 @@ class MqttService {
     });
   }
 
+  unsubscribeFeed(feedKey: string): void {
+    const topic = `${this.prefix}/feeds/${feedKey}`;
+    this.client?.unsubscribe(topic, (err) => {
+      if (err) console.error(`[MQTT] Unsubscribe thất bại: ${topic}`);
+      else console.log(`[MQTT] Unsubscribed: ${topic}`);
+    });
+    this.handlers.delete(feedKey);
+  }
+
   // ─── Publish lệnh đến thiết bị ───────────────────────────────
   publish(feedKey: string, value: string): void {
     const topic = `${this.prefix}/feeds/${feedKey}`;
@@ -103,24 +116,44 @@ class MqttService {
     devices.forEach((d) => {
       this.subscribeFeed(d.key);
       // Observer: khi Yolo:Bit gửi data lên feed -> lưu DB
-      this.registerHandler(d.key, this._onDeviceData.bind(this));
+      this.registerHandler(d.key, this.onDeviceData.bind(this));
     });
 
     // System feeds: nhận config thay đổi từ Yolo:Bit (nếu có)
-    this.registerHandler(
-      SYSTEM_FEEDS["sys.config.temp"],
-      (_key, val) => SystemConfig.findOneAndUpdate(
-        { config_key: "temp_alert_threshold" }, { config_value: val }).exec()
-    );
+    // this.registerHandler(
+    //   SYSTEM_FEEDS["sys.config.temp"],
+    //   (_key, val) => SystemConfig.findOneAndUpdate(
+    //     { config_key: "temp_alert_threshold" }, { config_value: val }).exec()
+    // );
   }
 
   // ─── Khi nhận sensor data từ Yolo:Bit ────────────────────────
-  private async _onDeviceData(feedKey: string, value: string): Promise<void> {
+  async onDeviceData(feedKey: string, value: string): Promise<void> {
     try {
       const device = await Device.findOne({ key: feedKey });
-      if (!device) return;
-      (device as any).pushData(value);
-      await device.save();
+      if (device?.type.endsWith("Sensor")) {
+        await Data.create({
+          deviceId: device?._id,
+          value,
+          type: device?.type
+        });
+        const threshold = await Threshold.findOne({ deviceId: device?._id });
+        if (threshold && Number.parseFloat(value) > threshold.value) {
+          await SensorAlert.create({
+            deviceId: device?._id,
+            value: Number.parseFloat(value),
+            threshold: threshold.value,
+            createdAt: Date.now(),
+          });
+        }
+      } else if (value.endsWith(":local")){
+          await ActionLog.create({
+            deviceId: device?._id,
+            deviceName: device?.name ?? "Unknown Device",
+            action: value === "1:local" ? "on" : "off",
+            actor: "local",
+          });
+        }
     } catch (err) {
       console.error("[MQTT] Lưu data thất bại:", err);
     }

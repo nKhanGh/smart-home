@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { check } from "express-validator";
-import { register, login, getMe } from "../controllers/authController";
+import authController from "../controllers/auth.controller";
 import { verifyToken } from "../middleware/authMiddleware";
+import { AddUserSchema, LoginSchema, RegisterSchema } from "../models/UserSchema";
+import validate from "../middleware/validateMiddleware";
 
 const router = Router();
 
@@ -20,7 +21,7 @@ const router = Router();
  *             required:
  *               - username
  *               - password
- *               - full_name
+ *               - fullName
  *             properties:
  *               username:
  *                 type: string
@@ -28,7 +29,7 @@ const router = Router();
  *               password:
  *                 type: string
  *                 example: 123456
- *               full_name:
+ *               fullName:
  *                 type: string
  *                 example: Nguyen Huu Khang
  *     responses:
@@ -37,11 +38,7 @@ const router = Router();
  *       400:
  *         description: Dữ liệu không hợp lệ
  */
-router.post("/register", [
-  check("username",  "Username tối thiểu 3 ký tự").isLength({ min: 3 }),
-  check("password",  "Password tối thiểu 6 ký tự").isLength({ min: 6 }),
-  check("full_name", "Họ tên không được trống").notEmpty(),
-], register);
+router.post("/register", validate(RegisterSchema), authController.register);
 
 /**
  * @swagger
@@ -58,20 +55,17 @@ router.post("/register", [
  *             properties:
  *               username:
  *                 type: string
- *                 example: khang123
+ *                 example: khangkhang
  *               password:
  *                 type: string
- *                 example: 123456
+ *                 example: khangkhang
  *     responses:
  *       200:
  *         description: Trả về JWT token
  *       401:
  *         description: Sai username hoặc password
  */
-router.post("/login", [
-  check("username", "Username không được trống").notEmpty(),
-  check("password", "Password không được trống").notEmpty(),
-], login);
+router.post("/login", validate(LoginSchema), authController.login);
 
 /**
  * @swagger
@@ -87,6 +81,7 @@ router.post("/login", [
  *       401:
  *         description: Token không hợp lệ hoặc hết hạn
  */
-router.get("/me", verifyToken, getMe);
+router.get("/me", verifyToken, authController.getMe);
+
 
 export default router;

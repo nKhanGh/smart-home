@@ -1,21 +1,21 @@
 import { Schema, model, Document, Types } from "mongoose";
 
 export interface IActionLogDoc extends Document {
-  user       : Types.ObjectId;
-  device     : Types.ObjectId;
-  device_name: string;
+  userId     : Types.ObjectId;
+  deviceId   : Types.ObjectId;
+  deviceName : string;
   action     : string;
   actor      : string;
-  created_at : Date;
+  createdAt  : Date;
 }
 
 const ActionLogSchema = new Schema<IActionLogDoc>({
-  user       : { type: Schema.Types.ObjectId, ref: "User" },
-  device     : { type: Schema.Types.ObjectId, ref: "Device", required: true },
-  device_name: { type: String, required: true },
+  userId     : { type: Schema.Types.ObjectId, ref: "User" },
+  deviceId   : { type: Schema.Types.ObjectId, ref: "Device", required: true },
+  deviceName : { type: String, required: true },
   action     : { type: String, required: true },
   actor      : { type: String, required: true },
-  created_at : { type: Date, default: Date.now },
+  createdAt  : { type: Date, default: Date.now },
 });
 
 export default model<IActionLogDoc>("ActionLog", ActionLogSchema);

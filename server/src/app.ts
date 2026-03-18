@@ -1,9 +1,14 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import authRoutes   from "./routes/auth";
+import authRoutes from "./routes/auth";
 import deviceRoutes from "./routes/devices";
-import roomRoutes   from "./routes/rooms";
-import configRoutes from "./routes/config";
+import roomRoutes from "./routes/rooms";
+import thresholdRoutes from "./routes/threshold";
+import scheduleRoutes from "./routes/schedules";
+import sensorAlertRoutes from "./routes/sensorAlerts";
+import dataRoutes from "./routes/data";
+import userRoutes from "./routes/user";
+// import configRoutes from "./routes/config";
 
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger";
@@ -19,18 +24,24 @@ app.use((req, _res, next) => {
 });
 
 // ─── Routes ───────────────────────────────────────────────────────
-app.use("/api/auth",    authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/devices", deviceRoutes);
-app.use("/api/rooms",   roomRoutes);
-app.use("/api/config",  configRoutes);
+app.use("/api/rooms", roomRoutes);
+app.use("/api/devices/:id/threshold", thresholdRoutes);
+app.use("/api/schedules", scheduleRoutes);
+app.use("/api/sensor-alerts", sensorAlertRoutes);
+app.use("/api/data", dataRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get("/", (_req, res) =>
-  res.json({ status: "ok", message: "Smart Home Backend đang chạy." }));
+  res.json({ status: "ok", message: "Smart Home Backend đang chạy." }),
+);
 
 // ─── 404 ──────────────────────────────────────────────────────────
 app.use((_req, res) =>
-  res.status(404).json({ code: "404", msg: "Endpoint không tồn tại." }));
+  res.status(404).json({ code: "404", msg: "Endpoint không tồn tại." }),
+);
 
 // ─── Global Error Handler ─────────────────────────────────────────
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
