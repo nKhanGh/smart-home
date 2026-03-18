@@ -1,9 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../types";
-import dataService, {
-  DataService,
-  DataServiceError,
-} from "../services/data.service";
+import dataService, { DataService } from "../services/data.service";
+import handleControllerError from "../utils/handleControllerError";
 
 export class DataController {
   constructor(private readonly service: DataService) {}
@@ -17,14 +15,7 @@ export class DataController {
       );
       res.status(200).json(data);
     } catch (err) {
-      if (err instanceof DataServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error fetching data list:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching data list:");
     }
   };
 
@@ -33,14 +24,7 @@ export class DataController {
       const data = await this.service.getDataById(req.params.id);
       res.status(200).json(data);
     } catch (err) {
-      if (err instanceof DataServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error fetching data detail:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching data detail:");
     }
   };
 
@@ -56,14 +40,7 @@ export class DataController {
       );
       res.status(200).json(data);
     } catch (err) {
-      if (err instanceof DataServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error fetching data by device id:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching data by device id:");
     }
   };
 }

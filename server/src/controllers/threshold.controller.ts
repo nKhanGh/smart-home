@@ -3,8 +3,8 @@ import { AuthRequest } from "../types";
 import { UpdateThresholdInput } from "../models/ThresholdSchema";
 import thresholdService, {
   ThresholdService,
-  ThresholdServiceError,
 } from "../services/threshold.service";
+import handleControllerError from "../utils/handleControllerError";
 
 export class ThresholdController {
   constructor(private readonly service: ThresholdService) {}
@@ -14,13 +14,7 @@ export class ThresholdController {
       const threshold = await this.service.getThreshold(req.params.id);
       res.status(200).json(threshold);
     } catch (err) {
-      if (err instanceof ThresholdServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching threshold:");
     }
   };
 
@@ -33,13 +27,7 @@ export class ThresholdController {
       );
       res.status(200).json(threshold);
     } catch (err) {
-      if (err instanceof ThresholdServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error updating threshold:");
     }
   };
 }

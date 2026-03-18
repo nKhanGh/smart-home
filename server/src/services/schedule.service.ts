@@ -4,15 +4,7 @@ import Schedule, {
   UpdateScheduleInput,
 } from "../models/ScheduleSchema";
 import Device from "../models/DeviceSchema";
-
-export class ScheduleServiceError extends Error {
-  statusCode: number;
-
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.statusCode = statusCode;
-  }
-}
+import { ServiceError } from "../errors/service.error";
 
 export class ScheduleService {
   async getSchedules(deviceId?: unknown) {
@@ -20,7 +12,7 @@ export class ScheduleService {
 
     if (typeof deviceId === "string" && deviceId.trim()) {
       if (!Types.ObjectId.isValid(deviceId)) {
-        throw new ScheduleServiceError(400, "deviceId không hợp lệ.");
+        throw new ServiceError(400, "deviceId không hợp lệ.");
       }
       filters.deviceId = new Types.ObjectId(deviceId);
     }
@@ -36,19 +28,19 @@ export class ScheduleService {
       "name key type",
     );
     if (!schedule) {
-      throw new ScheduleServiceError(404, "Schedule not found.");
+      throw new ServiceError(404, "Schedule not found.");
     }
     return schedule;
   }
 
   async getSchedulesByDeviceId(deviceId: string) {
     if (!Types.ObjectId.isValid(deviceId)) {
-      throw new ScheduleServiceError(400, "deviceId không hợp lệ.");
+      throw new ServiceError(400, "deviceId không hợp lệ.");
     }
 
     const device = await Device.findById(deviceId);
     if (!device) {
-      throw new ScheduleServiceError(404, "Device not found.");
+      throw new ServiceError(404, "Device not found.");
     }
 
     return Schedule.find({ deviceId: new Types.ObjectId(deviceId) })
@@ -59,7 +51,7 @@ export class ScheduleService {
   async addSchedule(payload: AddScheduleInput) {
     const device = await Device.findById(payload.deviceId);
     if (!device) {
-      throw new ScheduleServiceError(404, "Device not found.");
+      throw new ServiceError(404, "Device not found.");
     }
 
     return Schedule.create({
@@ -73,15 +65,15 @@ export class ScheduleService {
   async updateSchedule(id: string, payload: UpdateScheduleInput) {
     const schedule = await Schedule.findById(id);
     if (!schedule) {
-      throw new ScheduleServiceError(404, "Schedule not found.");
+      throw new ServiceError(404, "Schedule not found.");
     }
 
     if (payload.deviceId) {
       const device = await Device.findById(payload.deviceId);
       if (!device) {
-        throw new ScheduleServiceError(404, "Device not found.");
+        throw new ServiceError(404, "Device not found.");
       }
-      schedule.deviceId = device._id as Types.ObjectId;
+      schedule.deviceId = device._id;
     }
 
     if (payload.triggerTime !== undefined) {
@@ -101,7 +93,7 @@ export class ScheduleService {
   async deleteSchedule(id: string) {
     const schedule = await Schedule.findByIdAndDelete(id);
     if (!schedule) {
-      throw new ScheduleServiceError(404, "Schedule not found.");
+      throw new ServiceError(404, "Schedule not found.");
     }
   }
 }

@@ -14,9 +14,24 @@ const router = Router();
  * /api/schedules:
  *   get:
  *     summary: Lấy danh sách lịch
+ *     description: Có thể lọc theo deviceId bằng query param
  *     tags: [Schedules]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: deviceId
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: 65f2c1d9e8c1a32b1a6f1234
+ *     responses:
+ *       200:
+ *         description: Danh sách lịch
+ *       400:
+ *         description: deviceId không hợp lệ
+ *       500:
+ *         description: Server Error
  */
 router.get("/", verifyToken, scheduleController.getSchedules);
 
@@ -28,6 +43,22 @@ router.get("/", verifyToken, scheduleController.getSchedules);
  *     tags: [Schedules]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: deviceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: 65f2c1d9e8c1a32b1a6f1234
+ *     responses:
+ *       200:
+ *         description: Danh sách lịch theo thiết bị
+ *       400:
+ *         description: deviceId không hợp lệ
+ *       404:
+ *         description: Device not found
+ *       500:
+ *         description: Server Error
  */
 router.get(
   "/device/:deviceId",
@@ -43,6 +74,20 @@ router.get(
  *     tags: [Schedules]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: 65f2c1d9e8c1a32b1a6f9999
+ *     responses:
+ *       200:
+ *         description: Chi tiết lịch
+ *       404:
+ *         description: Schedule not found
+ *       500:
+ *         description: Server Error
  */
 router.get("/:id", verifyToken, scheduleController.getScheduleById);
 
@@ -59,7 +104,35 @@ router.get("/:id", verifyToken, scheduleController.getScheduleById);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: "#/components/schemas/AddSchedule"
+ *             type: object
+ *             required:
+ *               - deviceId
+ *               - triggerTime
+ *               - action
+ *             properties:
+ *               deviceId:
+ *                 type: string
+ *                 example: 65f2c1d9e8c1a32b1a6f1234
+ *               triggerTime:
+ *                 type: string
+ *                 example: "07:30"
+ *               action:
+ *                 type: string
+ *                 enum: [on, off]
+ *               repeatDays:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+ *     responses:
+ *       201:
+ *         description: Tạo lịch thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ *       404:
+ *         description: Device not found
+ *       500:
+ *         description: Server Error
  */
 router.post(
   "/",
@@ -76,12 +149,43 @@ router.post(
  *     tags: [Schedules]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: 65f2c1d9e8c1a32b1a6f9999
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: "#/components/schemas/UpdateSchedule"
+ *             type: object
+ *             properties:
+ *               deviceId:
+ *                 type: string
+ *                 example: 65f2c1d9e8c1a32b1a6f1234
+ *               triggerTime:
+ *                 type: string
+ *                 example: "08:00"
+ *               action:
+ *                 type: string
+ *                 enum: [on, off]
+ *               repeatDays:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+ *     responses:
+ *       200:
+ *         description: Cập nhật lịch thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ *       404:
+ *         description: Schedule hoặc Device không tồn tại
+ *       500:
+ *         description: Server Error
  */
 router.put(
   "/:id",
@@ -98,12 +202,20 @@ router.put(
  *     tags: [Schedules]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: "#/components/schemas/DeleteSchedule"
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: 65f2c1d9e8c1a32b1a6f9999
+ *     responses:
+ *       200:
+ *         description: Xóa lịch thành công
+ *       404:
+ *         description: Schedule not found
+ *       500:
+ *         description: Server Error
  */
 router.delete("/:id", verifyToken, scheduleController.deleteSchedule);
 

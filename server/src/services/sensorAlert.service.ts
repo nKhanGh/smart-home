@@ -1,19 +1,11 @@
 import { Types } from "mongoose";
 import SensorAlert from "../models/SensorAlertSchema";
 import Device from "../models/DeviceSchema";
-
-export class SensorAlertServiceError extends Error {
-  statusCode: number;
-
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.statusCode = statusCode;
-  }
-}
+import { ServiceError } from "../errors/service.error";
 
 export class SensorAlertService {
   private parseLimit(limit: unknown, max: number, fallback: number): number {
-    const parsed = typeof limit === "string" ? Number(limit) : NaN;
+    const parsed = typeof limit === "string" ? Number(limit) : Number.NaN;
     return Number.isFinite(parsed)
       ? Math.min(Math.max(parsed, 1), max)
       : fallback;
@@ -24,7 +16,7 @@ export class SensorAlertService {
 
     if (typeof deviceId === "string" && deviceId.trim()) {
       if (!Types.ObjectId.isValid(deviceId)) {
-        throw new SensorAlertServiceError(400, "deviceId không hợp lệ.");
+        throw new ServiceError(400, "deviceId không hợp lệ.");
       }
       filters.deviceId = new Types.ObjectId(deviceId);
     }
@@ -43,19 +35,19 @@ export class SensorAlertService {
       "name key type",
     );
     if (!alert) {
-      throw new SensorAlertServiceError(404, "SensorAlert not found.");
+      throw new ServiceError(404, "SensorAlert not found.");
     }
     return alert;
   }
 
   async getSensorAlertsByDeviceId(deviceId: string, limit?: unknown) {
     if (!Types.ObjectId.isValid(deviceId)) {
-      throw new SensorAlertServiceError(400, "deviceId không hợp lệ.");
+      throw new ServiceError(400, "deviceId không hợp lệ.");
     }
 
     const device = await Device.findById(deviceId);
     if (!device) {
-      throw new SensorAlertServiceError(404, "Device not found.");
+      throw new ServiceError(404, "Device not found.");
     }
 
     const safeLimit = this.parseLimit(limit, 500, 100);

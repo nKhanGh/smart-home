@@ -7,6 +7,7 @@ import thresholdRoutes from "./routes/threshold";
 import scheduleRoutes from "./routes/schedules";
 import sensorAlertRoutes from "./routes/sensorAlerts";
 import dataRoutes from "./routes/data";
+import userRoutes from "./routes/user";
 // import configRoutes from "./routes/config";
 
 import swaggerUi from "swagger-ui-express";
@@ -30,6 +31,7 @@ app.use("/api/devices/:id/threshold", thresholdRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/sensor-alerts", sensorAlertRoutes);
 app.use("/api/data", dataRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get("/", (_req, res) =>

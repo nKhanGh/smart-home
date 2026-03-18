@@ -34,4 +34,15 @@ export const LoginSchema = z.object({
 
 export type LoginInput = z.infer<typeof LoginSchema>;
 
+export const AddUserSchema = z.object({
+  username: z.string().min(6, "Tên đăng nhập phải có ít nhất 6 ký tự."),
+  password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự."),
+  fullName: z.string().min(1, "Họ tên không được để trống."),
+  role: z.enum(["admin", "user"], {
+    message: "Vai trò phải là 'admin' hoặc 'user'.",
+  }),
+})
+
+export type AddUserInput = z.infer<typeof AddUserSchema>;
+
 export default model<IUserDoc>("User", UserSchema);

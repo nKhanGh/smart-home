@@ -4,10 +4,8 @@ import {
   AddScheduleInput,
   UpdateScheduleInput,
 } from "../models/ScheduleSchema";
-import scheduleService, {
-  ScheduleService,
-  ScheduleServiceError,
-} from "../services/schedule.service";
+import scheduleService, { ScheduleService } from "../services/schedule.service";
+import handleControllerError from "../utils/handleControllerError";
 
 export class ScheduleController {
   constructor(private readonly service: ScheduleService) {}
@@ -17,14 +15,7 @@ export class ScheduleController {
       const schedules = await this.service.getSchedules(req.query.deviceId);
       res.status(200).json(schedules);
     } catch (err) {
-      if (err instanceof ScheduleServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error fetching schedules:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching schedules:");
     }
   };
 
@@ -33,14 +24,7 @@ export class ScheduleController {
       const schedule = await this.service.getScheduleById(req.params.id);
       res.status(200).json(schedule);
     } catch (err) {
-      if (err instanceof ScheduleServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error fetching schedule:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching schedule:");
     }
   };
 
@@ -54,14 +38,7 @@ export class ScheduleController {
       );
       res.status(200).json(schedules);
     } catch (err) {
-      if (err instanceof ScheduleServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error fetching schedules by device id:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching schedules by device id:");
     }
   };
 
@@ -74,14 +51,7 @@ export class ScheduleController {
         .status(201)
         .json({ code: "201", msg: "Tạo lịch thành công.", schedule });
     } catch (err) {
-      if (err instanceof ScheduleServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error creating schedule:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error creating schedule:");
     }
   };
 
@@ -95,14 +65,7 @@ export class ScheduleController {
         .status(200)
         .json({ code: "200", msg: "Cập nhật lịch thành công.", schedule });
     } catch (err) {
-      if (err instanceof ScheduleServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error updating schedule:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error updating schedule:");
     }
   };
 
@@ -111,14 +74,7 @@ export class ScheduleController {
       await this.service.deleteSchedule(req.params.id);
       res.status(200).json({ code: "200", msg: "Xóa lịch thành công." });
     } catch (err) {
-      if (err instanceof ScheduleServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error deleting schedule:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error deleting schedule:");
     }
   };
 }

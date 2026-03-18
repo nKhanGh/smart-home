@@ -1,13 +1,5 @@
 import Room, { AddRoomInput } from "../models/RoomSchema";
-
-export class RoomServiceError extends Error {
-  statusCode: number;
-
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.statusCode = statusCode;
-  }
-}
+import { ServiceError } from "../errors/service.error";
 
 export class RoomService {
   private removeVietnameseTones(str: string) {
@@ -33,7 +25,7 @@ export class RoomService {
     const key = this.buildRoomKey(payload.name);
 
     if (await Room.findOne({ key })) {
-      throw new RoomServiceError(400, "Key phòng đã tồn tại.");
+      throw new ServiceError(400, "Key phòng đã tồn tại.");
     }
 
     const room = await Room.create({
@@ -49,7 +41,7 @@ export class RoomService {
   async deleteRoom(id: string) {
     const room = await Room.findByIdAndDelete(id);
     if (!room) {
-      throw new RoomServiceError(404, "Room not found.");
+      throw new ServiceError(404, "Room not found.");
     }
     return room;
   }

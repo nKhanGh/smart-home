@@ -1,25 +1,17 @@
 import Threshold, { UpdateThresholdInput } from "../models/ThresholdSchema";
 import Device from "../models/DeviceSchema";
-
-export class ThresholdServiceError extends Error {
-  statusCode: number;
-
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.statusCode = statusCode;
-  }
-}
+import { ServiceError } from "../errors/service.error";
 
 export class ThresholdService {
   async getThreshold(deviceId: string) {
     const device = await Device.findOne({ _id: deviceId });
     if (!device) {
-      throw new ThresholdServiceError(404, "Device not found.");
+      throw new ServiceError(404, "Device not found.");
     }
 
     const threshold = await Threshold.findOne({ deviceId: device._id });
     if (!threshold) {
-      throw new ThresholdServiceError(404, "Threshold not found.");
+      throw new ServiceError(404, "Threshold not found.");
     }
 
     return threshold;
@@ -32,7 +24,7 @@ export class ThresholdService {
   ) {
     const device = await Device.findOne({ _id: deviceId });
     if (!device) {
-      throw new ThresholdServiceError(404, "Device not found.");
+      throw new ServiceError(404, "Device not found.");
     }
 
     let threshold = await Threshold.findOne({ deviceId: device._id });

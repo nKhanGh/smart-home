@@ -1,7 +1,7 @@
 import { Router } from "express";
 import authController from "../controllers/auth.controller";
 import { verifyToken } from "../middleware/authMiddleware";
-import { LoginSchema, RegisterSchema } from "../models/UserSchema";
+import { AddUserSchema, LoginSchema, RegisterSchema } from "../models/UserSchema";
 import validate from "../middleware/validateMiddleware";
 
 const router = Router();
@@ -82,5 +82,6 @@ router.post("/login", validate(LoginSchema), authController.login);
  *         description: Token không hợp lệ hoặc hết hạn
  */
 router.get("/me", verifyToken, authController.getMe);
+
 
 export default router;

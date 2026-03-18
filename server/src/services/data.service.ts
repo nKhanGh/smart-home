@@ -1,19 +1,11 @@
 import { Types } from "mongoose";
 import Data from "../models/DataSchema";
 import Device from "../models/DeviceSchema";
-
-export class DataServiceError extends Error {
-  statusCode: number;
-
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.statusCode = statusCode;
-  }
-}
+import { ServiceError } from "../errors/service.error";
 
 export class DataService {
   private parseLimit(limit: unknown, max: number, fallback: number): number {
-    const parsed = typeof limit === "string" ? Number(limit) : NaN;
+    const parsed = typeof limit === "string" ? Number(limit) : Number.NaN;
     return Number.isFinite(parsed)
       ? Math.min(Math.max(parsed, 1), max)
       : fallback;
@@ -24,7 +16,7 @@ export class DataService {
 
     if (typeof deviceId === "string" && deviceId.trim()) {
       if (!Types.ObjectId.isValid(deviceId)) {
-        throw new DataServiceError(400, "deviceId không hợp lệ.");
+        throw new ServiceError(400, "deviceId không hợp lệ.");
       }
       filters.deviceId = new Types.ObjectId(deviceId);
     }
@@ -44,19 +36,21 @@ export class DataService {
   async getDataById(id: string) {
     const data = await Data.findById(id).populate("deviceId", "name key type");
     if (!data) {
-      throw new DataServiceError(404, "Data not found.");
+      throw new ServiceError(404, "Data not found.");
     }
     return data;
   }
 
   async getDataByDeviceId(deviceId: string, type?: unknown, limit?: unknown) {
     if (!Types.ObjectId.isValid(deviceId)) {
-      throw new DataServiceError(400, "deviceId không hợp lệ.");
+      throw new ServiceError(400, "deviceId không hợp lệ.");
     }
 
-    const device = await Device.findById(deviceId);
+    console.log("Fetching data for deviceId:", deviceId, "with type:", type, "and limit:", limit);
+
+    const device = await Device.findOne({ _id: deviceId });
     if (!device) {
-      throw new DataServiceError(404, "Device not found.");
+      throw new ServiceError(404, "Device not found.");
     }
 
     const filters: { deviceId: Types.ObjectId; type?: string } = {

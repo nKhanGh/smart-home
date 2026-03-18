@@ -3,12 +3,11 @@ import {
   AddDeviceInput,
   SendCommandInput,
   UpdateDeviceInput,
+  VoiceCommandInput,
 } from "../models/DeviceSchema";
 import { AuthRequest } from "../types";
-import deviceService, {
-  DeviceService,
-  DeviceServiceError,
-} from "../services/device.service";
+import deviceService, { DeviceService } from "../services/device.service";
+import handleControllerError from "../utils/handleControllerError";
 
 export class DeviceController {
   constructor(private readonly service: DeviceService) {}
@@ -18,8 +17,7 @@ export class DeviceController {
       const devices = await this.service.getDevices();
       res.status(200).json(devices);
     } catch (err) {
-      console.error("Error fetching devices:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching devices:");
     }
   };
 
@@ -28,14 +26,7 @@ export class DeviceController {
       const device = await this.service.getDeviceById(req.params.id);
       res.status(200).json(device);
     } catch (err) {
-      if (err instanceof DeviceServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error fetching device:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching device:");
     }
   };
 
@@ -44,13 +35,7 @@ export class DeviceController {
       const data = await this.service.getDeviceData(req.params.id);
       res.status(200).json(data);
     } catch (err) {
-      if (err instanceof DeviceServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching device data:");
     }
   };
 
@@ -64,14 +49,7 @@ export class DeviceController {
         .status(201)
         .json({ code: "201", msg: "Thêm thiết bị thành công.", device });
     } catch (err: unknown) {
-      if (err instanceof DeviceServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      const message = err instanceof Error ? err.message : "Server Error.";
-      res.status(500).json({ code: "500", msg: message });
+      handleControllerError(err, res, "Error creating device:");
     }
   };
 
@@ -85,14 +63,7 @@ export class DeviceController {
         .status(200)
         .json({ code: "200", msg: "Cập nhật thành công.", device });
     } catch (err) {
-      if (err instanceof DeviceServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error updating device:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error updating device:");
     }
   };
 
@@ -101,14 +72,7 @@ export class DeviceController {
       await this.service.deleteDevice(req.params.id);
       res.status(200).json({ code: "200", msg: "Xóa thiết bị thành công." });
     } catch (err) {
-      if (err instanceof DeviceServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      console.error("Error deleting device:", err);
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error deleting device:");
     }
   };
 
@@ -124,14 +88,31 @@ export class DeviceController {
         msg: `Đã gửi lệnh ${result.action} đến ${result.deviceName}.`,
       });
     } catch (err: unknown) {
-      if (err instanceof DeviceServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      const message = err instanceof Error ? err.message : "Server Error.";
-      res.status(500).json({ code: "500", msg: message });
+      handleControllerError(err, res, "Error sending device command:");
+    }
+  };
+
+  executeVoiceCommand = async (
+    req: AuthRequest,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const result = await this.service.executeVoiceCommand(
+        req.body as VoiceCommandInput,
+        req.user,
+      );
+      res.status(200).json({
+        code: "200",
+        msg: `Đã xử lý lệnh giọng nói: ${result.action} ${result.deviceName}${result.roomName ? ` (${result.roomName})` : ""}.`,
+        parsed: {
+          action: result.action,
+          deviceName: result.deviceName,
+          roomName: result.roomName,
+          rawText: result.rawText,
+        },
+      });
+    } catch (err: unknown) {
+      handleControllerError(err, res, "Error executing voice command:");
     }
   };
 
@@ -144,13 +125,25 @@ export class DeviceController {
       );
       res.status(200).json(logs);
     } catch (err) {
-      if (err instanceof DeviceServiceError) {
-        res
-          .status(err.statusCode)
-          .json({ code: `${err.statusCode}`, msg: err.message });
-        return;
-      }
-      res.status(500).json({ code: "500", msg: "Server Error." });
+      handleControllerError(err, res, "Error fetching logs:");
+    }
+  };
+
+  getCurrentData = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const data = await this.service.getCurrentData(req.params.id);
+      res.status(200).json(data);
+    } catch (err) {
+      handleControllerError(err, res, "Error fetching current data:");
+    }
+  };
+
+  getCurrentAction = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const action = await this.service.getCurrentAction(req.params.id);
+      res.status(200).json(action);
+    } catch (err) {
+      handleControllerError(err, res, "Error fetching current action:");
     }
   };
 }
