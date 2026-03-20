@@ -22,7 +22,6 @@ const DeviceSchema = new Schema<IDeviceDoc>(
     type: {
       type: String,
       enum: ["tempSensor", "lightSensor", "humiditySensor", "light", "fan"],
-      required: true,
     },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     createdAt: { type: Date, default: Date.now },
