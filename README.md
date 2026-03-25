@@ -11,7 +11,6 @@
 [![Adafruit IO](https://img.shields.io/badge/Adafruit_IO-MQTT-AE2029?style=flat-square)](https://io.adafruit.com/)
 [![MQTT](https://img.shields.io/badge/MQTT-5-660066?style=flat-square&logo=mqtt)](https://mqtt.org/)
 
-[⚙️ Backend Repo](#) · [📱 Frontend Repo](#)
 
 </div>
 
@@ -93,6 +92,8 @@ src/
     └── config.ts
 ```
 
+### Frontend
+
 ---
 
 ## 🔄 Luồng hoạt động
@@ -133,25 +134,21 @@ App → PUT /api/config/temp_alert_threshold
 - Tài khoản **MongoDB Atlas**
 - Tài khoản **Adafruit IO**
 
-### Backend
-
+### 🖥️ Server
+ 
 ```bash
-# 1. Clone repository
-git clone https://github.com/nKhanGh/smart-home.git
+# 1. Di chuyển vào thư mục server
 cd server
-
+ 
 # 2. Cài đặt dependencies
 npm install
-
+ 
 # 3. Tạo file môi trường
 cp .env.example .env
-# Điền các biến môi trường cần thiết vào .env
-
-# 4. Khởi chạy môi trường development
-npm run dev
 ```
-
-#### Biến môi trường `.env`
+ 
+Điền các biến môi trường vào `.env`:
+ 
 ```env
 PORT=3000
 MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/smarthome
@@ -159,49 +156,135 @@ AIO_USERNAME=your_adafruit_username
 AIO_KEY=your_adafruit_key
 JWT_SECRET=your_jwt_secret
 JWT_EXPIRES_IN=7d
+EXPO_PUSH_TOKEN=ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
 ```
-
-#### Scripts
+ 
 ```bash
-npm run dev      # Chạy development (ts-node-dev)
-npm run build    # Build TypeScript → dist/
-npm run start    # Chạy production
+# 4. Sync feeds từ Adafruit IO vào MongoDB (chạy 1 lần đầu)
+npm run sync
+ 
+# 5. Khởi chạy development
+npm run dev
 ```
+ 
+Server chạy tại: `http://localhost:3000`
+Swagger UI tại: `http://localhost:3000/api-docs`
+ 
+| Script | Mô tả |
+|---|---|
+| `npm run dev` | Chạy development (ts-node-dev) |
+| `npm run build` | Build TypeScript → dist/ |
+| `npm run start` | Chạy production |
+| `npm run sync` | Sync feeds Adafruit → MongoDB |
+ 
+---
 
-### Frontend
-
+### 📱 Client
+ 
 ```bash
-git clone clone https://github.com/nKhanGh/smart-home.git
-cd smarthome-app
+# 1. Di chuyển vào thư mục client
+cd client
+ 
+# 2. Cài đặt dependencies
 npm install
+ 
+# 3. Tạo file môi trường
+cp .env.example .env
+```
+ 
+Điền các biến môi trường vào `.env`:
+ 
+```env
+EXPO_PUBLIC_API_URL=http://<your-local-ip>:3000
+EXPO_PUBLIC_AIO_USERNAME=your_adafruit_username
+EXPO_PUBLIC_AIO_KEY=your_adafruit_key
+```
+ 
+> ⚠️ Dùng địa chỉ IP thực của máy (không dùng `localhost`) để điện thoại kết nối được với server.
+ 
+```bash
+# 4. Khởi chạy
 npx expo start
 ```
-
+ 
+Quét QR code bằng **Expo Go** trên điện thoại để chạy ứng dụng.
+ 
 ---
 
 ## ✅ Tính năng
+ 
+### 🔐 Xác thực
+- Đăng ký, đăng nhập bằng email
+- JWT authentication
+- Phân quyền Admin / User
+ 
+### 🏠 Quản lý phòng & thiết bị
+- Thêm, xóa phòng — tự động tạo/xóa group trên Adafruit IO
+- Thêm, sửa, xóa thiết bị — tự động tạo/xóa feed trên Adafruit IO
+- Xem danh sách thiết bị theo phòng
+ 
+### 🎛️ Điều khiển
+- Bật/tắt thiết bị từ xa qua MQTT realtime
+- Điều khiển bằng giọng nói (Speech-to-Text → text command)
+- Xem trạng thái hiện tại của thiết bị
+ 
+### 📊 Dữ liệu & Thống kê
+- Xem dữ liệu sensor realtime (nhiệt độ, độ ẩm, ánh sáng)
+- Lịch sử dữ liệu sensor theo thiết bị
+- Lịch sử hành động điều khiển
+ 
+### ⏰ Lịch hẹn giờ
+- Đặt lịch bật/tắt thiết bị theo giờ và thứ trong tuần
+- Cron job tự động chạy mỗi phút
+- Xem, sửa, xóa lịch theo thiết bị
+ 
+### 🔔 Cảnh báo
+- Cấu hình ngưỡng cảnh báo theo từng thiết bị
+- Tự động cảnh báo khi sensor vượt ngưỡng
+- Lưu lịch sử cảnh báo
+ 
+### 👥 Quản lý người dùng
+- Thêm người dùng (Admin)
+ 
 
-### 👤 Người dùng
-| Tính năng | Mô tả |
-|---|---|
-| 🔐 Xác thực | Đăng ký / Đăng nhập bằng email, JWT tự động refresh |
-| 🏠 Quản lý phòng | Thêm, xóa phòng; xem danh sách thiết bị theo phòng |
-| 💡 Quản lý thiết bị | Thêm, sửa, xóa thiết bị; tự động tạo feed trên Adafruit IO |
-| 🎛️ Điều khiển | Bật/tắt thiết bị từ xa; điều chỉnh màu đèn, tốc độ quạt |
-| 📅 Hẹn giờ | Lên lịch bật/tắt thiết bị theo thời gian và thứ trong tuần |
-| 🔒 Khóa cửa | Mở cửa bằng mật khẩu; nhận diện khuôn mặt |
-| 📊 Thống kê | Biểu đồ nhiệt độ, độ ẩm, ánh sáng theo khoảng thời gian |
-| 🔔 Thông báo | Cảnh báo khi cảm biến vượt ngưỡng cho phép |
-| 📜 Lịch sử | Xem lịch sử hoạt động từng thiết bị |
+---
 
-### ⚙️ Hệ thống
-| Tính năng | Mô tả |
-|---|---|
-| 🌡️ Ngưỡng cảnh báo | Cấu hình ngưỡng nhiệt độ, độ ẩm, ánh sáng |
-| 🔄 Chế độ tự động | AUTO: tự bật đèn/quạt theo cảm biến; MANUAL: điều khiển thủ công |
-| 📡 Realtime | Trạng thái thiết bị cập nhật realtime qua MQTT |
-| 🛡️ Bảo mật | JWT authentication, bcrypt password hashing |
-
+## 📡 API
+ 
+Sau khi khởi chạy server, truy cập Swagger UI để xem và test toàn bộ API:
+ 
+```
+http://localhost:3000/api-docs
+```
+ 
+| Nhóm | Base URL | Mô tả |
+|---|---|---|
+| Auth | `/api/auth` | Đăng ký, đăng nhập, thông tin user |
+| Rooms | `/api/rooms` | Quản lý phòng |
+| Devices | `/api/devices` | Quản lý thiết bị, gửi lệnh, xem data |
+| Data | `/api/data` | Dữ liệu cảm biến |
+| Schedules | `/api/schedules` | Lịch hẹn giờ |
+| Sensor Alerts | `/api/sensor-alerts` | Cảnh báo vượt ngưỡng |
+| Thresholds | `/api/devices/{id}/threshold` | Ngưỡng cảnh báo |
+| Users | `/api/users` | Quản lý người dùng |
+ 
+---
+ 
+## 📱 Giao diện ứng dụng
+ 
+> 🚧 Phần này sẽ được bổ sung sau
+ 
+<!-- Thêm screenshot các màn hình chính vào đây -->
+<!-- Gợi ý các màn hình cần chụp:
+  - Màn hình đăng nhập
+  - Danh sách phòng
+  - Chi tiết phòng + danh sách thiết bị
+  - Điều khiển thiết bị
+  - Biểu đồ dữ liệu sensor
+  - Màn hình hẹn giờ
+  - Thông báo cảnh báo
+-->
+ 
 ---
 
 ## 🏗️ Design Patterns
