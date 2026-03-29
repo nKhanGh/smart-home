@@ -78,6 +78,7 @@ export class AuthService {
 
   async refreshToken(token: string) {
     const secret = process.env.JWT_SECRET || "your-secret-key";
+    console.log("Refreshing token:", token);
     try {
       const payload = jwt.verify(token, secret) as { id: string; username: string; role: string; type: string };
       if (payload.type !== "refresh") {
@@ -100,8 +101,10 @@ export class AuthService {
         secret,
         refreshSignOptions,
       );
+      console.log("New token generated:", newToken);
       return { token: newToken, refreshToken: newRefreshToken };
     } catch (err) {
+      console.log("Error refreshing token:", err);
       throw new ServiceError(401, "Invalid refresh token.");
     }
   }

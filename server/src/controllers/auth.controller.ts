@@ -43,9 +43,10 @@ export class AuthController {
   login = async (req: Request, res: Response): Promise<void> => {
     try {
       const result = await this.service.login(req.body as LoginInput);
+      console.log("Login successful for user:", result);
       res
         .status(200)
-        .json({ code: "200", token: result.token, user: result.user });
+        .json({ code: "200", token: result.token, refreshToken: result.refreshToken, user: result.user });
     } catch (err) {
       handleControllerError(err, res, "Error logging in:");
     }
