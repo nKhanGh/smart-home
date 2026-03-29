@@ -17,7 +17,6 @@ const bootstrap = async (): Promise<void> => {
 
   app.listen(PORT, () =>
     console.log(`[Server] Đang chạy tại http://localhost:${PORT}`));
-  app.listen(3000, '0.0.0.0');
 };
 
 bootstrap().catch((err) => {
