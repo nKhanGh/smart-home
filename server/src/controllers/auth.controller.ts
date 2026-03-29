@@ -20,6 +20,26 @@ export class AuthController {
     }
   };
 
+  introspect = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const token = req.body.token;
+      const result = await this.service.introspect(token);
+      res.status(200).json(result);
+    } catch (err) {
+      handleControllerError(err, res, "Error introspecting token:");
+    }
+  };
+
+  refreshToken = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const token = req.body.token;
+      const result = await this.service.refreshToken(token);
+      res.status(200).json({ code: "200", ...result });
+    } catch (err) {
+      handleControllerError(err, res, "Error refreshing token:");
+    }
+  };
+
   login = async (req: Request, res: Response): Promise<void> => {
     try {
       const result = await this.service.login(req.body as LoginInput);
