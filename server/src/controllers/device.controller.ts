@@ -1,6 +1,5 @@
 import { Response } from "express";
 import {
-  AddDeviceInput,
   SendCommandInput,
   UpdateDeviceInput,
   VoiceCommandInput,
@@ -39,19 +38,19 @@ export class DeviceController {
     }
   };
 
-  addDevice = async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      const device = await this.service.addDevice(
-        req.body as AddDeviceInput,
-        req.user?.id,
-      );
-      res
-        .status(201)
-        .json({ code: "201", msg: "Thêm thiết bị thành công.", device });
-    } catch (err: unknown) {
-      handleControllerError(err, res, "Error creating device:");
-    }
-  };
+  // addDevice = async (req: AuthRequest, res: Response): Promise<void> => {
+  //   try {
+  //     const device = await this.service.addDevice(
+  //       req.body as AddDeviceInput,
+  //       req.user?.id,
+  //     );
+  //     res
+  //       .status(201)
+  //       .json({ code: "201", msg: "Thêm thiết bị thành công.", device });
+  //   } catch (err: unknown) {
+  //     handleControllerError(err, res, "Error creating device:");
+  //   }
+  // };
 
   updateDevice = async (req: AuthRequest, res: Response): Promise<void> => {
     try {

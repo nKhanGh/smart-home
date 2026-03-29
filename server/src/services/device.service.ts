@@ -1,6 +1,5 @@
 import { Types } from "mongoose";
 import Device, {
-  AddDeviceInput,
   SendCommandInput,
   UpdateDeviceInput,
   VoiceCommandInput,
@@ -154,40 +153,40 @@ export class DeviceService {
       .limit(100);
   }
 
-  async addDevice(payload: AddDeviceInput, userId?: string) {
-    const { name, description, roomId, type } = payload;
+  // async addDevice(payload: AddDeviceInput, userId?: string) {
+  //   const { name, description, roomId, type } = payload;
 
-    const room = await Room.findOne({ _id: roomId });
-    if (!room) {
-      throw new ServiceError(404, "Room not found.");
-    }
+  //   const room = await Room.findOne({ _id: roomId });
+  //   if (!room) {
+  //     throw new ServiceError(404, "Room not found.");
+  //   }
 
-    const { data: feed } = await adafruitAPI.post(`/groups/${room.key}/feeds`, {
-      feed: { name, description },
-    });
+  //   const { data: feed } = await adafruitAPI.post(`/groups/${room.key}/feeds`, {
+  //     feed: { name, description },
+  //   });
 
-    const device = await Device.create({
-      name,
-      description,
-      key: feed.key,
-      roomId: room._id,
-      type,
-      createdBy: userId,
-    });
+  //   const device = await Device.create({
+  //     name,
+  //     description,
+  //     key: feed.key,
+  //     roomId: room._id,
+  //     type,
+  //     createdBy: userId,
+  //   });
 
-    await Threshold.create({
-      deviceId: device._id,
-      value: 0,
-      updatedBy: userId,
-    });
+  //   await Threshold.create({
+  //     deviceId: device._id,
+  //     value: 0,
+  //     updatedBy: userId,
+  //   });
 
-    room.devices.push(device._id as never);
-    await room.save();
+  //   room.devices.push(device._id as never);
+  //   await room.save();
 
-    mqttService.subscribeFeed(feed.key);
+  //   mqttService.subscribeFeed(feed.key);
 
-    return device;
-  }
+  //   return device;
+  // }
 
   async updateDevice(id: string, payload: UpdateDeviceInput) {
     const device = await Device.findOne({ _id: id });
@@ -269,7 +268,7 @@ export class DeviceService {
 
     mqttService.publish(
       device.key,
-      payload.action === "on" ? "1:app" : "0:app",
+      payload.action,
     );
 
     ActionLog.create({

@@ -3,7 +3,6 @@ import { verifyToken } from "../middleware/authMiddleware";
 import deviceController from "../controllers/device.controller";
 import validate from "../middleware/validateMiddleware";
 import {
-  AddDeviceSchema,
   UpdateDeviceSchema,
   VoiceCommandSchema,
 } from "../models/DeviceSchema";
@@ -110,49 +109,49 @@ router.get("/:id/data", verifyToken, deviceController.getDeviceData);
  */
 router.get("/:id/logs", verifyToken, deviceController.getLogs);
 
-/**
- * @swagger
- * /api/devices:
- *   post:
- *     summary: Thêm thiết bị mới
- *     tags: [Devices]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - roomId
- *               - type
- *             properties:
- *               name:
- *                 type: string
- *                 example: Đèn phòng khách
- *               description:
- *                 type: string
- *                 example: Đèn LED phòng khách
- *               roomId:
- *                 type: string
- *                 example: room1
- *               type:
- *                 type: string
- *                 example: light
- *     responses:
- *       201:
- *         description: Thêm thiết bị thành công
- *       400:
- *         description: Dữ liệu không hợp lệ
- */
-router.post(
-  "/",
-  verifyToken,
-  validate(AddDeviceSchema),
-  deviceController.addDevice,
-);
+// /**
+//  * @swagger
+//  * /api/devices:
+//  *   post:
+//  *     summary: Thêm thiết bị mới
+//  *     tags: [Devices]
+//  *     security:
+//  *       - bearerAuth: []
+//  *     requestBody:
+//  *       required: true
+//  *       content:
+//  *         application/json:
+//  *           schema:
+//  *             type: object
+//  *             required:
+//  *               - name
+//  *               - roomId
+//  *               - type
+//  *             properties:
+//  *               name:
+//  *                 type: string
+//  *                 example: Đèn phòng khách
+//  *               description:
+//  *                 type: string
+//  *                 example: Đèn LED phòng khách
+//  *               roomId:
+//  *                 type: string
+//  *                 example: room1
+//  *               type:
+//  *                 type: string
+//  *                 example: light
+//  *     responses:
+//  *       201:
+//  *         description: Thêm thiết bị thành công
+//  *       400:
+//  *         description: Dữ liệu không hợp lệ
+//  */
+// router.post(
+//   "/",
+//   verifyToken,
+//   validate(AddDeviceSchema),
+//   deviceController.addDevice,
+// );
 
 /**
  * @swagger

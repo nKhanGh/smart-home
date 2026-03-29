@@ -131,11 +131,10 @@ class MqttService {
   async onDeviceData(feedKey: string, value: string): Promise<void> {
     try {
       const device = await Device.findOne({ key: feedKey });
-      if (device?.type.endsWith("Sensor")) {
+      if (device?.type === "sensor") {
         await Data.create({
           deviceId: device?._id,
           value,
-          type: device?.type
         });
         const threshold = await Threshold.findOne({ deviceId: device?._id });
         if (threshold && Number.parseFloat(value) > threshold.value) {

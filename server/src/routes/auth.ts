@@ -40,6 +40,59 @@ const router = Router();
  */
 router.post("/register", validate(RegisterSchema), authController.register);
 
+
+/**
+ * @swagger
+ * /api/auth/introspect:
+ *   post:
+ *     summary: Introspect token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJ1c2VybmFtZSI6ImtoYW5nMTIzIiwicm9sZSI6ImFkbWluIiwidHlwZSI6ImFjY2VzcyJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+ *     responses:
+ *       200:
+ *         description: Token được introspect thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
+router.post("/introspect", authController.introspect);
+
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Làm mới token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJ1c2VybmFtZSI6ImtoYW5nMTIzIiwicm9sZSI6ImFkbWluIiwidHlwZSI6ImFjY2VzcyJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+ *     responses:
+ *       200:
+ *         description: Token được làm mới thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
+router.post("/refresh", authController.refreshToken);
+
 /**
  * @swagger
  * /api/auth/login:
