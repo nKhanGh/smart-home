@@ -7,6 +7,7 @@ import {
 import { styles } from "@/styles/(tabs)/index.styles";
 import RoomBadge from "@/components/home/RoomBadge";
 import StatusCard from "@/components/home/StatusCard";
+import LoadingSpinner from "../ui/LoadingSpinner";
 
 const SensorCard = ({
   emoji,
@@ -17,6 +18,7 @@ const SensorCard = ({
   roomName,
   device,
   onSelect,
+  isLoading
 }: {
   emoji: string;
   label: string;
@@ -26,6 +28,7 @@ const SensorCard = ({
   roomName?: string;
   device?: DeviceResponse[];
   onSelect: (device: DeviceResponse) => void;
+  isLoading?: boolean;
 }) => (
   <View style={styles.sensorCard}>
     <View style={[styles.sensorAccent, { backgroundColor: accentColor }]} />
@@ -33,6 +36,8 @@ const SensorCard = ({
       <RoomBadge roomName={roomName || "Không xác định"} device={device || []} onSelect={onSelect} />
     </View>
     <Text style={styles.sensorEmoji}>{emoji}</Text>
+    {isLoading ? <LoadingSpinner size={32} color="#22C55E" variant="wave" /> :
+    <>
     <View style={styles.sensorValueRow}>
       <Text style={styles.sensorValue}>{value}</Text>
       <Text style={styles.sensorUnit}>{unit}</Text>
@@ -46,6 +51,8 @@ const SensorCard = ({
           ? "humiditySensor"
           : "lightSensor",
     })}
+    </>
+  }
   </View>
 );
 

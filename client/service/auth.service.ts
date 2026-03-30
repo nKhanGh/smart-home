@@ -16,4 +16,8 @@ export const authService = {
   logout: () => {
     return AxiosInstance.post("/auth/logout");
   },
+
+  getMe: () => {
+    return AxiosInstance.get<UserResponse>("/auth/me");
+  }
 };

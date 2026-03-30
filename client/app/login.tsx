@@ -12,15 +12,21 @@ import {
   View,
 } from "react-native";
 import { styles } from "../styles/login.styles";
+import AuthContext, { useAuth } from "@/contexts/AuthContext";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const {fetchUserInfo} = useAuth();
 
   const handleLogin = async () => {
+    setLoading(true);
     try {
-      const response = await authService.login(email, password);
+      const response = await authService.login(username, password);
       console.log("Login response:", response);
       if (response.data) {
         // Lưu token vào AsyncStorage hoặc Context
@@ -28,9 +34,12 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("smart-home-access-token", token);
         await AsyncStorage.setItem("smart-home-refresh-token", refreshToken);
       }
+      await fetchUserInfo();
       router.replace("/(tabs)");
     } catch (error) {
       console.error("Login error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,7 +53,7 @@ export default function LoginScreen() {
           />
         </View>
         <Text style={styles.logoTitle}>
-          <Text style={styles.logoGreen}>Smart</Text>
+          <Text style={styles.logoGreen}>Nex</Text>
           <Text style={styles.logoBlack}>Home</Text>
         </Text>
       </View>
@@ -56,10 +65,10 @@ export default function LoginScreen() {
         <View style={styles.inputGroup}>
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Tên đăng nhập"
             placeholderTextColor="#9CA3AF"
-            value={email}
-            onChangeText={setEmail}
+            value={username}
+            onChangeText={setUsername}
             keyboardType="email-address"
             autoCapitalize="none"
           />
@@ -79,7 +88,8 @@ export default function LoginScreen() {
           onPress={handleLogin}
           activeOpacity={0.85}
         >
-          <Text style={styles.buttonText}>ĐĂNG NHẬP</Text>
+          {loading ? <LoadingSpinner size={24} color="#FFFFFF" variant="spinner" /> :
+          <Text style={styles.buttonText}>ĐĂNG NHẬP</Text> }
         </TouchableOpacity>
       </View>
     </SafeAreaView>

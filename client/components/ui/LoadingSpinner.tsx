@@ -11,7 +11,7 @@ import {
 // Types
 // ─────────────────────────────────────────────
 
-type LoadingVariant = 'orbital' | 'pulse' | 'wave' | 'morph';
+type LoadingVariant = 'orbital' | 'pulse' | 'wave' | 'morph' | 'spinner';
 
 interface LoadingSpinnerProps {
   /** Kích thước tổng thể của component (px). Mặc định: 64 */
@@ -293,6 +293,58 @@ const MorphLoader: React.FC<{ size: number; color: string }> = ({ size, color })
   );
 };
 
+// ─── Spinner – vòng tròn xoay đơn giản ───────────────────────────
+
+const SpinnerLoader: React.FC<{ size: number; color: string }> = ({ size, color }) => {
+  const rotation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(rotation, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
+
+  const rotate = rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const thickness = Math.max(2, size * 0.08);
+
+  return (
+    <View style={{ width: size, height: size }}>
+      {/* Track (vòng nền mờ) */}
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: thickness,
+          borderColor: `${color}28`,
+          position: 'absolute',
+        }}
+      />
+      {/* Arc xoay */}
+      <Animated.View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: thickness,
+          borderColor: 'transparent',
+          borderTopColor: color,
+          transform: [{ rotate }],
+        }}
+      />
+    </View>
+  );
+};
+
 // ─────────────────────────────────────────────
 // Main export
 // ─────────────────────────────────────────────
@@ -315,6 +367,8 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 }) => {
   const renderVariant = () => {
     switch (variant) {
+      case 'spinner':
+        return <SpinnerLoader size={size} color={color} />;
       case 'pulse':
         return <PulseLoader size={size} color={color} />;
       case 'wave':

@@ -11,6 +11,8 @@ interface DeviceResponse {
   type: string;
   createdAt: string;
   updatedAt: string;
+  currentData?: string | number;
+  currentAction?: string | number;
 }
 
 interface QuickDevice {

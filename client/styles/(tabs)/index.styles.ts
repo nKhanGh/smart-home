@@ -253,6 +253,16 @@ export const styles = StyleSheet.create({
     color: '#22C55E',
     fontWeight: '700',
   },
+  updateButton: {
+    marginTop: 12,
+    marginLeft: 'auto',
+  },
+
+  updateButtonText: {
+    color: '#22C55E',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 
   // Tab Bar
   tabBar: {
