@@ -1,10 +1,15 @@
 // app/(tabs)/index.tsx
+import { DeviceService } from "@/service/device.service";
 import { HomeDisplayService } from "@/service/homeDisplay.service";
 import { styles } from "@/styles/(tabs)/index.styles";
 import React, { useState, useRef, useEffect } from "react";
-import { ScrollView, View, Text, TouchableOpacity } from "react-native";
+import { ScrollView, View, Text, TouchableOpacity, Modal, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { io, Socket } from "socket.io-client";
+import RoomBadge from "@/components/home/RoomBadge";
+import StatusCard from "@/components/home/StatusCard";
+import AlertBanner from "@/components/home/AlertBanner";
+import SensorCard from "@/components/home/SensorCard";
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SOCKET_URL ?? "http://localhost:3000";
@@ -39,222 +44,10 @@ const DEVICES: Device[] = [
   { id: "4", name: "Đèn phòng ngủ bố", icon: "💡", on: false },
 ];
 
-// ── Sub-components ───────────────────────────────
-
-const statusCard = ({
-  value,
-  type,
-}: {
-  value: string | number;
-  type: string;
-}) => {
-  if (type === "temperatureSensor") {
-    const tempValue = Number.parseFloat(value as string);
-    if (tempValue < 20) {
-      return (
-        <View style={[styles.statusBadge, { backgroundColor: "#3B82F622" }]}>
-          <View style={[styles.statusDot, { backgroundColor: "#3B82F6" }]} />
-          <Text style={[styles.statusText, { color: "#3B82F6" }]}>Thấp</Text>
-        </View>
-      );
-    } else if (tempValue <= 30) {
-      return (
-        <View style={[styles.statusBadge, { backgroundColor: "#22C55E22" }]}>
-          <View style={[styles.statusDot, { backgroundColor: "#22C55E" }]} />
-          <Text style={[styles.statusText, { color: "#22C55E" }]}>
-            Bình thường
-          </Text>
-        </View>
-      );
-    } else {
-      return (
-        <View style={[styles.statusBadge, { backgroundColor: "#F59E0B22" }]}>
-          <View style={[styles.statusDot, { backgroundColor: "#F59E0B" }]} />
-          <Text style={[styles.statusText, { color: "#F59E0B" }]}>Cao</Text>
-        </View>
-      );
-    }
-  } else if (type === "humiditySensor") {
-    const humValue = Number.parseFloat(value as string);
-    if (humValue <= 30) {
-      return (
-        <View style={[styles.statusBadge, { backgroundColor: "#3B82F622" }]}>
-          <View style={[styles.statusDot, { backgroundColor: "#3B82F6" }]} />
-          <Text style={[styles.statusText, { color: "#3B82F6" }]}>Thấp</Text>
-        </View>
-      );
-    } else if (humValue <= 60) {
-      return (
-        <View style={[styles.statusBadge, { backgroundColor: "#22C55E22" }]}>
-          <View style={[styles.statusDot, { backgroundColor: "#22C55E" }]} />
-          <Text style={[styles.statusText, { color: "#22C55E" }]}>
-            Bình thường
-          </Text>
-        </View>
-      );
-    } else {
-      return (
-        <View style={[styles.statusBadge, { backgroundColor: "#F59E0B22" }]}>
-          <View style={[styles.statusDot, { backgroundColor: "#F59E0B" }]} />
-          <Text style={[styles.statusText, { color: "#F59E0B" }]}>Cao</Text>
-        </View>
-      );
-    }
-  } else if (type === "lightSensor") {
-    const lightValue = Number.parseFloat(value as string);
-    if (lightValue < 100) {
-      return (
-        <View style={[styles.statusBadge, { backgroundColor: "#3B82F622" }]}>
-          <View style={[styles.statusDot, { backgroundColor: "#3B82F6" }]} />
-          <Text style={[styles.statusText, { color: "#3B82F6" }]}>Thấp</Text>
-        </View>
-      );
-    } else if (lightValue <= 500) {
-      return (
-        <View style={[styles.statusBadge, { backgroundColor: "#22C55E22" }]}>
-          <View style={[styles.statusDot, { backgroundColor: "#22C55E" }]} />
-          <Text style={[styles.statusText, { color: "#22C55E" }]}>
-            Bình thường
-          </Text>
-        </View>
-      );
-    } else {
-      return (
-        <View style={[styles.statusBadge, { backgroundColor: "#F59E0B22" }]}>
-          <View style={[styles.statusDot, { backgroundColor: "#F59E0B" }]} />
-          <Text style={[styles.statusText, { color: "#F59E0B" }]}>Cao</Text>
-        </View>
-      );
-    }
-  } else {
-    return (
-      <Text style={[styles.statusText, { color: "#6B7280" }]}>
-        Không xác định
-      </Text>
-    );
-  }
-};
-
-const SensorCard = ({
-  emoji,
-  label,
-  value,
-  unit,
-  accentColor,
-}: {
-  emoji: string;
-  label: string;
-  value: string | number;
-  unit: string;
-  status: string;
-  statusColor: string;
-  accentColor: string;
-}) => (
-  <View style={styles.sensorCard}>
-    <View style={[styles.sensorAccent, { backgroundColor: accentColor }]} />
-    <View style={styles.sensorHeader}>
-      <View style={styles.roomBadge}>
-        <View style={styles.dot} />
-        <Text style={styles.roomBadgeText}>Phòng khách</Text>
-        <Text style={styles.dropdownArrow}>▼</Text>
-      </View>
-    </View>
-    <Text style={styles.sensorEmoji}>{emoji}</Text>
-    <View style={styles.sensorValueRow}>
-      <Text style={styles.sensorValue}>{value}</Text>
-      <Text style={styles.sensorUnit}>{unit}</Text>
-    </View>
-    <Text style={styles.sensorLabel}>{label}</Text>
-    {statusCard({
-      value,
-      type: label.toLowerCase().includes("nhiệt")
-        ? "temperatureSensor"
-        : label.toLowerCase().includes("độ ẩm")
-          ? "humiditySensor"
-          : "lightSensor",
-    })}
-  </View>
-);
-
-const AlertBanner = ({
-  alert,
-  text,
-  type,
-}: {
-  alert: string;
-  text: string;
-  type: string;
-}) => {
-  const alertSelect = {
-    icon:
-      type === "temperatureSensor"
-        ? "🔥"
-        : type === "humiditySensor"
-          ? "💧"
-          : "☀️",
-    backgroundColor:
-      type === "temperatureSensor"
-        ? "#e2440022"
-        : type === "humiditySensor"
-          ? "#3B82F622"
-          : "#F59E0B22",
-    textColor:
-      type === "temperatureSensor"
-        ? "#ec1f04"
-        : type === "humiditySensor"
-          ? "#3B82F6"
-          : "#F59E0B",
-    iconBackground:
-      type === "temperatureSensor"
-        ? "#F59E0B11"
-        : type === "humiditySensor"
-          ? "#3B82F611"
-          : "#F59E0B11",
-  };
-  return (
-    <View
-      style={[
-        styles.alertBanner,
-        {
-          backgroundColor: alertSelect.backgroundColor,
-          borderColor: alertSelect.textColor,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.alertIconWrap,
-          { backgroundColor: alertSelect.iconBackground },
-        ]}
-      >
-        <Text
-          style={[
-            styles.alertIconText,
-            {
-              color: alertSelect.textColor,
-              backgroundColor: alertSelect.iconBackground,
-            },
-          ]}
-        >
-          {alertSelect.icon}
-        </Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.alertBold, { color: alertSelect.textColor }]}>
-          {alert}
-        </Text>
-        <Text style={[styles.alertText, { color: alertSelect.textColor }]}>
-          {text}
-        </Text>
-      </View>
-    </View>
-  );
-};
-
-// ── Main Screen ──────────────────────────────────
 export default function HomeScreen() {
   const [devices, setDevices] = useState<Device[]>(DEVICES);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [sensorList, setSensorList] = useState<DeviceResponse[]>([]);
   const [sensorState, setSensorState] = useState<Map<string, SensorState>>(
     new Map([
       [
@@ -272,6 +65,20 @@ export default function HomeScreen() {
     ]),
   );
   const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    const fetchSensorDevices = async () => {
+      try {
+        const response = await DeviceService.getSensorDevices();
+        setSensorList(response.data);
+        console.log("Sensor devices:", response.data);
+      } catch (error) {
+        console.error("Error fetching sensor devices:", error);
+      }
+    };
+
+    fetchSensorDevices();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -330,7 +137,7 @@ export default function HomeScreen() {
     };
 
     const handleData = (data: any) => {
-console.log("Received sensor data:", data);
+      console.log("Received sensor data:", data);
       const state = sensorState.get(data.type) || {
         roomId: null,
         currentData: null,
@@ -349,7 +156,7 @@ console.log("Received sensor data:", data);
           roomName: data.roomName,
         }),
       );
-    }
+    };
 
     socketRef.current.on("sensor:data", handleData);
     socketRef.current.on("sensor:alert", handleSensorAlert);
@@ -367,6 +174,21 @@ console.log("Received sensor data:", data);
     setDevices((prev) =>
       prev.map((d) => (d.id === id ? { ...d, on: !d.on } : d)),
     );
+  };
+
+  const handleSelectRoom = async (sensorType: string, device: DeviceResponse) => {
+    try {
+      const response = await DeviceService.getCurrentData(device._id);
+      console.log("Current data for device", device._id, ":", response.data);
+      setSensorState((prev) =>
+        new Map(prev).set(sensorType, { roomId: device.roomId._id, currentData: response?.data?.value, deviceId: device._id, roomName: device.roomId.name })
+      );
+      device.type === "temperatureSensor" && HomeDisplayService.updateHomeDisplayData({ tempId: device._id});
+      device.type === "humiditySensor" && HomeDisplayService.updateHomeDisplayData({ humId: device._id});
+      device.type === "lightSensor" && HomeDisplayService.updateHomeDisplayData({ briId: device._id});
+      } catch (error) {
+        console.error("Error fetching current data:", error);
+      }
   };
 
   return (
@@ -406,18 +228,24 @@ console.log("Received sensor data:", data);
             label="NHIỆT ĐỘ"
             value={sensorState.get("temperatureSensor")?.currentData || "0"}
             unit="°C"
-            status="Cao"
-            statusColor="#F59E0B"
             accentColor="#F97316"
+            roomName={
+              sensorState.get("temperatureSensor")?.roomName || "Phòng khách"
+            }
+            device={sensorList.filter(d => d.type === "temperatureSensor")}
+            onSelect={(device: DeviceResponse) => handleSelectRoom("temperatureSensor", device)}
           />
           <SensorCard
             emoji="💧"
             label="ĐỘ ẨM"
             value={sensorState.get("humiditySensor")?.currentData || "0"}
             unit="%"
-            status="Bình thường"
-            statusColor="#22C55E"
             accentColor="#3B82F6"
+            roomName={
+              sensorState.get("humiditySensor")?.roomName || "Phòng khách"
+            }
+            device={sensorList.filter(d => d.type === "humiditySensor")}
+            onSelect={(device: DeviceResponse) => handleSelectRoom("humiditySensor", device)}
           />
         </View>
 
@@ -427,13 +255,17 @@ console.log("Received sensor data:", data);
           <View style={styles.lightCardTop}>
             <Text style={styles.lightEmoji}>☀️</Text>
             <Text style={styles.lightTitle}>ÁNH SÁNG</Text>
-            <View style={styles.roomBadge}>
+            {/* <View style={styles.roomBadge}>
               <View style={styles.dot} />
               <Text style={styles.roomBadgeText}>
                 {sensorState.get("lightSensor")?.roomName || "Phòng khách"}
               </Text>
               <Text style={styles.dropdownArrow}>▼</Text>
-            </View>
+            </View> */}
+            <RoomBadge
+              roomName={sensorState.get("lightSensor")?.roomName || "Phòng khách"} device={sensorList.filter(d => d.type === "lightSensor")}
+              onSelect={(device: DeviceResponse) => handleSelectRoom("lightSensor", device)}
+            />
           </View>
           <View style={styles.lightCardBottom}>
             <View style={styles.sensorValueRow}>
@@ -442,7 +274,7 @@ console.log("Received sensor data:", data);
               </Text>
               <Text style={styles.sensorUnit}>lux</Text>
             </View>
-            {statusCard({
+            {StatusCard({
               value: sensorState.get("lightSensor")?.currentData || "0",
               type: "lightSensor",
             })}

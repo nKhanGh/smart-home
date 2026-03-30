@@ -2,7 +2,7 @@ interface UpdateHomeDisplayData {
   tempId?: string;
   briId?: string;
   humId?: string;
-  instantControl: string[] = [];
+  instantControl?: string[] = [];
 }
 
 interface TempDisplay {

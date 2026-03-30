@@ -5,12 +5,14 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F0FAF0',
-    paddingTop: 24
+    // paddingTop: 24
+    paddingTop: 12,
+    paddingBottom: -24,
   },
   scroll: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+    // paddingTop: 16,
+    // paddingBottom: 20,
     gap: 16,
   },
 
