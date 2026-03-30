@@ -8,11 +8,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Modal,
-  Animated,
-  TextInput,
-  Pressable,
-  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { io, Socket } from "socket.io-client";
@@ -25,6 +20,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useRouter } from "expo-router";
 import DoorPasswordModal from "@/components/DoorPasswordModal";
 import QuickDeviceModal from "@/components/QuickDeviceModal";
+import Toast from 'react-native-toast-message';
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SOCKET_URL ?? "http://localhost:3000";
@@ -139,6 +135,11 @@ export default function HomeScreen() {
         }
         return [...prev, data];
       });
+      Toast.show({
+        type: "error",
+        text1: data.alert,
+        text2: data.text
+      });
     };
 
     const handleSensorNormal = (data: any) => {
@@ -146,6 +147,11 @@ export default function HomeScreen() {
       setAlerts((prev) =>
         prev.filter((alert) => alert.deviceId !== data.deviceId),
       );
+      Toast.show({
+        type: "info",
+        text1: "Cảnh báo đã được giải quyết",
+        text2: `Cảm biến ở ${data.roomName} đã trở lại bình thường.`
+      });
     };
 
     const handleData = (data: any) => {
@@ -203,8 +209,18 @@ export default function HomeScreen() {
         HomeDisplayService.updateHomeDisplayData({ humId: device._id });
       device.type === "lightSensor" &&
         HomeDisplayService.updateHomeDisplayData({ briId: device._id });
+      Toast.show({
+        type: "success",
+        text1: "Cập nhật cảm biến",
+        text2: `Đã chuyển sang ${device.name} - ${device.roomId.name}.`
+      })
     } catch (error) {
       console.error("Error fetching current data:", error);
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Không thể lấy dữ liệu cảm biến."
+      });
     }
   };
 
@@ -256,8 +272,18 @@ export default function HomeScreen() {
           d.id === deviceId ? { ...d, currentAction: newAction } : d,
         ),
       );
+      Toast.show({
+        type: "success",
+        text1: "Thành công",
+        text2: `Đã ${newAction === "1" ? "bật" : "tắt"} thiết bị.`
+      });
     } catch (error) {
       console.error("Error toggling device:", error);
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Không thể điều khiển thiết bị."
+      });
     }
   };
 
@@ -287,8 +313,19 @@ export default function HomeScreen() {
           }
         })
       }
+        Toast.show({
+          type: "success",
+          text1: "Cập nhật thiết bị nhanh",
+          text2: "Đã cập nhật danh sách thiết bị nhanh."
+        });
     } catch (error) {
       console.error("Error updating quick devices:", error);
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Không thể cập nhật thiết bị nhanh."
+      });
+
     }
   };
 

@@ -5,15 +5,16 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Image,
-  SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "../styles/login.styles";
-import AuthContext, { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import Toast from 'react-native-toast-message';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -36,8 +37,18 @@ export default function LoginScreen() {
       }
       await fetchUserInfo();
       router.replace("/(tabs)");
+      Toast.show({
+        type: "success",
+        text1: "Đăng nhập thành công",
+        text2: `Chào mừng ${username}!`
+      });
     } catch (error) {
       console.error("Login error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Đăng nhập thất bại",
+        text2: "Vui lòng kiểm tra lại tên đăng nhập và mật khẩu."
+      });
     } finally {
       setLoading(false);
     }

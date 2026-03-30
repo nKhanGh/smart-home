@@ -7,6 +7,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import "../global.css";
+import Toast from 'react-native-toast-message';
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import AuthProvider from "@/contexts/AuthContext";
@@ -23,6 +24,7 @@ export default function RootLayout() {
       <AuthProvider>
         <Stack screenOptions={{ headerShown: false }}>
         </Stack>
+        <Toast />
       </AuthProvider>
       <StatusBar style="auto" />
     </ThemeProvider>
