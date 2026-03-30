@@ -34,7 +34,7 @@ const SmartHomeOnboarding = () => {
     if (result) {
       router.push("/(tabs)");
     } else {
-      router.push("./login");
+      router.push("/login");
     }
   };
 

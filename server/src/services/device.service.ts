@@ -12,6 +12,7 @@ import { adafruitAPI } from "../adafruit";
 import mqttService from "./mqttService";
 import { JwtPayload } from "../types";
 import { ServiceError } from "../errors/service.error";
+import bcrypt from "bcryptjs";
 
 export class DeviceService {
   private readonly genericRoomTokens = new Set(["phong", "phòng", "room"]);
@@ -138,7 +139,13 @@ export class DeviceService {
     if (!device) {
       throw new ServiceError(404, "Device not found.");
     }
-    return device;
+    if (device.type.endsWith("Device")) {
+      const action = await this.getCurrentAction(id);
+      return { ...device.toObject(), currentAction: action?.action || null };
+    } else {
+      const data = await this.getCurrentData(id);
+      return { ...device.toObject(), currentData: data?.value || null };
+    }
   }
 
   async getDeviceData(id: string) {
@@ -247,6 +254,28 @@ export class DeviceService {
     return device;
   }
 
+  async updatePassword(id:string, newPassword: string, oldPassword?: string) {
+    const device = await Device.findOne({ _id: id });
+    if (!device) {
+      throw new ServiceError(404, "Device not found.");
+    }
+    if (device.type !== "doorDevice") {
+      throw new ServiceError(400, "Only door devices have passwords.");
+    }
+    if (device.password && device.password.length > 0) {
+      if (!oldPassword) {
+        throw new ServiceError(400, "Current password is required.");
+      }
+      const isMatch = await bcrypt.compare(oldPassword, device.password);
+      if (!isMatch) {
+        throw new ServiceError(403, "Current password is incorrect.");
+      }
+    }
+    device.password = await bcrypt.hash(newPassword, 10);
+    await device.save();
+    return { msg: "Password updated successfully." };
+  }
+
   async deleteDevice(id: string) {
     const device = await Device.findOne({ _id: id });
     if (!device) {
@@ -264,6 +293,16 @@ export class DeviceService {
     const device = await Device.findOne({ _id: id });
     if (!device) {
       throw new ServiceError(404, "Device not found.");
+    }
+
+    if (device.type === "doorDevice") {
+      if (!payload.password) {
+        throw new ServiceError(400, "Password is required for door devices.");
+      }
+      const isMatch = await bcrypt.compare(payload.password, device.password);
+      if (!isMatch) {
+        throw new ServiceError(403, "Incorrect password.");
+      }
     }
 
     mqttService.publish(
@@ -431,6 +470,12 @@ export class DeviceService {
     });
 
     return log;
+  }
+
+  async getSensorDevices() {
+    return Device.find({
+      type: { $in: ["temperatureSensor", "lightSensor", "humiditySensor"] },
+    }).populate("roomId", "name");
   }
 }
 

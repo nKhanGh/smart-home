@@ -15,7 +15,6 @@ const RoomSchema = new Schema<IRoomDoc>({
   key    : { type: String, required: true, unique: true },
   devices: [{ type: Schema.Types.ObjectId, ref: "Device" }],
   backgroundName: { type: String, default: "default.jpg" },
-  createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 

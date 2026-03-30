@@ -41,14 +41,17 @@ axiosInstance.interceptors.response.use(
         const refreshToken = await AsyncStorage.getItem("smart-home-refresh-token");
 
         const res = await axiosNoAuth.post("/auth/refresh", {
-          refreshToken,
+          token: refreshToken,
         });
-
-        const newAccessToken = res.data.result.accessToken;
-        const newRefreshToken = res.data.result.refreshToken;
+        console.log("Token refresh response:", res.data);
+        const newAccessToken = res.data.accessToken;
+        const newRefreshToken = res.data.refreshToken;
 
         await AsyncStorage.setItem("smart-home-access-token", newAccessToken);
         await AsyncStorage.setItem("smart-home-refresh-token", newRefreshToken);
+
+        axiosInstance.defaults.headers.common["Authorization"] =
+         `Bearer ${newAccessToken}`;
 
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 

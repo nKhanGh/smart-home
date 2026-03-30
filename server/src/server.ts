@@ -1,21 +1,35 @@
 import "dotenv/config";
 import app from "./app";
+import http from "http";
+import { Server } from "socket.io";
 import connectDB from "./config/db";
 import mqttService from "./services/mqttService";
 // import { seedDefaults } from "./models/SystemConfigSchema";
+// import { startScheduler } from "./services/schedule.service";
 
 const PORT = process.env.PORT ?? 3000;
 
 const bootstrap = async (): Promise<void> => {
   await connectDB();
-  // await seedDefaults();
 
-  // Kết nối MQTT đến Adafruit IO
-  // Yolo:Bit cũng subscribe/publish lên đây trực tiếp — không cần gateway
+  const httpServer = http.createServer(app);
+
+  const io = new Server(httpServer, {
+    cors: { origin: "*" },
+  });
+
+  io.on("connection", (socket) => {
+    console.log(`[Socket] Client kết nối: ${socket.id}`);
+    socket.on("disconnect", () =>
+      console.log(`[Socket] Client ngắt kết nối: ${socket.id}`)
+    );
+  });
+
+  mqttService.setIO(io);
   mqttService.connect();
   await mqttService.subscribeAllDeviceFeeds();
 
-  app.listen(PORT, () =>
+  httpServer.listen(PORT, () =>
     console.log(`[Server] Đang chạy tại http://localhost:${PORT}`));
 };
 
