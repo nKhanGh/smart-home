@@ -3,12 +3,7 @@ import { DeviceService } from "@/service/device.service";
 import { HomeDisplayService } from "@/service/homeDisplay.service";
 import { styles } from "@/styles/(tabs)/index.styles";
 import React, { useState, useRef, useEffect } from "react";
-import {
-  ScrollView,
-  View,
-  Text,
-  TouchableOpacity,
-} from "react-native";
+import { ScrollView, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { io, Socket } from "socket.io-client";
 import RoomBadge from "@/components/home/RoomBadge";
@@ -20,7 +15,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useRouter } from "expo-router";
 import DoorPasswordModal from "@/components/DoorPasswordModal";
 import QuickDeviceModal from "@/components/QuickDeviceModal";
-import Toast from 'react-native-toast-message';
+import Toast from "react-native-toast-message";
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SOCKET_URL ?? "http://localhost:3000";
@@ -116,12 +111,18 @@ export default function HomeScreen() {
         console.log("Home display data:", response.data);
       } catch (error) {
         console.error("Error fetching home display data:", error);
+      } finally {
+        console.log("Finished fetching initial data", sensorState, devices);
       }
       setInitialLoading(false);
     };
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    console.log("🔥 sensorState updated:", sensorState);
+  }, [sensorState]);
 
   useEffect(() => {
     socketRef.current = io(SERVER_URL, { transports: ["websocket"] });
@@ -138,7 +139,7 @@ export default function HomeScreen() {
       Toast.show({
         type: "error",
         text1: data.alert,
-        text2: data.text
+        text2: data.text,
       });
     };
 
@@ -150,30 +151,25 @@ export default function HomeScreen() {
       Toast.show({
         type: "info",
         text1: "Cảnh báo đã được giải quyết",
-        text2: `Cảm biến ở ${data.roomName} đã trở lại bình thường.`
+        text2: data.text,
       });
     };
 
     const handleData = (data: any) => {
-      console.log("Received sensor data:", data);
-      const state = sensorState.get(data.type) || {
-        roomId: null,
-        currentData: null,
-        deviceId: null,
-        roomName: null,
-      };
-      console.log("[Socket] Nhận data:", data);
-      console.log("[Socket] State hiện tại:", state);
-      console.log("[Socket] roomId match:", state?.roomId, "===", data.roomId);
-      if (state.roomId !== data.roomId) return;
-      setSensorState((prev) =>
-        new Map(prev).set(data.type, {
+      setSensorState((prev) => {
+        const state = prev.get(data.type);
+
+        console.log("[Socket] prev:", state);
+
+        if (!state || state.roomId !== data.roomId) return prev;
+
+        return new Map(prev).set(data.type, {
           roomId: data.roomId,
           currentData: data.value,
           deviceId: data.deviceId,
           roomName: data.roomName,
-        }),
-      );
+        });
+      });
     };
 
     socketRef.current.on("sensor:data", handleData);
@@ -212,14 +208,14 @@ export default function HomeScreen() {
       Toast.show({
         type: "success",
         text1: "Cập nhật cảm biến",
-        text2: `Đã chuyển sang ${device.name} - ${device.roomId.name}.`
-      })
+        text2: `Đã chuyển sang ${device.name} - ${device.roomId.name}.`,
+      });
     } catch (error) {
       console.error("Error fetching current data:", error);
       Toast.show({
         type: "error",
         text1: "Lỗi",
-        text2: "Không thể lấy dữ liệu cảm biến."
+        text2: "Không thể lấy dữ liệu cảm biến.",
       });
     }
   };
@@ -275,28 +271,30 @@ export default function HomeScreen() {
       Toast.show({
         type: "success",
         text1: "Thành công",
-        text2: `Đã ${newAction === "1" ? "bật" : "tắt"} thiết bị.`
+        text2: `Đã ${newAction === "1" ? "bật" : "tắt"} thiết bị.`,
       });
     } catch (error) {
       console.error("Error toggling device:", error);
       Toast.show({
         type: "error",
         text1: "Lỗi",
-        text2: "Không thể điều khiển thiết bị."
+        text2: "Không thể điều khiển thiết bị.",
       });
     }
   };
 
   const updateQuickDevices = async (deviceIds: string[]) => {
     try {
-      await HomeDisplayService.updateHomeDisplayData({ instantControl: deviceIds });
-      setDevices(prev => prev.filter(d => deviceIds.includes(d.id)));
-      if (deviceIds.length > devices.length){
+      await HomeDisplayService.updateHomeDisplayData({
+        instantControl: deviceIds,
+      });
+      setDevices((prev) => prev.filter((d) => deviceIds.includes(d.id)));
+      if (deviceIds.length > devices.length) {
         deviceIds.forEach(async (id) => {
-          if (!devices.some(d => d.id === id)){
+          if (!devices.some((d) => d.id === id)) {
             try {
               const response = await DeviceService.getDeviceById(id);
-              const data = response.data
+              const data = response.data;
               console.log("Fetched device for quick control:", data);
               const newDevice: DeviceInstantControl = {
                 id,
@@ -306,26 +304,25 @@ export default function HomeScreen() {
                 type: data.type,
                 currentAction: data.currentAction || "0",
               };
-              setDevices(prev => [...prev, newDevice]);
+              setDevices((prev) => [...prev, newDevice]);
             } catch (error) {
               console.error("Error fetching device by ID:", error);
             }
           }
-        })
-      }
-        Toast.show({
-          type: "success",
-          text1: "Cập nhật thiết bị nhanh",
-          text2: "Đã cập nhật danh sách thiết bị nhanh."
         });
+      }
+      Toast.show({
+        type: "success",
+        text1: "Cập nhật thiết bị nhanh",
+        text2: "Đã cập nhật danh sách thiết bị nhanh.",
+      });
     } catch (error) {
       console.error("Error updating quick devices:", error);
       Toast.show({
         type: "error",
         text1: "Lỗi",
-        text2: "Không thể cập nhật thiết bị nhanh."
+        text2: "Không thể cập nhật thiết bị nhanh.",
       });
-
     }
   };
 
@@ -469,7 +466,9 @@ export default function HomeScreen() {
                   <Text style={styles.deviceIcon}>
                     {getDeviceIcon(device.type)}
                   </Text>
-                  <Text style={styles.deviceName}>{device.name} - {device.roomName}</Text>
+                  <Text style={styles.deviceName}>
+                    {device.name} - {device.roomName}
+                  </Text>
                   <Text
                     style={[
                       styles.deviceStatus,
@@ -485,7 +484,10 @@ export default function HomeScreen() {
             </View>
           )}
           <View style={styles.updateButton}>
-            <Text style={styles.updateButtonText} onPress={() => setQuickModalVisible(true)}>
+            <Text
+              style={styles.updateButtonText}
+              onPress={() => setQuickModalVisible(true)}
+            >
               Đổi thiết bị nhanh
             </Text>
           </View>
@@ -499,11 +501,11 @@ export default function HomeScreen() {
         setDoorModalVisible={setDoorModalVisible}
       />
       <QuickDeviceModal
-  visible={quickModalVisible}
-  setVisible={setQuickModalVisible}
-  selectedDevices={devices}
-  onConfirm={updateQuickDevices}
-/>
+        visible={quickModalVisible}
+        setVisible={setQuickModalVisible}
+        selectedDevices={devices}
+        onConfirm={updateQuickDevices}
+      />
     </SafeAreaView>
   );
 }

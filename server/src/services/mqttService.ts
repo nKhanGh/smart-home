@@ -17,12 +17,13 @@ import Threshold from "../models/ThresholdSchema";
 import SensorAlert from "../models/SensorAlertSchema";
 import { Server as SocketIOServer } from "socket.io";
 import { get } from "http";
+import deviceService from "./device.service";
 // import { SystemConfig } from "../models/SystemConfigSchema";
 
 type MqttHandler = (feedKey: string, value: string) => void;
 
 const getName = (type: string) => {
-  switch(type){
+  switch (type) {
     case "temperatureSensor":
       return "Nhiệt độ";
     case "humiditySensor":
@@ -34,10 +35,10 @@ const getName = (type: string) => {
     default:
       return "Thiết bị";
   }
-}
+};
 
 const getUnit = (type: string) => {
-  switch(type){
+  switch (type) {
     case "temperatureSensor":
       return "°C";
     case "humiditySensor":
@@ -47,7 +48,7 @@ const getUnit = (type: string) => {
     default:
       return "";
   }
-}
+};
 
 class MqttService {
   private static instance: MqttService;
@@ -165,8 +166,10 @@ class MqttService {
   async onDeviceData(feedKey: string, value: string): Promise<void> {
     console.log(`[MQTT] Data received: ${feedKey} = ${value}`);
     try {
-      const device = await Device.findOne({ key: feedKey });
+      const device = await Device.findOne({ key: feedKey }).populate("roomId", "name");
       if (device?.type.endsWith("Sensor")) {
+        const lastData = await deviceService.getCurrentData(device?._id.toString() || "");
+
         await Data.create({
           deviceId: device?._id,
           value,
@@ -174,42 +177,50 @@ class MqttService {
         const threshold = await Threshold.findOne({ deviceId: device?._id });
         this.io?.emit("sensor:data", {
           deviceId: device._id,
-          roomId: device.roomId,
+          roomId: device.roomId ? (device.roomId as any)._id : null,
           type: device.type,
           value: Number.parseFloat(value),
-          feedKey,
+          roomName: device.roomId ? (device.roomId as any).name : "",
         });
         console.log(`[MQTT] Data received1: ${feedKey} = ${value}`);
-        if (threshold && Number.parseFloat(value) >= threshold.value) {
-          await SensorAlert.create({
-            deviceId: device?._id,
-            value: Number.parseFloat(value),
-            threshold: threshold.value,
-            createdAt: Date.now(),
-          });
-          const room = await Room.findById(device?.roomId);
-          const alert = "Cảnh báo "  + getName(device.type) + " cao - " + room?.name;
-          const text = value + getUnit(device.type) + " vượt ngưỡng cho phép " + threshold.value + getUnit(device.type);
-          this.io?.emit("sensor:alert", {
-            type: device.type,
-            deviceId: device._id,
-            alert,
-            text,
-          });
-        } else {
-          this.io?.emit("sensor:normal", {
-            deviceId: device._id,
-          });
+        if (threshold) {
+          if (Number.parseFloat(value) >= threshold.value) {
+            await SensorAlert.create({
+              deviceId: device?._id,
+              value: Number.parseFloat(value),
+              threshold: threshold.value,
+              createdAt: Date.now(),
+            });
+            const room = await Room.findById(device?.roomId);
+            const alert =
+              "Cảnh báo " + getName(device.type) + " cao - " + room?.name;
+            const text =
+              value +
+              getUnit(device.type) +
+              " vượt ngưỡng cho phép " +
+              threshold.value +
+              getUnit(device.type);
+            this.io?.emit("sensor:alert", {
+              type: device.type,
+              deviceId: device._id,
+              alert,
+              text,
+            });
+          } else{
+            if (lastData){
+              const isLastAlert = Number.parseFloat(lastData.value) >= threshold.value;
+              console.log(`[MQTT] last data: ${lastData.value}, threshold: ${threshold.value}, isLastAlert: ${isLastAlert}`);
+              if (isLastAlert)
+                this.io?.emit("sensor:normal", {
+                  deviceId: device._id,
+                  type: device.type,
+                  alert: getName(device.type) + " bình thường",
+                  text: "Cảm biếm ở " + (device.roomId ? (device.roomId as any).name : "") + " đã trở lại bình thường",
+                });
+            }
+          }
         }
       }
-      // else if (value.endsWith(":local")) {
-      //   await ActionLog.create({
-      //     deviceId: device?._id,
-      //     deviceName: device?.name ?? "Unknown Device",
-      //     action: value === "1:local" ? "on" : "off",
-      //     actor: "local",
-      //   });
-      // }
     } catch (err) {
       console.error("[MQTT] Lưu data thất bại:", err);
     }
