@@ -8,6 +8,7 @@ import scheduleRoutes from "./routes/schedules";
 import sensorAlertRoutes from "./routes/sensorAlerts";
 import dataRoutes from "./routes/data";
 import userRoutes from "./routes/user";
+import homeDisplayRoutes from "./routes/homeDisplay";
 // import configRoutes from "./routes/config";
 
 import swaggerUi from "swagger-ui-express";
@@ -33,6 +34,7 @@ app.use("/api/sensor-alerts", sensorAlertRoutes);
 app.use("/api/data", dataRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api/home-display", homeDisplayRoutes);
 
 app.get("/", (_req, res) =>
   res.json({ status: "ok", message: "Smart Home Backend đang chạy." }),

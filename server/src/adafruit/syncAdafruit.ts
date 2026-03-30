@@ -6,11 +6,14 @@ import Room from "../models/RoomSchema";
 import Threshold from "../models/ThresholdSchema";
 import { Types } from "mongoose";
 
-const getType = (name: string) => {
-  if (name.endsWith("SENSOR")) return "sensor";
-  else if (name.endsWith("THRESHOLD")) return "threshold";
-  else return "device";
+const getType = (key: string) => {
+  if (key.endsWith("-threshold")) return "threshold";
+  else if (key.endsWith("-temp")) return "temperatureSensor";
+  else if (key.endsWith("-hum")) return "humiditySensor";
+  else if (key.endsWith("-bri")) return "lightSensor";
+  return "device";
 };
+
 
 const sync = async () => {
   await connectDB();
@@ -24,12 +27,12 @@ const sync = async () => {
   }
 
   for (const group of groups) {
+    if (group.name === "Default") continue;
     let room = await Room.findOne({ key: group.key });
     if (!room) {
       room = await Room.create({
-        name: group.name,
+        name: group.name.split("_").join(" ").trim().toLowerCase() || group.name,
         key: group.key,
-        createdBy: new Types.ObjectId(ADMIN_USER_ID),
       });
       console.log(`[Sync] Room created: ${room.name}`);
     }
@@ -44,12 +47,11 @@ const sync = async () => {
       }
 
       const device = await Device.create({
-        name: feed.name,
+        name: feed.name?.split("_").slice(1).join(" ").trim().toLowerCase() || feed.key,
         description: feed.description ?? "",
         key: feed.key,
         roomId: room._id,
-        createdBy: new Types.ObjectId(ADMIN_USER_ID),
-        type: getType(feed.name),
+        type: getType(feed.key),
       });
 
       await Threshold.create({
