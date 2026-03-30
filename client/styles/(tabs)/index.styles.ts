@@ -219,6 +219,7 @@ export const styles = StyleSheet.create({
   },
   devicesGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
   deviceItem: {
@@ -230,6 +231,7 @@ export const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1.5,
     borderColor: 'transparent',
+    width: '23%',
   },
   deviceItemOn: {
     backgroundColor: '#DCFCE7',

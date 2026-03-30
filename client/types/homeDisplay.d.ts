@@ -30,10 +30,11 @@ interface HumDisplay {
 }
 
 interface DeviceInstantControl {
-  deviceId: string;
+  id: string;
+  name: string;
   roomName: string;
   roomId: string;
-  type: "device";
+  type: string;
   currentAction: string | number;
 }
 

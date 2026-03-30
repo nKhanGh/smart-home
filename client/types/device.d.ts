@@ -12,3 +12,16 @@ interface DeviceResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+interface QuickDevice {
+  name: string;
+  roomName: string;
+  roomId: string;
+  type: string;
+  currentAction: string | number;
+}
+
+interface CommandInput {
+  action: string;
+  password?: string;
+}
