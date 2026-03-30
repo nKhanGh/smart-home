@@ -139,7 +139,13 @@ export class DeviceService {
     if (!device) {
       throw new ServiceError(404, "Device not found.");
     }
-    return device;
+    if (device.type.endsWith("Device")) {
+      const action = await this.getCurrentAction(id);
+      return { ...device.toObject(), currentAction: action?.action || null };
+    } else {
+      const data = await this.getCurrentData(id);
+      return { ...device.toObject(), currentData: data?.value || null };
+    }
   }
 
   async getDeviceData(id: string) {

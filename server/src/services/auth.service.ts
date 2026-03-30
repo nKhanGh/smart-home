@@ -102,7 +102,7 @@ export class AuthService {
         refreshSignOptions,
       );
       console.log("New token generated:", newToken);
-      return { token: newToken, refreshToken: newRefreshToken };
+      return { accessToken: newToken, refreshToken: newRefreshToken };
     } catch (err) {
       console.log("Error refreshing token:", err);
       throw new ServiceError(401, "Invalid refresh token.");
