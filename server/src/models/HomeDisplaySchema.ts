@@ -26,6 +26,7 @@ interface HumDisplay {
 }
 
 interface DeviceInstantControl {
+  id: string;
   name: string;
   roomName: string;
   roomId: string;

@@ -66,6 +66,19 @@ export class DeviceController {
     }
   };
 
+  updatePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      await this.service.updatePassword(
+        req.params.id,
+        req.body.newPassword,
+        req.body.oldPassword,
+      );
+      res.status(200).json({ code: "200", msg: "Cập nhật mật khẩu thành công." });
+    } catch (err) {
+      handleControllerError(err, res, "Error updating device password:");
+    }
+  };
+
   deleteDevice = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       await this.service.deleteDevice(req.params.id);
@@ -145,6 +158,15 @@ export class DeviceController {
       handleControllerError(err, res, "Error fetching current action:");
     }
   };
+
+  getSensorDevices = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const devices = await this.service.getSensorDevices();
+      res.status(200).json(devices);
+    } catch (err) {
+      handleControllerError(err, res, "Error fetching sensor devices:");
+    }
+  }
 }
 
 const deviceController = new DeviceController(deviceService);

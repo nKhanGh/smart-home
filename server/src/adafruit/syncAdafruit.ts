@@ -5,12 +5,16 @@ import Device from "../models/DeviceSchema";
 import Room from "../models/RoomSchema";
 import Threshold from "../models/ThresholdSchema";
 import { Types } from "mongoose";
+import bcrypt from "bcryptjs";
 
 const getType = (key: string) => {
   if (key.endsWith("-threshold")) return "threshold";
   else if (key.endsWith("-temp")) return "temperatureSensor";
   else if (key.endsWith("-hum")) return "humiditySensor";
   else if (key.endsWith("-bri")) return "lightSensor";
+  else if (key.endsWith("-light") || key.endsWith("-plug")) return "lightDevice";
+  else if (key.endsWith("-door")) return "doorDevice";
+  else if (key.endsWith("-fan")) return "fanDevice";
   return "device";
 };
 
@@ -52,6 +56,7 @@ const sync = async () => {
         key: feed.key,
         roomId: room._id,
         type: getType(feed.key),
+        password: getType(feed.key) === "doorDevice" ? bcrypt.hash("123456", 10) : "",
       });
 
       await Threshold.create({

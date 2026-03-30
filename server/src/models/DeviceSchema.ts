@@ -7,8 +7,9 @@ export interface IDeviceDoc extends Document {
   key: string;
   mode: "auto" | "manual";
   roomId: Types.ObjectId;
-  type:  "lightSensor" | "temperatureSensor" | "humiditySensor" | "device" | "threshold";
+  type:  "lightSensor" | "temperatureSensor" | "humiditySensor" | "device" | "threshold" | "lightDevice" | "doorDevice" | "fanDevice";
   createdBy: Types.ObjectId;
+  password: string;
   createdAt: Date;
 }
 
@@ -21,8 +22,9 @@ const DeviceSchema = new Schema<IDeviceDoc>(
     roomId: { type: Schema.Types.ObjectId, ref: "Room", required: true },
     type: {
       type: String,
-      enum: ["lightSensor", "temperatureSensor", "humiditySensor", "device", "threshold"],
+      enum: ["lightSensor", "temperatureSensor", "humiditySensor", "device", "threshold", "lightDevice", "doorDevice", "fanDevice"],
     },
+    password: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true },
@@ -54,6 +56,7 @@ export type UpdateDeviceInput = z.infer<typeof UpdateDeviceSchema>;
 
 export const SendCommandSchema = z.object({
   action: z.string().min(1, "Hành động không được để trống."),
+  password: z.string().optional(),
 });
 
 export type SendCommandInput = z.infer<typeof SendCommandSchema>;

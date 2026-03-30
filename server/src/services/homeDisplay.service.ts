@@ -51,10 +51,11 @@ export class HomeDisplayService {
           device._id.toString(),
         );
         return {
+          id: device._id.toString(),
           name: device.name || "",
           roomName: (device.roomId as any)?.name || "",
           roomId: (device.roomId as any)?._id.toString() || "",
-          type: "device" as const,
+          type: device.type,
           currentAction: actionLog?.action || "",
         };
       }),
@@ -67,21 +68,21 @@ export class HomeDisplayService {
         roomName: tempDevice?.roomId?.name || "",
         type: "temperatureSensor",
         currentData: tempData?.value || null,
-        roomId: (tempDevice?.roomId)?._id.toString() || "",
+        roomId: tempDevice?.roomId?._id.toString() || "",
       },
       bri: {
         deviceId: briDevice._id.toString(),
         roomName: briDevice?.roomId?.name || "",
         type: "lightSensor",
         currentData: briData?.value || null,
-        roomId: (briDevice?.roomId)?._id.toString() || "",
+        roomId: briDevice?.roomId?._id.toString() || "",
       },
       hum: {
         deviceId: humDevice._id.toString(),
         roomName: humDevice?.roomId?.name || "",
         type: "humiditySensor",
         currentData: humData?.value || null,
-        roomId: (humDevice?.roomId)?._id.toString() || "",
+        roomId: humDevice?.roomId?._id.toString() || "",
       },
       instantControl,
     };
@@ -92,9 +93,23 @@ export class HomeDisplayService {
   }
 
   async updateHomeDisplay(userId: string, input: UpdateHomeDisplayInput) {
-    const homeDisplay = await HomeDisplay.findOneAndUpdate({ userId }, input, {
-      new: true,
-    }).populate("tempId briId humId");
+    const updateData: any = {
+      ...input,
+      updatedAt: new Date(),
+    };
+
+    if (input.instantControl != null && input.instantControl.length > 0) {
+      updateData.instantControl = input.instantControl;
+    } else {
+      delete updateData.instantControl;
+    }
+
+    const homeDisplay = await HomeDisplay.findOneAndUpdate(
+      { userId },
+      updateData,
+      { new: true },
+    ).populate("tempId briId humId");
+
     if (!homeDisplay) {
       throw new ServiceError(404, "Home display not found for this user.");
     }

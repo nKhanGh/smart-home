@@ -2,10 +2,7 @@ import { Router } from "express";
 import { verifyToken } from "../middleware/authMiddleware";
 import deviceController from "../controllers/device.controller";
 import validate from "../middleware/validateMiddleware";
-import {
-  UpdateDeviceSchema,
-  VoiceCommandSchema,
-} from "../models/DeviceSchema";
+import { UpdateDeviceSchema, VoiceCommandSchema } from "../models/DeviceSchema";
 
 const router = Router();
 
@@ -23,6 +20,76 @@ const router = Router();
  */
 router.get("/", verifyToken, deviceController.getDevices);
 
+/**
+ * @swagger
+ * /api/devices/sensors:
+ *   get:
+ *     summary: Lấy danh sách thiết bị cảm biến (temp, bri, hum)
+ *     tags: [Devices]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Danh sách thiết bị cảm biến
+ *       404:
+ *         description: Không tìm thấy thiết bị cảm biến
+ */
+router.get("/sensors", verifyToken, deviceController.getSensorDevices);
+
+/**
+ * @swagger
+ * /api/devices/{id}/password:
+ *   patch:
+ *     summary: Cập nhật mật khẩu thiết bị (chỉ dành cho doorDevice)
+ *     tags: [Devices]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: device_id
+ *         schema:
+ *           type: string
+ *           example: door_room1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newPassword
+ *             properties:
+ *               newPassword:
+ *                 type: string
+ *                 example: newpassword123
+ *               oldPassword:
+ *                 type: string
+ *                 example: oldpassword123
+ *                 description: Bắt buộc khi thiết bị đã có mật khẩu trước đó
+ *     responses:
+ *       200:
+ *         description: Cập nhật mật khẩu thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: "200"
+ *                 msg:
+ *                   type: string
+ *                   example: Cập nhật mật khẩu thành công.
+ *       400:
+ *         description: Thiếu newPassword hoặc thiết bị không phải doorDevice
+ *       403:
+ *         description: Mật khẩu hiện tại không đúng
+ *       404:
+ *         description: Device not found
+ */
+router.patch("/:id/password", verifyToken, deviceController.updatePassword);
 
 /**
  * @swagger
@@ -320,7 +387,6 @@ router.post(
  */
 router.get("/:id/current-data", verifyToken, deviceController.getCurrentData);
 
-
 /**
  * @swagger
  * /api/devices/{id}/current-action:
@@ -343,6 +409,10 @@ router.get("/:id/current-data", verifyToken, deviceController.getCurrentData);
  *       404:
  *         description: Device not found
  */
-router.get("/:id/current-action", verifyToken, deviceController.getCurrentAction);
+router.get(
+  "/:id/current-action",
+  verifyToken,
+  deviceController.getCurrentAction,
+);
 
 export default router;
