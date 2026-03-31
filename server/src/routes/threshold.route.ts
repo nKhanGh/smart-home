@@ -42,7 +42,7 @@ const router = Router({ mergeParams: true });
  *         description: Server Error
  */
 router.put(
-  "",
+  "/",
   verifyToken,
   validate(UpdateThresholdSchema),
   thresholdController.updateThreshold,
@@ -71,6 +71,6 @@ router.put(
  *       500:
  *         description: Server Error
  */
-router.get("", verifyToken, thresholdController.getThreshold);
+router.get("/", verifyToken, thresholdController.getThreshold);
 
 export default router;

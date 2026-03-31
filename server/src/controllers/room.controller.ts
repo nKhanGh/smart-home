@@ -17,28 +17,48 @@ export class RoomController {
     }
   };
 
-  addRoom = async (req: AuthRequest, res: Response): Promise<void> => {
+  getRoomById = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const payload = req.body as AddRoomInput;
-      const { room, key } = await this.service.addRoom(payload, req.user?.id);
-      await adafruitAPI.post("/groups", { group: { name: payload.name, key } });
-      res
-        .status(201)
-        .json({ code: "201", msg: "Thêm phòng thành công.", room });
+      const room = await this.service.getRoomById(req.params.id);
+      res.status(200).json(room);
     } catch (err) {
-      handleControllerError(err, res, "Error creating room:");
+      handleControllerError(err, res, "Error fetching room:");
     }
   };
 
-  deleteRoom = async (req: AuthRequest, res: Response): Promise<void> => {
+  updateRoom = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const room = await this.service.deleteRoom(req.params.id);
-      await adafruitAPI.delete(`/groups/${room.key}`);
-      res.status(200).json({ code: "200", msg: "Xóa phòng thành công." });
+      const payload = req.body as Partial<AddRoomInput>;
+      const room = await this.service.updateRoom(req.params.id, payload);
+      res.status(200).json(room);
     } catch (err) {
-      handleControllerError(err, res, "Error deleting room:");
+      handleControllerError(err, res, "Error updating room:");
     }
   };
+
+
+  // addRoom = async (req: AuthRequest, res: Response): Promise<void> => {
+  //   try {
+  //     const payload = req.body as AddRoomInput;
+  //     const { room, key } = await this.service.addRoom(payload, req.user?.id);
+  //     await adafruitAPI.post("/groups", { group: { name: payload.name, key } });
+  //     res
+  //       .status(201)
+  //       .json({ code: "201", msg: "Thêm phòng thành công.", room });
+  //   } catch (err) {
+  //     handleControllerError(err, res, "Error creating room:");
+  //   }
+  // };
+
+  // deleteRoom = async (req: AuthRequest, res: Response): Promise<void> => {
+  //   try {
+  //     const room = await this.service.deleteRoom(req.params.id);
+  //     await adafruitAPI.delete(`/groups/${room.key}`);
+  //     res.status(200).json({ code: "200", msg: "Xóa phòng thành công." });
+  //   } catch (err) {
+  //     handleControllerError(err, res, "Error deleting room:");
+  //   }
+  // };
 }
 
 const roomController = new RoomController(roomService);

@@ -276,18 +276,18 @@ export class DeviceService {
     return { msg: "Password updated successfully." };
   }
 
-  async deleteDevice(id: string) {
-    const device = await Device.findOne({ _id: id });
-    if (!device) {
-      throw new ServiceError(404, "Device not found.");
-    }
+  // async deleteDevice(id: string) {
+  //   const device = await Device.findOne({ _id: id });
+  //   if (!device) {
+  //     throw new ServiceError(404, "Device not found.");
+  //   }
 
-    await adafruitAPI.delete(`/feeds/${device.key}`);
-    await Room.findByIdAndUpdate(device.roomId, {
-      $pull: { devices: device._id },
-    });
-    await Device.findByIdAndDelete(device._id);
-  }
+  //   await adafruitAPI.delete(`/feeds/${device.key}`);
+  //   await Room.findByIdAndUpdate(device.roomId, {
+  //     $pull: { devices: device._id },
+  //   });
+  //   await Device.findByIdAndDelete(device._id);
+  // }
 
   async sendCommand(id: string, payload: SendCommandInput, user?: JwtPayload) {
     const device = await Device.findOne({ _id: id });
@@ -475,6 +475,12 @@ export class DeviceService {
   async getSensorDevices() {
     return Device.find({
       type: { $in: ["temperatureSensor", "lightSensor", "humiditySensor"] },
+    }).populate("roomId", "name");
+  }
+
+  async getThresholdDevices() {
+    return Device.find({
+      type: "threshold",
     }).populate("roomId", "name");
   }
 }

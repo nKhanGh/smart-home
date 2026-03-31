@@ -79,14 +79,14 @@ export class DeviceController {
     }
   };
 
-  deleteDevice = async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      await this.service.deleteDevice(req.params.id);
-      res.status(200).json({ code: "200", msg: "Xóa thiết bị thành công." });
-    } catch (err) {
-      handleControllerError(err, res, "Error deleting device:");
-    }
-  };
+  // deleteDevice = async (req: AuthRequest, res: Response): Promise<void> => {
+  //   try {
+  //     await this.service.deleteDevice(req.params.id);
+  //     res.status(200).json({ code: "200", msg: "Xóa thiết bị thành công." });
+  //   } catch (err) {
+  //     handleControllerError(err, res, "Error deleting device:");
+  //   }
+  // };
 
   sendCommand = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -165,6 +165,15 @@ export class DeviceController {
       res.status(200).json(devices);
     } catch (err) {
       handleControllerError(err, res, "Error fetching sensor devices:");
+    }
+  }
+
+  getThresholdDevices = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const devices = await this.service.getThresholdDevices();
+      res.status(200).json(devices);
+    } catch (err) {
+      handleControllerError(err, res, "Error fetching threshold devices:");
     }
   }
 }
