@@ -1,6 +1,7 @@
 import { authService } from "@/service/auth.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
 
 import { EventEmitter } from 'eventemitter3';
 export const emitter = new EventEmitter();
@@ -31,12 +32,15 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserResponse | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const router = useRouter();
 
   const logout = useCallback(async () => {
     await AsyncStorage.removeItem('smart-home-access-token');
+    await AsyncStorage.removeItem('smart-home-refresh-token');
     setIsLoggedIn(false);
     setAccessToken(null);
     setUser(null);
+    emitter.emit('logout');
   }, []);
 
   const fetchUserInfo = useCallback(async () => {
@@ -60,7 +64,10 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const handleLogout = () => {
       setIsLoggedIn(false);
       setAccessToken(null);
+      AsyncStorage.removeItem('smart-home-access-token');
+      AsyncStorage.removeItem('smart-home-refresh-token');
       setUser(null);
+      router.replace("/login");
     };
 
     fetchUserInfo();
