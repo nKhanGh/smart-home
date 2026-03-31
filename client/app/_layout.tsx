@@ -11,6 +11,7 @@ import Toast from 'react-native-toast-message';
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import AuthProvider from "@/contexts/AuthContext";
+import { SocketProvider } from "@/contexts/SocketContext";
 
 // export const unstable_settings = {
 //   anchor: "(tabs)",
@@ -22,8 +23,10 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-        </Stack>
+        <SocketProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+          </Stack>
+        </SocketProvider>
         <Toast />
       </AuthProvider>
       <StatusBar style="auto" />

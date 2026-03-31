@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import DoorPasswordModal from "@/components/DoorPasswordModal";
 import QuickDeviceModal from "@/components/QuickDeviceModal";
 import Toast from "react-native-toast-message";
+import { useSocket } from "@/contexts/SocketContext";
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SOCKET_URL ?? "http://localhost:3000";
@@ -55,7 +56,6 @@ export default function HomeScreen() {
       ],
     ]),
   );
-  const socketRef = useRef<Socket | null>(null);
   const [doorModalVisible, setDoorModalVisible] = useState(false);
   const [pendingDoorDevice, setPendingDoorDevice] =
     useState<DeviceInstantControl | null>(null);
@@ -64,6 +64,8 @@ export default function HomeScreen() {
   const [quickModalVisible, setQuickModalVisible] = useState(false);
 
   const router = useRouter();
+
+  const { subscribe } = useSocket();
 
   const { user } = useAuth();
 
@@ -125,8 +127,6 @@ export default function HomeScreen() {
   }, [sensorState]);
 
   useEffect(() => {
-    socketRef.current = io(SERVER_URL, { transports: ["websocket"] });
-    console.log("Connecting to socket server at:", SERVER_URL);
 
     const handleSensorAlert = (data: any) => {
       setAlerts((prev) => {
@@ -172,15 +172,14 @@ export default function HomeScreen() {
       });
     };
 
-    socketRef.current.on("sensor:data", handleData);
-    socketRef.current.on("sensor:alert", handleSensorAlert);
-    socketRef.current.on("sensor:normal", handleSensorNormal);
+    const unSubData = subscribe("sensor:data", handleData);
+    const unSubAlert = subscribe("sensor:alert", handleSensorAlert);
+    const unSubNormal = subscribe("sensor:normal", handleSensorNormal);
 
     return () => {
-      socketRef.current?.off("sensor:alert", handleSensorAlert);
-      socketRef.current?.off("sensor:normal", handleSensorNormal);
-      socketRef.current?.off("sensor:data", handleData);
-      socketRef.current?.disconnect();
+      unSubData();
+      unSubAlert();
+      unSubNormal();
     };
   }, []);
 
@@ -257,7 +256,14 @@ export default function HomeScreen() {
     password?: string,
   ) => {
     try {
-      const newAction = currentAction === "1" ? "0" : "1";
+      let newAction;
+      if (devices.find((d) => d.id === deviceId)?.type === "doorDevice") {
+        newAction = currentAction === "2" ? "3" : "2";
+      }
+      if (devices.find((d) => d.id === deviceId)?.type === "fanDevice"){
+        newAction = Number.parseFloat(currentAction.toString()) === 0 ? "100" : "0";
+      }
+      else newAction = currentAction === "1" ? "0" : "1";
       await DeviceService.sendCommand(
         deviceId,
         newAction,
@@ -457,7 +463,7 @@ export default function HomeScreen() {
                   key={device.id}
                   style={[
                     styles.deviceItem,
-                    device.currentAction === "1" && styles.deviceItemOn,
+                    (device.currentAction === "1" || device.currentAction === "3" || device.currentAction === "100") && styles.deviceItemOn,
                   ]}
                   onPress={() =>
                     handleDevicePress(device, device.currentAction)
@@ -472,12 +478,12 @@ export default function HomeScreen() {
                   <Text
                     style={[
                       styles.deviceStatus,
-                      device.currentAction === "1"
+                      (device.currentAction === "1" || device.currentAction === "3" || device.currentAction === "100")
                         ? styles.deviceStatusOn
                         : null,
                     ]}
                   >
-                    {device.currentAction === "1" ? "BẬT" : "Tắt"}
+                    {device.currentAction === "1" || device.currentAction === "3" || device.currentAction === "100" ? "BẬT" : "Tắt"}
                   </Text>
                 </TouchableOpacity>
               ))}
