@@ -7,7 +7,15 @@ export interface IDeviceDoc extends Document {
   key: string;
   mode: "auto" | "manual";
   roomId: Types.ObjectId;
-  type:  "lightSensor" | "temperatureSensor" | "humiditySensor" | "device" | "threshold" | "lightDevice" | "doorDevice" | "fanDevice";
+  type:
+    | "lightSensor"
+    | "temperatureSensor"
+    | "humiditySensor"
+    | "device"
+    | "threshold"
+    | "lightDevice"
+    | "doorDevice"
+    | "fanDevice";
   createdBy: Types.ObjectId;
   password: string;
   createdAt: Date;
@@ -22,7 +30,16 @@ const DeviceSchema = new Schema<IDeviceDoc>(
     roomId: { type: Schema.Types.ObjectId, ref: "Room", required: true },
     type: {
       type: String,
-      enum: ["lightSensor", "temperatureSensor", "humiditySensor", "device", "threshold", "lightDevice", "doorDevice", "fanDevice"],
+      enum: [
+        "lightSensor",
+        "temperatureSensor",
+        "humiditySensor",
+        "device",
+        "threshold",
+        "lightDevice",
+        "doorDevice",
+        "fanDevice",
+      ],
     },
     password: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
@@ -39,7 +56,6 @@ const DeviceSchema = new Schema<IDeviceDoc>(
 //     { message: "Loại thiết bị không hợp lệ." },
 //   ),
 // });
-
 
 export const UpdateDeviceSchema = z.object({
   name: z.string().min(1, "Tên thiết bị không được để trống.").optional(),
@@ -60,6 +76,15 @@ export const SendCommandSchema = z.object({
 });
 
 export type SendCommandInput = z.infer<typeof SendCommandSchema>;
+
+export const UpdateDevicePasswordSchema = z.object({
+  newPassword: z.string().min(1, "Mật khẩu mới không được để trống."),
+  oldPassword: z.string().optional(),
+});
+
+export type UpdateDevicePasswordInput = z.infer<
+  typeof UpdateDevicePasswordSchema
+>;
 
 export const VoiceCommandSchema = z.object({
   text: z.string().min(1, "Nội dung lệnh không được để trống."),

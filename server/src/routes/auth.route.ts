@@ -1,7 +1,12 @@
 import { Router } from "express";
 import authController from "../controllers/auth.controller";
 import { verifyToken } from "../middleware/authMiddleware";
-import { AddUserSchema, LoginSchema, RegisterSchema } from "../models/UserSchema";
+import {
+  IntrospectSchema,
+  LoginSchema,
+  RefreshTokenSchema,
+  RegisterSchema,
+} from "../models/UserSchema";
 import validate from "../middleware/validateMiddleware";
 
 const router = Router();
@@ -40,7 +45,6 @@ const router = Router();
  */
 router.post("/register", validate(RegisterSchema), authController.register);
 
-
 /**
  * @swagger
  * /api/auth/introspect:
@@ -65,7 +69,11 @@ router.post("/register", validate(RegisterSchema), authController.register);
  *       400:
  *         description: Dữ liệu không hợp lệ
  */
-router.post("/introspect", authController.introspect);
+router.post(
+  "/introspect",
+  validate(IntrospectSchema),
+  authController.introspect,
+);
 
 /**
  * @swagger
@@ -91,7 +99,11 @@ router.post("/introspect", authController.introspect);
  *       400:
  *         description: Dữ liệu không hợp lệ
  */
-router.post("/refresh", authController.refreshToken);
+router.post(
+  "/refresh",
+  validate(RefreshTokenSchema),
+  authController.refreshToken,
+);
 
 /**
  * @swagger
@@ -135,6 +147,5 @@ router.post("/login", validate(LoginSchema), authController.login);
  *         description: Token không hợp lệ hoặc hết hạn
  */
 router.get("/me", verifyToken, authController.getMe);
-
 
 export default router;

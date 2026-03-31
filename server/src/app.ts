@@ -1,14 +1,15 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import authRoutes from "./routes/auth";
-import deviceRoutes from "./routes/devices";
-import roomRoutes from "./routes/rooms";
-import thresholdRoutes from "./routes/threshold";
-import scheduleRoutes from "./routes/schedules";
-import sensorAlertRoutes from "./routes/sensorAlerts";
-import dataRoutes from "./routes/data";
-import userRoutes from "./routes/user";
-import homeDisplayRoutes from "./routes/homeDisplay";
+import authRoutes from "./routes/auth.route";
+import deviceRoutes from "./routes/devices.route";
+import roomRoutes from "./routes/rooms.route";
+import thresholdRoutes from "./routes/threshold.route";
+import scheduleRoutes from "./routes/schedules.route";
+import sensorAlertRoutes from "./routes/sensorAlerts.route";
+import dataRoutes from "./routes/data.route";
+import userRoutes from "./routes/user.route";
+import homeDisplayRoutes from "./routes/homeDisplay.route";
+import statisticRoutes from "./routes/statistic.route";
 // import configRoutes from "./routes/config";
 
 import swaggerUi from "swagger-ui-express";
@@ -35,6 +36,7 @@ app.use("/api/data", dataRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/home-display", homeDisplayRoutes);
+app.use("/api/statistics", statisticRoutes);
 
 app.get("/", (_req, res) =>
   res.json({ status: "ok", message: "Smart Home Backend đang chạy." }),

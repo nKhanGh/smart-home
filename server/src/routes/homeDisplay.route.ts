@@ -2,7 +2,10 @@ import { Router } from "express";
 import homeDisplayController from "../controllers/homeDisplay.controller";
 import { verifyToken } from "../middleware/authMiddleware";
 import validate from "../middleware/validateMiddleware";
-import { CreateHomeDisplaySchema, UpdateHomeDisplaySchema } from "../models/HomeDisplaySchema";
+import {
+  CreateHomeDisplaySchema,
+  UpdateHomeDisplaySchema,
+} from "../models/HomeDisplaySchema";
 
 /**
  * @swagger
@@ -11,7 +14,6 @@ import { CreateHomeDisplaySchema, UpdateHomeDisplaySchema } from "../models/Home
  *   description: API quản lý hiển thị trên trang chủ
  */
 const router = Router();
-
 
 /** * @swagger
  * /api/home-display:
@@ -27,14 +29,10 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - userId
  *               - tempId
  *               - briId
  *               - humId
  *             properties:
- *               userId:
- *                 type: string
- *                 example: 60d0fe4f5311236168a109ca
  *               tempId:
  *                 type: string
  *                 example: 60d0fe4f5311236168a109cb
@@ -56,7 +54,12 @@ const router = Router();
  *       500:
  *         description: Server Error
  */
-router.post("/", verifyToken, validate(CreateHomeDisplaySchema), homeDisplayController.createHomeDisplay);
+router.post(
+  "/",
+  verifyToken,
+  validate(CreateHomeDisplaySchema),
+  homeDisplayController.createHomeDisplay,
+);
 
 /**
  * @swagger
@@ -135,6 +138,11 @@ router.get("/", verifyToken, homeDisplayController.getHomeDisplay);
  *       500:
  *         description: Server Error
  */
-router.put("/", verifyToken, validate(UpdateHomeDisplaySchema), homeDisplayController.updateHomeDisplay);
+router.put(
+  "/",
+  verifyToken,
+  validate(UpdateHomeDisplaySchema),
+  homeDisplayController.updateHomeDisplay,
+);
 
 export default router;
