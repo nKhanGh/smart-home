@@ -17,6 +17,7 @@ import DoorPasswordModal from "@/components/DoorPasswordModal";
 import QuickDeviceModal from "@/components/QuickDeviceModal";
 import Toast from "react-native-toast-message";
 import { useSocket } from "@/contexts/SocketContext";
+import { getAction, getNextAction } from "@/utils/devices.util";
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SOCKET_URL ?? "http://localhost:3000";
@@ -256,11 +257,7 @@ export default function HomeScreen() {
     password?: string,
   ) => {
     try {
-      let newAction;
-      if (devices.find((d) => d.id === deviceId)?.type === "fanDevice"){
-        newAction = Number.parseFloat(currentAction.toString()) === 0 ? "100" : "0";
-      }
-      else newAction = currentAction === "1" ? "0" : "1";
+      const newAction = getNextAction(devices.find(d => d.id === deviceId)?.type || "", currentAction);
       await DeviceService.sendCommand(
         deviceId,
         newAction,
@@ -479,7 +476,7 @@ export default function HomeScreen() {
                         : null,
                     ]}
                   >
-                    {device.currentAction !== "0" ? "BẬT" : "Tắt"}
+                    {getAction(device.type, device.currentAction)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -502,12 +499,14 @@ export default function HomeScreen() {
         pendingDoorDevice={pendingDoorDevice}
         setDoorModalVisible={setDoorModalVisible}
       />
-      <QuickDeviceModal
-        visible={quickModalVisible}
-        setVisible={setQuickModalVisible}
-        selectedDevices={devices}
-        onConfirm={updateQuickDevices}
-      />
+      {quickModalVisible &&
+        <QuickDeviceModal
+          visible={quickModalVisible}
+          setVisible={setQuickModalVisible}
+          selectedDevices={devices}
+          onConfirm={updateQuickDevices}
+        />
+      }
     </SafeAreaView>
   );
 }

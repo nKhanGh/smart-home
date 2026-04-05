@@ -73,7 +73,7 @@ export default function StatsScreen() {
         const sensorDevices = response.data;
         setSensors(sensorDevices);
         if (sensorDevices.length > 0) {
-          setSelectedSensorId(sensorDevices[0]._id);
+          setSelectedSensorId(sensorDevices[0].id);
         }
       } catch {
         setError("Không thể tải danh sách cảm biến.");
@@ -108,7 +108,7 @@ export default function StatsScreen() {
   }, [selectedSensorId, period]);
 
   const selectedSensor = useMemo(
-    () => sensors.find((sensor) => sensor._id === selectedSensorId),
+    () => sensors.find((sensor) => sensor.id === selectedSensorId),
     [sensors, selectedSensorId],
   );
 
@@ -182,12 +182,12 @@ export default function StatsScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.sensorChipRow}>
                 {sensors.map((sensor) => {
-                  const active = sensor._id === selectedSensorId;
+                  const active = sensor.id === selectedSensorId;
                   return (
                     <TouchableOpacity
-                      key={sensor._id}
+                      key={sensor.id}
                       style={[styles.sensorChip, active && styles.sensorChipActive]}
-                      onPress={() => setSelectedSensorId(sensor._id)}
+                      onPress={() => setSelectedSensorId(sensor.id)}
                     >
                       <Text style={[styles.sensorChipName, active && styles.sensorChipNameActive]}>
                         {sensor.name}

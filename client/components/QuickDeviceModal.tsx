@@ -51,6 +51,7 @@ const QuickDeviceModal = ({
       }
     };
     if (visible) {
+      console.log("QuickDeviceModal opened with selectedDevices:", selectedDevices);
       setChosen(selectedDevices.map((d) => d.id));
       setError("");
       fetchDevices();
@@ -131,21 +132,19 @@ const QuickDeviceModal = ({
           {/* Slot indicators */}
           <Animated.View style={[styles.slotRow, { transform: [{ translateX: shakeAnim }] }]}>
             {[0, 1, 2, 3].map((i) => (
-              <View
-                key={i}
-                style={[styles.slot, i < chosen.length && styles.slotFilled]}
-              >
-                {i < chosen.length ? (
-                  <Text style={styles.slotIcon}>
-                    {getDeviceIcon(
-                      allDevices.find((d) => d.id === chosen[i])?.type ?? ""
-                    )}
-                  </Text>
-                ) : (
-                  <Text style={styles.slotPlus}>+</Text>
-                )}
-              </View>
-            ))}
+  <View
+    key={`slot-${i}`}   // ✅ dùng string prefix để tránh nhầm với key khác
+    style={[styles.slot, i < chosen.length && styles.slotFilled]}
+  >
+    {i < chosen.length ? (
+      <Text key="icon" style={styles.slotIcon}>
+        {getDeviceIcon(allDevices.find((d) => d.id === chosen[i])?.type ?? "")}
+      </Text>
+    ) : (
+      <Text key="plus" style={styles.slotPlus}>+</Text>
+    )}
+  </View>
+))}
           </Animated.View>
 
           {/* Error */}

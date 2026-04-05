@@ -20,6 +20,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome6";
 import RoomUpdateModal from "@/components/RoomUpdateModal";
+import { useRouter } from "expo-router";
+import { getAction, getNextAction } from "@/utils/devices.util";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const images: Record<string, any> = {
   "living-room.png": require("@/assets/images/living-room.png"),
@@ -109,28 +112,6 @@ const sensorTextColor: Record<string, any> = {
   motionSensor: "#991B1B",
 };
 
-const getAction = (device: DeviceResponse) => {
-  if (device.type === "doorDevice") {
-    return device.currentAction === "0" || device.currentAction === 0
-      ? "Đang đóng"
-      : "Đang mở";
-  } else if (device.type.endsWith("Device")) {
-    return device.currentAction === "0" || device.currentAction === 0
-      ? "Đang tắt"
-      : "Đang bật";
-  }
-};
-
-const getNextAction = (
-  device: DeviceResponse,
-  currentAction: string | number,
-): string => {
-  if (device.type === "fanDevice") {
-    return currentAction.toString() === "0" ? "100" : "0";
-  }
-
-  return currentAction === "1" ? "0" : "1";
-};
 
 const updateDeviceActionInRooms = (
   prevRooms: RoomResponse[],
@@ -167,9 +148,10 @@ const DeviceRow = ({
   ) => void;
 }) => {
   const sensor = isSensor(device.type);
+  const router = useRouter();
 
   return (
-    <View style={styles.deviceRow}>
+    <TouchableOpacity style={styles.deviceRow} onPress={() => router.push(`../(devices)/${device.id}`)}>
       {/* Icon */}
       <View
         style={[
@@ -190,7 +172,7 @@ const DeviceRow = ({
               device.currentAction ? styles.statusOn : styles.statusOff,
             ]}
           >
-            {sensor ? "" : getAction(device)}
+            {sensor ? "" : getAction(device.type, device.currentAction ?? "0")}
             {sensor &&
               `Ngưỡng cảnh báo: ${device.threshold + getUnit(device.type)}`}
           </Text>
@@ -247,7 +229,7 @@ const DeviceRow = ({
           />
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -380,6 +362,7 @@ const RoomCard = ({
 
 const RoomsScreen = () => {
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   const { subscribe } = useSocket();
@@ -419,7 +402,7 @@ const RoomsScreen = () => {
         return;
       }
 
-      const newAction = getNextAction(device, currentAction);
+      const newAction = getNextAction(device.type, currentAction);
       await DeviceService.sendCommand(
         device.id,
         newAction,
@@ -477,6 +460,8 @@ const RoomsScreen = () => {
         );
       } catch (error) {
         console.error("Failed to fetch rooms:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchRooms();
@@ -513,6 +498,7 @@ const RoomsScreen = () => {
             <Text style={styles.avatarText}>{user?.avatarInitials}</Text>
           </View>
         </View>
+        {loading ? <View style={{marginTop: 40}}><LoadingSpinner variant="wave" color="#22C55E"/></View> : null}
 
         {/* Room cards */}
         {rooms.map((room) => (
