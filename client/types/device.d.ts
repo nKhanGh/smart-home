@@ -1,5 +1,5 @@
 interface DeviceResponse {
-  _id: string;
+  id: string;
   name: string;
   key: string;
   description: string;

@@ -138,7 +138,7 @@ const QuickDeviceModal = ({
                 {i < chosen.length ? (
                   <Text style={styles.slotIcon}>
                     {getDeviceIcon(
-                      allDevices.find((d) => d._id === chosen[i])?.type ?? ""
+                      allDevices.find((d) => d.id === chosen[i])?.type ?? ""
                     )}
                   </Text>
                 ) : (
@@ -161,17 +161,17 @@ const QuickDeviceModal = ({
               <View style={styles.roomGroup}>
                 <Text style={styles.roomLabel}>{roomName}</Text>
                 {devices.map((device) => {
-                  const isSelected = chosen.includes(device._id);
+                  const isSelected = chosen.includes(device.id);
                   const isDisabled = !isSelected && chosen.length >= 4;
                   return (
                     <TouchableOpacity
-                      key={device._id}
+                      key={device.id}
                       style={[
                         styles.deviceRow,
                         isSelected && styles.deviceRowSelected,
                         isDisabled && styles.deviceRowDisabled,
                       ]}
-                      onPress={() => toggleDevice(device._id)}
+                      onPress={() => toggleDevice(device.id)}
                       activeOpacity={0.7}
                       disabled={isDisabled}
                     >

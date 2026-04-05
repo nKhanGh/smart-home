@@ -1,5 +1,5 @@
 interface RoomResponse {
-  _id: string;
+  id: string;
   name: string;
   backgroundName?: string;
   devices: DeviceResponse[];

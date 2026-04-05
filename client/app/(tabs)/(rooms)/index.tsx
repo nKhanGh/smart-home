@@ -1,26 +1,33 @@
 // app/(tabs)/rooms.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
   Image,
+  ScrollView,
   Switch,
+  Text,
+  TouchableOpacity,
+  View,
+  Animated,
 } from "react-native";
 
-import { styles } from "@/styles/(tabs)/(rooms)/index.styles";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Icon from "react-native-vector-icons/FontAwesome6";
-import { RoomService } from "@/service/room.service";
+import DoorPasswordModal from "@/components/DoorPasswordModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
-
-// ── Types ──────────────────────────────────────────────────────────
+import { DeviceService } from "@/service/device.service";
+import { RoomService } from "@/service/room.service";
+import { styles } from "@/styles/(tabs)/(rooms)/index.styles";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+import Icon from "react-native-vector-icons/FontAwesome6";
+import RoomUpdateModal from "@/components/RoomUpdateModal";
 
 const images: Record<string, any> = {
   "living-room.png": require("@/assets/images/living-room.png"),
   "bedroom.png": require("@/assets/images/bedroom.png"),
+  "living-room1.png": require("@/assets/images/living-room1.png"),
+  "living-room2.png": require("@/assets/images/living-room2.png"),
+  "bedroom1.png": require("@/assets/images/bedroom1.png"),
+  "bedroom2.png": require("@/assets/images/bedroom2.png"),
   // "kitchen.png": require("@/assets/images/kitchen.png"),
 };
 
@@ -36,8 +43,6 @@ const getUnit = (type: DeviceResponse["type"]) => {
       return "";
   }
 };
-
-// ── Helpers ────────────────────────────────────────────────────────
 
 const getDeviceIcon = (type: DeviceResponse["type"]) => {
   switch (type) {
@@ -106,18 +111,60 @@ const sensorTextColor: Record<string, any> = {
 
 const getAction = (device: DeviceResponse) => {
   if (device.type === "doorDevice") {
-    return device.currentAction === "0" || device.currentAction === 0 ? "Đang đóng" : "Đang mở";
+    return device.currentAction === "0" || device.currentAction === 0
+      ? "Đang đóng"
+      : "Đang mở";
   } else if (device.type.endsWith("Device")) {
-    return device.currentAction === "0" || device.currentAction === 0 ? "Đang tắt" : "Đang bật";
+    return device.currentAction === "0" || device.currentAction === 0
+      ? "Đang tắt"
+      : "Đang bật";
   }
 };
 
+const getNextAction = (
+  device: DeviceResponse,
+  currentAction: string | number,
+): string => {
+  if (device.type === "fanDevice") {
+    return currentAction.toString() === "0" ? "100" : "0";
+  }
+
+  return currentAction === "1" ? "0" : "1";
+};
+
+const updateDeviceActionInRooms = (
+  prevRooms: RoomResponse[],
+  deviceId: string,
+  action: string | number,
+): RoomResponse[] =>
+  prevRooms.map((room) => ({
+    ...room,
+    devices: room.devices.map((device) =>
+      device.id === deviceId ? { ...device, currentAction: action } : device,
+    ),
+  }));
+
+const updateDeviceDataInRooms = (
+  prevRooms: RoomResponse[],
+  deviceId: string,
+  value: string | number,
+): RoomResponse[] =>
+  prevRooms.map((room) => ({
+    ...room,
+    devices: room.devices.map((device) =>
+      device.id === deviceId ? { ...device, currentData: value } : device,
+    ),
+  }));
+
 const DeviceRow = ({
   device,
-  onToggle,
+  onClickDevice,
 }: {
   device: DeviceResponse;
-  onToggle: (id: string) => void;
+  onClickDevice: (
+    device: DeviceResponse,
+    currentAction: string | number,
+  ) => void;
 }) => {
   const sensor = isSensor(device.type);
 
@@ -144,10 +191,10 @@ const DeviceRow = ({
             ]}
           >
             {sensor ? "" : getAction(device)}
-            {sensor && `Ngưỡng cảnh báo: ${device.threshold + getUnit(device.type)}`}
+            {sensor &&
+              `Ngưỡng cảnh báo: ${device.threshold + getUnit(device.type)}`}
           </Text>
-          {!sensor &&
-          
+          {!sensor && (
             <View
               style={[
                 styles.modeBadge,
@@ -165,7 +212,7 @@ const DeviceRow = ({
                 {!sensor && device.mode}
               </Text>
             </View>
-          }
+          )}
         </View>
       </View>
 
@@ -181,13 +228,24 @@ const DeviceRow = ({
           </Text>
         </View>
       ) : (
-        <Switch
-          value={device.currentAction != "0"}
-          onValueChange={() => onToggle(device._id)}
-          trackColor={{ false: "#D1D5DB", true: "#86EFAC" }}
-          thumbColor={device.currentAction === "0" || device.currentAction === 0 ? "#F9FAFB" : "#22C55E"}
-          ios_backgroundColor="#D1D5DB"
-        />
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => onClickDevice(device, device.currentAction ?? "0")}
+        >
+          <Switch
+            value={device.currentAction != "0"}
+            onValueChange={() =>
+              onClickDevice(device, device.currentAction ?? "0")
+            }
+            trackColor={{ false: "#D1D5DB", true: "#86EFAC" }}
+            thumbColor={
+              device.currentAction === "0" || device.currentAction === 0
+                ? "#F9FAFB"
+                : "#22C55E"
+            }
+            ios_backgroundColor="#D1D5DB"
+          />
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -195,15 +253,30 @@ const DeviceRow = ({
 
 const RoomCard = ({
   room,
-  onToggleDevice,
+  onClickDevice,
   onEditRoom,
 }: {
   room: RoomResponse;
-  onToggleDevice: (roomId: string, deviceId: string) => void;
+  onClickDevice: (
+    device: DeviceResponse,
+    currentAction: string | number,
+  ) => void;
   onEditRoom: (roomId: string) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [contentHeight, setContentHeight] = useState(0);
+
+  const animHeight = useRef(new Animated.Value(0)).current;
   const counts = countByType(room.devices);
+
+  useEffect(() => {
+    Animated.spring(animHeight, {
+      toValue: expanded ? contentHeight : 0,
+      useNativeDriver: false,
+      bounciness: 0,
+      speed: 14,
+    }).start();
+  }, [expanded, contentHeight]);
 
   return (
     <View style={styles.card}>
@@ -267,33 +340,38 @@ const RoomCard = ({
       </View>
 
       {/* ── Danh sách thiết bị (collapsible) ── */}
-      {expanded && room.devices.length > 0 && (
-        <View style={styles.deviceList}>
-          <View style={styles.divider} />
-          {room.devices.map((device, idx) => (
-            <View key={device._id}>
-              <DeviceRow
-                device={device}
-                onToggle={(id) => onToggleDevice(room._id, id)}
-              />
-              {idx < room.devices.length - 1 && (
-                <View style={styles.deviceDivider} />
-              )}
-            </View>
-          ))}
-        </View>
+      {(room.devices.length > 0 || expanded) && (
+        <Animated.View style={{ height: animHeight, overflow: "hidden" }}>
+          {/* đo chiều cao thật khi render lần đầu */}
+          <View
+            onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+            style={styles.deviceList}
+          >
+            <View style={styles.divider} />
+            {room.devices.map((device, idx) => (
+              <View key={device.id}>
+                <DeviceRow device={device} onClickDevice={onClickDevice} />
+                {idx < room.devices.length - 1 && (
+                  <View style={styles.deviceDivider} />
+                )}
+              </View>
+            ))}
+            {expanded && (
+              <TouchableOpacity
+                style={styles.editBtn}
+                onPress={() => onEditRoom(room.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.editBtnText}>
+                  CHỈNH SỬA THÔNG TIN PHÒNG
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </Animated.View>
       )}
 
       {/* ── Nút chỉnh sửa ── */}
-      {expanded && (
-        <TouchableOpacity
-          style={styles.editBtn}
-          onPress={() => onEditRoom(room._id)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.editBtnText}>CHỈNH SỬA THÔNG TIN PHÒNG</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
@@ -306,27 +384,73 @@ const RoomsScreen = () => {
 
   const { subscribe } = useSocket();
 
+  const [doorModalVisible, setDoorModalVisible] = useState(false);
+  const [pendingDoorDevice, setPendingDoorDevice] =
+    useState<DeviceResponse | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | number>("");
+
+  const [roomUpdateModalVisible, setRoomUpdateModalVisible] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<RoomResponse | null>(null);
+
+  const handleDevicePress = (
+    device: DeviceResponse,
+    currentAction: string | number,
+  ) => {
+    if (device.type === "doorDevice") {
+      setPendingDoorDevice(device);
+      setPendingAction(currentAction);
+      setDoorModalVisible(true);
+    } else {
+      toggleDevice(device.id, currentAction);
+    }
+  };
+
+  const toggleDevice = async (
+    deviceId: string,
+    currentAction: string | number,
+    password?: string,
+  ) => {
+    try {
+      const device = rooms
+        .flatMap((r) => r.devices)
+        .find((d) => d.id === deviceId);
+      if (!device) {
+        console.error("Device not found");
+        return;
+      }
+
+      const newAction = getNextAction(device, currentAction);
+      await DeviceService.sendCommand(
+        device.id,
+        newAction,
+        password ?? undefined,
+      );
+      setRooms((prev) => updateDeviceActionInRooms(prev, device.id, newAction));
+      Toast.show({
+        type: "success",
+        text1: "Thành công",
+        text2: `Đã ${newAction === "1" ? "bật" : "tắt"} thiết bị.`,
+      });
+    } catch (error) {
+      console.error("Error toggling device:", error);
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Không thể điều khiển thiết bị.",
+      });
+    }
+  };
+
   useEffect(() => {
     const handleData = (data: any) => {
       setRooms((prev) =>
-        prev.map((room) => ({
-          ...room,
-          devices: room.devices.map((d) =>
-            d._id === data.deviceId ? { ...d, currentData: data.value } : d,
-          ),
-        })),
+        updateDeviceDataInRooms(prev, data.deviceId, data.value),
       );
     };
 
     const handleAction = (data: any) => {
-      console.log(data);
       setRooms((prev) =>
-        prev.map((room) => ({
-          ...room,
-          devices: room.devices.map((d) =>
-            d._id === data.deviceId ? { ...d, currentAction: data.value } : d,
-          ),
-        })),
+        updateDeviceActionInRooms(prev, data.deviceId, data.value),
       );
     };
 
@@ -337,13 +461,12 @@ const RoomsScreen = () => {
       unSubData();
       unSubAction();
     };
-  },[]);
+  }, []);
 
   useEffect(() => {
     const fetchRooms = async () => {
       try {
         const response = await RoomService.getRooms();
-        console.log("Fetched rooms:", response.data);
         setRooms(
           response.data.map((r) => {
             r.devices = r.devices.filter(
@@ -359,24 +482,14 @@ const RoomsScreen = () => {
     fetchRooms();
   }, []);
 
-  const handleToggleDevice = (roomId: string, deviceId: string) => {
-    setRooms((prev) =>
-      prev.map((room) =>
-        room._id !== roomId
-          ? room
-          : {
-              ...room,
-              devices: room.devices.map((d) =>
-                d._id !== deviceId ? d : { ...d, isOn: !d.currentAction },
-              ),
-            },
-      ),
-    );
-  };
-
   const handleEditRoom = (roomId: string) => {
-    // TODO: navigate to edit screen
-    console.log("Edit room:", roomId);
+    const room = rooms.find((r) => r.id === roomId);
+    if (room) {
+      setEditingRoom(room);
+      setRoomUpdateModalVisible(true);
+    } else {
+      console.error("Room not found for editing:", roomId);
+    }
   };
 
   return (
@@ -404,13 +517,33 @@ const RoomsScreen = () => {
         {/* Room cards */}
         {rooms.map((room) => (
           <RoomCard
-            key={room._id}
+            key={room.id}
             room={room}
-            onToggleDevice={handleToggleDevice}
+            onClickDevice={handleDevicePress}
             onEditRoom={handleEditRoom}
           />
         ))}
       </ScrollView>
+      <DoorPasswordModal
+        doAction={toggleDevice}
+        doorModalVisible={doorModalVisible}
+        pendingAction={pendingAction}
+        pendingDoorDevice={pendingDoorDevice}
+        setDoorModalVisible={setDoorModalVisible}
+      />
+
+      <RoomUpdateModal
+        onUpdate={(roomId, name, backgroundName) => {
+          setRooms((prev) =>
+            prev.map((r) =>
+              r.id === roomId ? { ...r, name, backgroundName } : r,
+            ),
+          );
+        }}
+        room={editingRoom as RoomResponse}
+        setVisible={setRoomUpdateModalVisible}
+        visible={roomUpdateModalVisible}
+      />
     </SafeAreaView>
   );
 };

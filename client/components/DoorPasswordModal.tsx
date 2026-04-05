@@ -20,7 +20,7 @@ const DoorPasswordModal = ({
 }: {
   doorModalVisible: boolean;
   setDoorModalVisible: (visible: boolean) => void;
-  pendingDoorDevice: DeviceInstantControl | null;
+  pendingDoorDevice: DeviceInstantControl | null | DeviceResponse;
   pendingAction: string | number;
   doAction: (id: string, action: string | number, password?: string) => Promise<void>;
 }) => {
