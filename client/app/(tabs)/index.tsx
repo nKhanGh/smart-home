@@ -172,14 +172,25 @@ export default function HomeScreen() {
       });
     };
 
+    const handleDeviceAction = (data: any) => {
+      console.log("Received device action:", data);
+      setDevices((prev) =>
+        prev.map((d) =>
+          d.id === data.deviceId ? { ...d, currentAction: data.value } : d,
+        ),
+      );
+    }
+
     const unSubData = subscribe("sensor:data", handleData);
     const unSubAlert = subscribe("sensor:alert", handleSensorAlert);
     const unSubNormal = subscribe("sensor:normal", handleSensorNormal);
+    const unSubDevice = subscribe("device:action", handleDeviceAction);
 
     return () => {
       unSubData();
       unSubAlert();
       unSubNormal();
+      unSubDevice();
     };
   }, []);
 
