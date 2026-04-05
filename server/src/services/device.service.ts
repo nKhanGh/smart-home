@@ -128,7 +128,10 @@ export class DeviceService {
   }
 
   async getDevices() {
-    return Device.find().populate("roomId", "name key");
+    return (await Device.find().populate("roomId", "name key")).map((device) => ({
+      id: device._id,
+      ...device.toObject(),
+    }));
   }
 
   async getDeviceById(id: string) {
@@ -141,10 +144,20 @@ export class DeviceService {
     }
     if (device.type.endsWith("Device")) {
       const action = await this.getCurrentAction(id);
-      return { ...device.toObject(), currentAction: action?.action || null };
+      return {
+        id: device._id,
+        ...device.toObject(),
+        currentAction: action?.action || null,
+      };
     } else {
       const data = await this.getCurrentData(id);
-      return { ...device.toObject(), currentData: data?.value || null };
+      const threshold = await Threshold.findOne({ deviceId: device._id });
+      return {
+        id: device._id,
+        ...device.toObject(),
+        currentData: data?.value || null,
+        threshold: threshold?.value || null,
+      };
     }
   }
 
@@ -254,7 +267,7 @@ export class DeviceService {
     return device;
   }
 
-  async updatePassword(id:string, newPassword: string, oldPassword?: string) {
+  async updatePassword(id: string, newPassword: string, oldPassword?: string) {
     const device = await Device.findOne({ _id: id });
     if (!device) {
       throw new ServiceError(404, "Device not found.");
@@ -305,10 +318,7 @@ export class DeviceService {
       }
     }
 
-    mqttService.publish(
-      device.key,
-      payload.action,
-    );
+    mqttService.publish(device.key, payload.action);
 
     ActionLog.create({
       userId: user?.id,

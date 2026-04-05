@@ -1,5 +1,6 @@
 import Room, { AddRoomInput } from "../models/RoomSchema";
 import { ServiceError } from "../errors/service.error";
+import deviceService from "./device.service";
 
 export class RoomService {
   // private removeVietnameseTones(str: string) {
@@ -18,7 +19,23 @@ export class RoomService {
   // }
 
   async getRooms() {
-    return Room.find().populate("devices", "name device_id key description mode type");
+    const rooms = await Room.find().populate(
+      "devices",
+      "name device_id key description mode type",
+    );
+
+    return Promise.all(
+      rooms.map(async (room) => ({
+        id: room._id,
+        name: room.name,
+        backgroundName: room.backgroundName,
+        devices: await Promise.all(
+          room.devices.map((device) =>
+            deviceService.getDeviceById(device._id.toString()),
+          ),
+        ),
+      })),
+    );
   }
 
   async getRoomById(id: string) {
@@ -29,7 +46,19 @@ export class RoomService {
     if (!room) {
       throw new ServiceError(404, "Room not found.");
     }
-    return room;
+
+    const devices = await Promise.all(
+      room.devices.map((device) =>
+        deviceService.getDeviceById(device._id.toString()),
+      ),
+    );
+
+    return {
+      id: room._id,
+      name: room.name,
+      backgroundName: room.backgroundName,
+      devices,
+    };
   }
 
   async updateRoom(id: string, payload: Partial<AddRoomInput>) {
@@ -44,7 +73,6 @@ export class RoomService {
     await room.save();
     return room;
   }
-
 
   // async addRoom(payload: AddRoomInput, createdBy?: string) {
   //   const key = this.buildRoomKey(payload.name);
