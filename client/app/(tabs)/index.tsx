@@ -17,6 +17,7 @@ import DoorPasswordModal from "@/components/DoorPasswordModal";
 import QuickDeviceModal from "@/components/QuickDeviceModal";
 import Toast from "react-native-toast-message";
 import { useSocket } from "@/contexts/SocketContext";
+import { getAction, getNextAction } from "@/utils/devices.util";
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SOCKET_URL ?? "http://localhost:3000";
@@ -74,7 +75,6 @@ export default function HomeScreen() {
       try {
         const response = await DeviceService.getSensorDevices();
         setSensorList(response.data);
-        console.log("Sensor devices:", response.data);
       } catch (error) {
         console.error("Error fetching sensor devices:", error);
       }
@@ -110,11 +110,9 @@ export default function HomeScreen() {
             }),
         );
         setDevices(data.instantControl);
-        console.log("Home display data:", response.data);
       } catch (error) {
         console.error("Error fetching home display data:", error);
       } finally {
-        console.log("Finished fetching initial data", sensorState, devices);
       }
       setInitialLoading(false);
     };
@@ -122,9 +120,6 @@ export default function HomeScreen() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    console.log("🔥 sensorState updated:", sensorState);
-  }, [sensorState]);
 
   useEffect(() => {
 
@@ -144,7 +139,6 @@ export default function HomeScreen() {
     };
 
     const handleSensorNormal = (data: any) => {
-      console.log("Received sensor normal:", data);
       setAlerts((prev) =>
         prev.filter((alert) => alert.deviceId !== data.deviceId),
       );
@@ -159,7 +153,6 @@ export default function HomeScreen() {
       setSensorState((prev) => {
         const state = prev.get(data.type);
 
-        console.log("[Socket] prev:", state);
 
         if (!state || state.roomId !== data.roomId) return prev;
 
@@ -172,14 +165,24 @@ export default function HomeScreen() {
       });
     };
 
+    const handleDeviceAction = (data: any) => {
+      setDevices((prev) =>
+        prev.map((d) =>
+          d.id === data.deviceId ? { ...d, currentAction: data.value } : d,
+        ),
+      );
+    }
+
     const unSubData = subscribe("sensor:data", handleData);
     const unSubAlert = subscribe("sensor:alert", handleSensorAlert);
     const unSubNormal = subscribe("sensor:normal", handleSensorNormal);
+    const unSubDevice = subscribe("device:action", handleDeviceAction);
 
     return () => {
       unSubData();
       unSubAlert();
       unSubNormal();
+      unSubDevice();
     };
   }, []);
 
@@ -188,22 +191,21 @@ export default function HomeScreen() {
     device: DeviceResponse,
   ) => {
     try {
-      const response = await DeviceService.getCurrentData(device._id);
-      console.log("Current data for device", device._id, ":", response.data);
+      const response = await DeviceService.getCurrentData(device.id);
       setSensorState((prev) =>
         new Map(prev).set(sensorType, {
           roomId: device.roomId._id,
           currentData: response?.data?.value,
-          deviceId: device._id,
+          deviceId: device.id,
           roomName: device.roomId.name,
         }),
       );
       device.type === "temperatureSensor" &&
-        HomeDisplayService.updateHomeDisplayData({ tempId: device._id });
+        HomeDisplayService.updateHomeDisplayData({ tempId: device.id });
       device.type === "humiditySensor" &&
-        HomeDisplayService.updateHomeDisplayData({ humId: device._id });
+        HomeDisplayService.updateHomeDisplayData({ humId: device.id });
       device.type === "lightSensor" &&
-        HomeDisplayService.updateHomeDisplayData({ briId: device._id });
+        HomeDisplayService.updateHomeDisplayData({ briId: device.id });
       Toast.show({
         type: "success",
         text1: "Cập nhật cảm biến",
@@ -240,7 +242,6 @@ export default function HomeScreen() {
     device: DeviceInstantControl,
     currentAction: string | number,
   ) => {
-    console.log("Device pressed:", device);
     if (device.type === "doorDevice") {
       setPendingDoorDevice(device);
       setPendingAction(currentAction);
@@ -256,14 +257,7 @@ export default function HomeScreen() {
     password?: string,
   ) => {
     try {
-      let newAction;
-      if (devices.find((d) => d.id === deviceId)?.type === "doorDevice") {
-        newAction = currentAction === "2" ? "3" : "2";
-      }
-      if (devices.find((d) => d.id === deviceId)?.type === "fanDevice"){
-        newAction = Number.parseFloat(currentAction.toString()) === 0 ? "100" : "0";
-      }
-      else newAction = currentAction === "1" ? "0" : "1";
+      const newAction = getNextAction(devices.find(d => d.id === deviceId)?.type || "", currentAction);
       await DeviceService.sendCommand(
         deviceId,
         newAction,
@@ -301,7 +295,6 @@ export default function HomeScreen() {
             try {
               const response = await DeviceService.getDeviceById(id);
               const data = response.data;
-              console.log("Fetched device for quick control:", data);
               const newDevice: DeviceInstantControl = {
                 id,
                 name: data.name,
@@ -463,7 +456,7 @@ export default function HomeScreen() {
                   key={device.id}
                   style={[
                     styles.deviceItem,
-                    (device.currentAction === "1" || device.currentAction === "3" || device.currentAction === "100") && styles.deviceItemOn,
+                    (device.currentAction !== "0") && styles.deviceItemOn,
                   ]}
                   onPress={() =>
                     handleDevicePress(device, device.currentAction)
@@ -478,12 +471,12 @@ export default function HomeScreen() {
                   <Text
                     style={[
                       styles.deviceStatus,
-                      (device.currentAction === "1" || device.currentAction === "3" || device.currentAction === "100")
+                      (device.currentAction !== "0")
                         ? styles.deviceStatusOn
                         : null,
                     ]}
                   >
-                    {device.currentAction === "1" || device.currentAction === "3" || device.currentAction === "100" ? "BẬT" : "Tắt"}
+                    {getAction(device.type, device.currentAction)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -506,12 +499,14 @@ export default function HomeScreen() {
         pendingDoorDevice={pendingDoorDevice}
         setDoorModalVisible={setDoorModalVisible}
       />
-      <QuickDeviceModal
-        visible={quickModalVisible}
-        setVisible={setQuickModalVisible}
-        selectedDevices={devices}
-        onConfirm={updateQuickDevices}
-      />
+      {quickModalVisible &&
+        <QuickDeviceModal
+          visible={quickModalVisible}
+          setVisible={setQuickModalVisible}
+          selectedDevices={devices}
+          onConfirm={updateQuickDevices}
+        />
+      }
     </SafeAreaView>
   );
 }

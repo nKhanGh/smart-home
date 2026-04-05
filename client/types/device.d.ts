@@ -1,5 +1,5 @@
 interface DeviceResponse {
-  _id: string;
+  id: string;
   name: string;
   key: string;
   description: string;
@@ -13,6 +13,7 @@ interface DeviceResponse {
   updatedAt: string;
   currentData?: string | number;
   currentAction?: string | number;
+  threshold?: string | number;
 }
 
 interface QuickDevice {
