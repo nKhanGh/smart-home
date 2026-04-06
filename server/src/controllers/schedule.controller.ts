@@ -19,6 +19,15 @@ export class ScheduleController {
     }
   };
 
+  switchScheduleStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const schedule = await this.service.switchScheduleStatus(req.params.id);
+      res.status(200).json(schedule);
+    } catch (err) {
+      handleControllerError(err, res, "Error switching schedule status:");
+    }
+  };
+
   getScheduleById = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const schedule = await this.service.getScheduleById(req.params.id);

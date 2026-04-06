@@ -31,7 +31,7 @@ export class DeviceController {
 
   getDeviceData = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const data = await this.service.getDeviceData(req.params.id);
+      const data = await this.service.getDeviceData(req.params.id, req.query.startDate as string | undefined, req.query.endDate as string | undefined);
       res.status(200).json(data);
     } catch (err) {
       handleControllerError(err, res, "Error fetching device data:");

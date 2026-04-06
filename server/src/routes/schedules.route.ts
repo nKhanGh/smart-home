@@ -219,4 +219,30 @@ router.put(
  */
 router.delete("/:id", verifyToken, scheduleController.deleteSchedule);
 
+
+/**
+ * @swagger
+ * /api/schedules/{id}/switch:
+ *   patch:
+ *     summary: Chuyển trạng thái kích hoạt của lịch (bật/tắt)
+ *     tags: [Schedules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: 65f2c1d9e8c1a32b1a6f9999
+ *     responses:
+ *       200:
+ *         description: Chi tiết lịch
+ *       404:
+ *         description: Schedule not found
+ *       500:
+ *         description: Server Error
+ */
+router.patch("/:id/switch", verifyToken, scheduleController.switchScheduleStatus);
+
 export default router;

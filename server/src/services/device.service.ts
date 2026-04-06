@@ -161,14 +161,25 @@ export class DeviceService {
     }
   }
 
-  async getDeviceData(id: string) {
+  async getDeviceData(id: string, startDate?: string, endDate?: string) {
     const device = await Device.findOne({ _id: id });
     console.log("Fetching data for device:", id, "found device:", !!device);
     if (!device) {
       throw new ServiceError(404, "Device not found.");
     }
 
-    return Data.find({ deviceId: device._id })
+    const query: any = { deviceId: device._id };
+    if (startDate || endDate) {
+      query.recordedAt = {};
+      if (startDate) {
+        query.recordedAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.recordedAt.$lte = new Date(endDate);
+      }
+    }
+
+    return Data.find(query)
       .sort({ recordedAt: -1 })
       .limit(100);
   }

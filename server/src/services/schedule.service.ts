@@ -22,6 +22,16 @@ export class ScheduleService {
       .sort({ createdAt: -1 });
   }
 
+  async switchScheduleStatus(id: string) {
+    const schedule = await Schedule.findById(id);
+    if (!schedule) {
+      throw new ServiceError(404, "Schedule not found.");
+    }
+    schedule.active = !schedule.active;
+    await schedule.save();
+    return schedule;
+  }
+
   async getScheduleById(id: string) {
     const schedule = await Schedule.findById(id).populate(
       "deviceId",

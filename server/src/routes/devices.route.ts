@@ -158,6 +158,20 @@ router.get("/:id", verifyToken, deviceController.getDeviceById);
  *         schema:
  *           type: string
  *           example: 65f2c1d9e8c1a32b1a6f1234
+ *       - name: startDate
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2024-01-01"
+ *       - name: endDate
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2024-12-31"
  *     responses:
  *       200:
  *         description: Dữ liệu sensor
