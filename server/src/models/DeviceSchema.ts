@@ -66,6 +66,7 @@ export const UpdateDeviceSchema = z.object({
       message: "Chế độ phải là 'auto' hoặc 'manual'.",
     })
     .optional(),
+  threshold: z.number().optional(),
 });
 
 export type UpdateDeviceInput = z.infer<typeof UpdateDeviceSchema>;

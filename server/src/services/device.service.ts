@@ -225,7 +225,7 @@ export class DeviceService {
       throw new ServiceError(404, "Device not found.");
     }
 
-    const { name, description, roomId, mode } = payload;
+    const { name, description, roomId, mode, threshold } = payload;
     const newRoom = roomId ? await Room.findById(roomId) : null;
     if (roomId && !newRoom) {
       throw new ServiceError(404, "Room not found.");
@@ -234,6 +234,14 @@ export class DeviceService {
     device.name = name ?? device.name;
     device.description = description ?? device.description;
     device.mode = mode ?? device.mode;
+
+    if (threshold !== undefined) {
+      await Threshold.findOneAndUpdate(
+        { deviceId: device._id },
+        { value: threshold },
+        { upsert: true }
+      );
+    }
 
     const isRoomChanged = roomId && roomId !== device.roomId.toString();
     if (isRoomChanged) {
@@ -268,9 +276,12 @@ export class DeviceService {
       mqttService.subscribeFeed(device.key);
     }
 
-    if (!isRoomChanged) {
+    if (!isRoomChanged && (name !== undefined || description !== undefined)) {
+      const feedPayload: any = {};
+      if (name !== undefined) feedPayload.name = name;
+      if (description !== undefined) feedPayload.description = description;
       await adafruitAPI.put(`/feeds/${device.key}`, {
-        feed: { name, description },
+        feed: feedPayload,
       });
     }
 
@@ -501,7 +512,7 @@ export class DeviceService {
 
   async getThresholdDevices() {
     return Device.find({
-      type: "threshold",
+      type: { $in: ["temperatureSensor", "lightSensor"] },
     }).populate("roomId", "name");
   }
 }
