@@ -25,7 +25,7 @@ const RoomBadge = ({ roomName, device, onSelect }: {
               Chọn phòng
             </Text>
             <FlatList
-              data={device} keyExtractor={(item) => item._id}
+              data={device} keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#F9FAFB", backgroundColor: item.roomId.name === roomName ? "#F0FDF4" : "white" }}

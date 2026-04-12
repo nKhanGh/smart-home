@@ -20,7 +20,7 @@ export const getNextAction = (
     return currentAction.toString() === "0" ? "100" : "0";
   }
 
-  return currentAction === "1" ? "0" : "1";
+  return currentAction === "0" ? "1" : "0";
 };
 
 export const getUnit = (type: string) => {
@@ -33,3 +33,24 @@ export const getUnit = (type: string) => {
 export const isSensor = (type: string) => {
   return type.endsWith("Sensor");
 }
+
+export const getDeviceIcon = (type: DeviceResponse["type"]) => {
+  switch (type) {
+    case "lightDevice":
+      return "💡";
+    case "fanDevice":
+      return "🌀";
+    case "temperatureSensor":
+      return "🌡️";
+    case "humiditySensor":
+      return "💧";
+    case "airConditionerDevice":
+      return "❄️";
+    case "lightSensor":
+      return "🔆";
+    case "doorDevice":
+      return "🚪";
+    default:
+      return "🔌";
+  }
+};

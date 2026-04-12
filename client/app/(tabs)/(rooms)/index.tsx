@@ -21,7 +21,7 @@ import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome6";
 import RoomUpdateModal from "@/components/RoomUpdateModal";
 import { useRouter } from "expo-router";
-import { getAction, getNextAction } from "@/utils/devices.util";
+import { getAction, getDeviceIcon, getNextAction } from "@/utils/devices.util";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const images: Record<string, any> = {
@@ -44,27 +44,6 @@ const getUnit = (type: DeviceResponse["type"]) => {
       return "lux";
     default:
       return "";
-  }
-};
-
-const getDeviceIcon = (type: DeviceResponse["type"]) => {
-  switch (type) {
-    case "lightDevice":
-      return "💡";
-    case "fanDevice":
-      return "🌀";
-    case "temperatureSensor":
-      return "🌡️";
-    case "humiditySensor":
-      return "💧";
-    case "airConditionerDevice":
-      return "❄️";
-    case "lightSensor":
-      return "🔆";
-    case "doorDevice":
-      return "🚪";
-    default:
-      return "🔌";
   }
 };
 
@@ -151,7 +130,7 @@ const DeviceRow = ({
   const router = useRouter();
 
   return (
-    <TouchableOpacity style={styles.deviceRow} onPress={() => router.push(`../(devices)/${device.id}`)}>
+    <TouchableOpacity style={styles.deviceRow} onPress={() => router.push(`/(devices)/${device.id}`)}>
       {/* Icon */}
       <View
         style={[
