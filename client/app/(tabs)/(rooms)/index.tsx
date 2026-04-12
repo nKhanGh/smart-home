@@ -151,7 +151,7 @@ const DeviceRow = ({
   const router = useRouter();
 
   return (
-    <TouchableOpacity style={styles.deviceRow} onPress={() => router.push(`../(devices)/${device.id}`)}>
+    <TouchableOpacity style={styles.deviceRow} onPress={() => router.push(`/(devices)/${device.id}`)}>
       {/* Icon */}
       <View
         style={[

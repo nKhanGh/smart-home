@@ -8,7 +8,7 @@ import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import { styles } from "@/styles/(tabs)/(devices)/[deviceId].styles";
 import { getAction, getUnit, isSensor } from "@/utils/devices.util";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -22,9 +22,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/FontAwesome5";
 const getHistoryComponent = (device: DeviceResponse | null) => {
   if (!device) return null;
-  if (device.type.endsWith("Sensor")) return <DeviceDataLog deviceId={device.id} />;
-  else if (device.type.endsWith("Device")) return <DeviceActionLog deviceId={device.id} />;
-}
+  if (device.type.endsWith("Sensor"))
+    return <DeviceDataLog deviceId={device.id} />;
+  else if (device.type.endsWith("Device"))
+    return <DeviceActionLog deviceId={device.id} />;
+};
 
 const getSettingsComponent = (device: DeviceResponse | null) => {
   if (!device) return null;
@@ -53,22 +55,25 @@ const DeviceDetailScreen = () => {
   const [active, setActive] = useState<"settings" | "history">("settings");
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  const {subscribe} = useSocket();
+  const { subscribe } = useSocket();
 
-    useEffect(() => {
-      const handleDeviceUpdate = (data: any) => {
-        if (data.deviceId === deviceId) {
-          setDevice((prev) => prev ? {...prev, currentAction: data.value} : prev);
-        }
-      };
+  const navigation = useNavigation();
 
-      const unsubscribe = subscribe("device:action", handleDeviceUpdate);
+  useEffect(() => {
+    const handleDeviceUpdate = (data: any) => {
+      if (data.deviceId === deviceId) {
+        setDevice((prev) =>
+          prev ? { ...prev, currentAction: data.value } : prev,
+        );
+      }
+    };
 
-      return () => {
-        unsubscribe();
-      };
+    const unsubscribe = subscribe("device:action", handleDeviceUpdate);
 
-    }, [subscribe, deviceId]);
+    return () => {
+      unsubscribe();
+    };
+  }, [subscribe, deviceId]);
 
   const switchTab = (tab: "settings" | "history") => {
     if (tab === active) return;
@@ -88,17 +93,17 @@ const DeviceDetailScreen = () => {
 
   useEffect(() => {
     const fetchDeviceDetails = async () => {
-      try{
+      try {
         const response = await DeviceService.getDeviceById(deviceId as string);
         console.log("Fetched device details:", response.data);
         setDevice(response.data);
       } catch (error) {
         console.error("Error fetching device details:", error);
       }
-    }
+    };
 
     fetchDeviceDetails();
-  }, []);
+  }, [deviceId]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -107,12 +112,17 @@ const DeviceDetailScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => globalThis.history.back()}>
+          <TouchableOpacity onPress={() => router.replace("/(tabs)/(rooms)")}>
             <Icon name="angle-left" size={20} color="#000" />
           </TouchableOpacity>
           <View>
-            <Text style={styles.headerTitle}> {device?.name || "Tên thiết bị"}</Text>
-            <Text style={styles.headerSubTitle}>{device?.roomId.name || "Mô tả thiết bị"}</Text>
+            <Text style={styles.headerTitle}>
+              {" "}
+              {device?.name || "Tên thiết bị"}
+            </Text>
+            <Text style={styles.headerSubTitle}>
+              {device?.roomId.name || "Mô tả thiết bị"}
+            </Text>
           </View>
         </View>
         <View style={styles.subHeader}>
@@ -120,17 +130,33 @@ const DeviceDetailScreen = () => {
             <Text style={styles.icon}>💡</Text>
           </View>
           <View>
-            <Text style={styles.subHeaderTitle}> {device?.name || "Tên thiết bị"}</Text>
+            <Text style={styles.subHeaderTitle}>
+              {" "}
+              {device?.name || "Tên thiết bị"}
+            </Text>
             <View style={styles.roomInfo}>
               <View style={styles.dot}></View>
-              <Text style={styles.roomInfoText}>{device?.roomId.name || "Mô tả thiết bị"}</Text>
+              <Text style={styles.roomInfoText}>
+                {device?.roomId.name || "Mô tả thiết bị"}
+              </Text>
             </View>
             {isSensor(device?.type || "") ? (
-              <Text style={styles.deviceStatus}> Ngưỡng cảnh báo: {device?.threshold || 0} {getUnit(device?.type || "")}</Text>
-            )
-            :
-            <Text style={styles.deviceStatus}> {getAction(device?.type || "", device?.currentAction || "").toUpperCase() + " - " + device?.mode.toUpperCase()}</Text>
-          }
+              <Text style={styles.deviceStatus}>
+                {" "}
+                Ngưỡng cảnh báo: {device?.threshold || 0}{" "}
+                {getUnit(device?.type || "")}
+              </Text>
+            ) : (
+              <Text style={styles.deviceStatus}>
+                {" "}
+                {getAction(
+                  device?.type || "",
+                  device?.currentAction || "",
+                ).toUpperCase() +
+                  " - " +
+                  device?.mode.toUpperCase()}
+              </Text>
+            )}
           </View>
         </View>
         <View style={styles.switchContainer}>
@@ -181,13 +207,8 @@ const DeviceDetailScreen = () => {
             </Text>
           </Pressable>
         </View>
-        {
-          active === "history" && getHistoryComponent(device)
-        }
-        {
-
-        active === "settings" && getSettingsComponent(device)
-        }
+        {active === "history" && getHistoryComponent(device)}
+        {active === "settings" && getSettingsComponent(device)}
       </ScrollView>
     </SafeAreaView>
   );
