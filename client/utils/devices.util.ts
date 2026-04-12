@@ -20,7 +20,7 @@ export const getNextAction = (
     return currentAction.toString() === "0" ? "100" : "0";
   }
 
-  return currentAction === "1" ? "0" : "1";
+  return currentAction === "0" ? "1" : "0";
 };
 
 export const getUnit = (type: string) => {

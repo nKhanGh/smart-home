@@ -4,6 +4,7 @@ import DoorComponent from "@/components/devices/DoorComponent";
 import FanComponent from "@/components/devices/FanComponent";
 import LightComponent from "@/components/devices/LightComponent";
 import SensorComponent from "@/components/devices/SensorComponent";
+import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import { styles } from "@/styles/(tabs)/(devices)/[deviceId].styles";
 import { getAction, getUnit, isSensor } from "@/utils/devices.util";
@@ -51,6 +52,23 @@ const DeviceDetailScreen = () => {
 
   const [active, setActive] = useState<"settings" | "history">("settings");
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const {subscribe} = useSocket();
+
+    useEffect(() => {
+      const handleDeviceUpdate = (data: any) => {
+        if (data.deviceId === deviceId) {
+          setDevice((prev) => prev ? {...prev, currentAction: data.value} : prev);
+        }
+      };
+
+      const unsubscribe = subscribe("device:action", handleDeviceUpdate);
+
+      return () => {
+        unsubscribe();
+      };
+
+    }, [subscribe, deviceId]);
 
   const switchTab = (tab: "settings" | "history") => {
     if (tab === active) return;
