@@ -1,6 +1,9 @@
 import { Response } from "express";
 import { AuthRequest } from "../types";
-import { UpdateThresholdInput } from "../models/ThresholdSchema";
+import {
+  CreateThresholdInput,
+  UpdateThresholdInput,
+} from "../models/ThresholdSchema";
 import thresholdService, {
   ThresholdService,
 } from "../services/threshold.service";
@@ -8,6 +11,19 @@ import handleControllerError from "../utils/handleControllerError";
 
 export class ThresholdController {
   constructor(private readonly service: ThresholdService) {}
+
+  createThreshold = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const threshold = await this.service.createThreshold(
+        req.params.id,
+        req.body as CreateThresholdInput,
+        req.user?.id,
+      );
+      res.status(201).json(threshold);
+    } catch (err) {
+      handleControllerError(err, res, "Error creating threshold:");
+    }
+  };
 
   getThreshold = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -21,13 +37,24 @@ export class ThresholdController {
   updateThreshold = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const threshold = await this.service.updateThreshold(
-        req.params.id,
+        req.params.thresholdId,
         req.body as UpdateThresholdInput,
         req.user?.id,
       );
       res.status(200).json(threshold);
     } catch (err) {
       handleControllerError(err, res, "Error updating threshold:");
+    }
+  };
+
+  deleteThreshold = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const threshold = await this.service.deleteThreshold(
+        req.params.thresholdId,
+      );
+      res.status(200).json(threshold);
+    } catch (err) {
+      handleControllerError(err, res, "Error deleting threshold:");
     }
   };
 }

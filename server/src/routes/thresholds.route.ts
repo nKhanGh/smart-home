@@ -1,26 +1,26 @@
 import { Router } from "express";
 import validate from "../middleware/validateMiddleware";
 import { verifyToken } from "../middleware/authMiddleware";
-import { CreateThresholdSchema } from "../models/ThresholdSchema";
+import { UpdateThresholdSchema } from "../models/ThresholdSchema";
 import thresholdController from "../controllers/threshold.controller";
 
-const router = Router({ mergeParams: true });
+const router = Router();
 
 /**
  * @swagger
- * /api/devices/{id}/threshold:
- *   post:
- *     summary: Tạo ngưỡng cho thiết bị
+ * /api/thresholds/{thresholdId}:
+ *   put:
+ *     summary: Cập nhật ngưỡng theo thresholdId
  *     tags: [Thresholds]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: thresholdId
  *         required: true
  *         schema:
  *           type: string
- *           example: 60c72b2f9b1e8e5d6c8f9a3b
+ *           example: 67f2c1d9e8c1a32b1a6f0001
  *     requestBody:
  *       required: true
  *       content:
@@ -48,43 +48,47 @@ const router = Router({ mergeParams: true });
  *                 enum: [on, off, alert]
  *                 example: alert
  *     responses:
- *       201:
- *         description: Tạo ngưỡng thành công
+ *       200:
+ *         description: Cập nhật ngưỡng thành công
  *       404:
- *         description: Device not found
+ *         description: Threshold/Device/Sensor not found
  *       500:
  *         description: Server Error
  */
-router.post(
-  "/",
+router.put(
+  "/:thresholdId",
   verifyToken,
-  validate(CreateThresholdSchema),
-  thresholdController.createThreshold,
+  validate(UpdateThresholdSchema),
+  thresholdController.updateThreshold,
 );
 
 /**
  * @swagger
- * /api/devices/{id}/threshold:
- *   get:
- *     summary: Lấy danh sách ngưỡng của thiết bị
+ * /api/thresholds/{thresholdId}:
+ *   delete:
+ *     summary: Xóa ngưỡng theo thresholdId
  *     tags: [Thresholds]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: thresholdId
  *         required: true
  *         schema:
  *           type: string
- *           example: 60c72b2f9b1e8e5d6c8f9a3b
+ *           example: 67f2c1d9e8c1a32b1a6f0001
  *     responses:
  *       200:
- *         description: Lấy danh sách ngưỡng thành công
+ *         description: Xóa ngưỡng thành công
  *       404:
- *         description: Device not found
+ *         description: Threshold not found
  *       500:
  *         description: Server Error
  */
-router.get("/", verifyToken, thresholdController.getThreshold);
+router.delete(
+  "/:thresholdId",
+  verifyToken,
+  thresholdController.deleteThreshold,
+);
 
 export default router;
