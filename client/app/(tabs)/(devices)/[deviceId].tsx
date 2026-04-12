@@ -241,6 +241,7 @@ const DeviceDetailScreen = () => {
               </TouchableOpacity>
             </View>
             {typeSetting === "auto" && <DeviceAutoComponent device={device as DeviceResponse} />}
+            {typeSetting === "schedule" && <DeviceScheduleComponent device={device as DeviceResponse} />}
           </View>
         )
         }

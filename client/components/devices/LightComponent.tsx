@@ -77,9 +77,10 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     marginTop: 36,
     justifyContent: "space-between",
+    paddingHorizontal: 20,
   },
   lampContainer: {
-    width: 300,
+    width: 260,
     height: 300,
     backgroundColor: "transparent",
   },
@@ -99,8 +100,9 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "space-around",
     alignItems: "center",
-    height: 160,
-    gap: 44,
+    height: 200,
+    gap: 32,
+    marginRight: 60,
   },
 
   dotWrapper: {
@@ -108,11 +110,17 @@ const styles = StyleSheet.create({
     height: 52,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "transparent",
   },
   colorDot: {
     width: 24,
     height: 24,
     borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 5,
   },
   dotSelected: {
     transform: [{ scale: 1.8 }],

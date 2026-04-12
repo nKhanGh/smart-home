@@ -257,21 +257,23 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
               </View>
 
               {/* Condition */}
-              <Text style={styles.conditionText}>
-                Nếu giá trị{" "}
-                <Text style={styles.conditionHighlight}>
-                  {whenText} {threshold.value}
+              <View style={styles.cardTop}>
+                <Text style={styles.conditionText}>
+                  Nếu giá trị{" "}
+                  <Text style={styles.conditionHighlight}>
+                    {whenText} {threshold.value}
+                  </Text>
                 </Text>
-              </Text>
 
-              {/* Action badge */}
-              <View
-                style={[styles.actionBadge, { backgroundColor: action.bg }]}
-              >
-                <Icon name={action.icon} size={11} color={action.color} />
-                <Text style={[styles.actionBadgeText, { color: action.color }]}>
-                  {action.label}
-                </Text>
+                {/* Action badge */}
+                <View
+                  style={[styles.actionBadge, { backgroundColor: action.bg }]}
+                >
+                  <Icon name={action.icon} size={11} color={action.color} />
+                  <Text style={[styles.actionBadgeText, { color: action.color }]}>
+                    {action.label}
+                  </Text>
+                </View>
               </View>
 
               {/* Divider */}
