@@ -4,10 +4,11 @@ import DoorComponent from "@/components/devices/DoorComponent";
 import FanComponent from "@/components/devices/FanComponent";
 import LightComponent from "@/components/devices/LightComponent";
 import SensorComponent from "@/components/devices/SensorComponent";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import { styles } from "@/styles/(tabs)/(devices)/[deviceId].styles";
-import { getAction, getUnit, isSensor } from "@/utils/devices.util";
+import { getAction, getDeviceIcon, getUnit, isSensor } from "@/utils/devices.util";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -51,13 +52,12 @@ const DeviceDetailScreen = () => {
   const { deviceId } = useLocalSearchParams();
 
   const [device, setDevice] = useState<DeviceResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [active, setActive] = useState<"settings" | "history">("settings");
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const { subscribe } = useSocket();
-
-  const navigation = useNavigation();
 
   useEffect(() => {
     const handleDeviceUpdate = (data: any) => {
@@ -92,6 +92,8 @@ const DeviceDetailScreen = () => {
   });
 
   useEffect(() => {
+    setDevice(null);
+    setLoading(true);
     const fetchDeviceDetails = async () => {
       try {
         const response = await DeviceService.getDeviceById(deviceId as string);
@@ -99,6 +101,8 @@ const DeviceDetailScreen = () => {
         setDevice(response.data);
       } catch (error) {
         console.error("Error fetching device details:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -118,26 +122,27 @@ const DeviceDetailScreen = () => {
           <View>
             <Text style={styles.headerTitle}>
               {" "}
-              {device?.name || "Tên thiết bị"}
+              {device?.name}
             </Text>
             <Text style={styles.headerSubTitle}>
-              {device?.roomId.name || "Mô tả thiết bị"}
+              {device?.roomId.name}
             </Text>
           </View>
         </View>
         <View style={styles.subHeader}>
+          {loading ? <LoadingSpinner variant="wave" color="#80c17f" style={{margin: "auto"}} /> : <>
           <View style={styles.iconWrap}>
-            <Text style={styles.icon}>💡</Text>
+            <Text style={styles.icon}>{getDeviceIcon(device?.type || "")}</Text>
           </View>
           <View>
             <Text style={styles.subHeaderTitle}>
               {" "}
-              {device?.name || "Tên thiết bị"}
+              {device?.name}
             </Text>
             <View style={styles.roomInfo}>
               <View style={styles.dot}></View>
               <Text style={styles.roomInfoText}>
-                {device?.roomId.name || "Mô tả thiết bị"}
+                {device?.roomId.name}
               </Text>
             </View>
             {isSensor(device?.type || "") ? (
@@ -158,6 +163,7 @@ const DeviceDetailScreen = () => {
               </Text>
             )}
           </View>
+          </>}
         </View>
         <View style={styles.switchContainer}>
           {/* Sliding background */}
@@ -207,6 +213,7 @@ const DeviceDetailScreen = () => {
             </Text>
           </Pressable>
         </View>
+        {loading ? <LoadingSpinner variant="wave" color="#22C55E" style={{margin: "auto", marginTop: 48}} /> : null}
         {active === "history" && getHistoryComponent(device)}
         {active === "settings" && getSettingsComponent(device)}
       </ScrollView>
