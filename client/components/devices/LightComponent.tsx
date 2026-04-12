@@ -44,7 +44,7 @@ const LightComponent = ({ device }: { device: DeviceResponse }) => {
           resizeMode="contain"
         />
         {SelectedLight && (
-          <SelectedLight width="90%" height="90%" style={styles.overlay} />
+          <SelectedLight width="70%" height="70%" style={styles.overlay} />
         )}
       </View>
 
@@ -79,15 +79,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   lampContainer: {
-    width: 200,
-    height: 200,
+    width: 300,
+    height: 300,
     backgroundColor: "transparent",
   },
   image: {
     position: "absolute",
     left: -36,
-    width: "140%",
-    height: "140%",
+    width: "100%",
+    height: "100%",
   },
   overlay: {
     position: "absolute",

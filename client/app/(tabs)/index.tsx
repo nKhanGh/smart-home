@@ -1,23 +1,22 @@
 // app/(tabs)/index.tsx
+import AlertBanner from "@/components/home/AlertBanner";
+import RoomBadge from "@/components/home/RoomBadge";
+import SensorCard from "@/components/home/SensorCard";
+import StatusCard from "@/components/home/StatusCard";
+import DoorPasswordModal from "@/components/modals/DoorPasswordModal";
+import QuickDeviceModal from "@/components/modals/QuickDeviceModal";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import { HomeDisplayService } from "@/service/homeDisplay.service";
 import { styles } from "@/styles/(tabs)/index.styles";
-import React, { useState, useRef, useEffect } from "react";
-import { ScrollView, View, Text, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { io, Socket } from "socket.io-client";
-import RoomBadge from "@/components/home/RoomBadge";
-import StatusCard from "@/components/home/StatusCard";
-import AlertBanner from "@/components/home/AlertBanner";
-import SensorCard from "@/components/home/SensorCard";
-import { useAuth } from "@/contexts/AuthContext";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { useRouter } from "expo-router";
-import DoorPasswordModal from "@/components/DoorPasswordModal";
-import QuickDeviceModal from "@/components/QuickDeviceModal";
-import Toast from "react-native-toast-message";
-import { useSocket } from "@/contexts/SocketContext";
 import { getAction, getNextAction } from "@/utils/devices.util";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SOCKET_URL ?? "http://localhost:3000";
@@ -35,6 +34,22 @@ type Alert = {
   text: string;
   alert: string;
 };
+
+const normalizeType = (type?: string) => (type || "").trim().toLowerCase();
+
+const isSensorTypeMatch = (deviceType: string, sensorType: string) => {
+  const d = normalizeType(deviceType);
+  const s = normalizeType(sensorType);
+
+  if (d === s) return true;
+  if (s === "temperaturesensor") return d.includes("temp");
+  if (s === "humiditysensor") return d.includes("humid");
+  if (s === "lightsensor") return d.includes("light") || d.includes("lux");
+  return false;
+};
+
+const getDeviceId = (device: DeviceResponse) =>
+  device.id || (device as DeviceResponse & { _id?: string })._id || "";
 
 export default function HomeScreen() {
   const [devices, setDevices] = useState<DeviceInstantControl[]>([]);
@@ -120,9 +135,7 @@ export default function HomeScreen() {
     fetchData();
   }, []);
 
-
   useEffect(() => {
-
     const handleSensorAlert = (data: any) => {
       setAlerts((prev) => {
         const exists = prev.some((a) => a.deviceId === data.deviceId);
@@ -153,7 +166,6 @@ export default function HomeScreen() {
       setSensorState((prev) => {
         const state = prev.get(data.type);
 
-
         if (!state || state.roomId !== data.roomId) return prev;
 
         return new Map(prev).set(data.type, {
@@ -171,7 +183,7 @@ export default function HomeScreen() {
           d.id === data.deviceId ? { ...d, currentAction: data.value } : d,
         ),
       );
-    }
+    };
 
     const unSubData = subscribe("sensor:data", handleData);
     const unSubAlert = subscribe("sensor:alert", handleSensorAlert);
@@ -190,22 +202,32 @@ export default function HomeScreen() {
     sensorType: string,
     device: DeviceResponse,
   ) => {
+    const selectedDeviceId = getDeviceId(device);
+    if (!selectedDeviceId) {
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Không tìm thấy ID cảm biến để cập nhật.",
+      });
+      return;
+    }
+
     try {
-      const response = await DeviceService.getCurrentData(device.id);
+      const response = await DeviceService.getCurrentData(selectedDeviceId);
       setSensorState((prev) =>
         new Map(prev).set(sensorType, {
           roomId: device.roomId._id,
           currentData: response?.data?.value,
-          deviceId: device.id,
+          deviceId: selectedDeviceId,
           roomName: device.roomId.name,
         }),
       );
       device.type === "temperatureSensor" &&
-        HomeDisplayService.updateHomeDisplayData({ tempId: device.id });
+        HomeDisplayService.updateHomeDisplayData({ tempId: selectedDeviceId });
       device.type === "humiditySensor" &&
-        HomeDisplayService.updateHomeDisplayData({ humId: device.id });
+        HomeDisplayService.updateHomeDisplayData({ humId: selectedDeviceId });
       device.type === "lightSensor" &&
-        HomeDisplayService.updateHomeDisplayData({ briId: device.id });
+        HomeDisplayService.updateHomeDisplayData({ briId: selectedDeviceId });
       Toast.show({
         type: "success",
         text1: "Cập nhật cảm biến",
@@ -257,7 +279,10 @@ export default function HomeScreen() {
     password?: string,
   ) => {
     try {
-      const newAction = getNextAction(devices.find(d => d.id === deviceId)?.type || "", currentAction);
+      const newAction = getNextAction(
+        devices.find((d) => d.id === deviceId)?.type || "",
+        currentAction,
+      );
       await DeviceService.sendCommand(
         deviceId,
         newAction,
@@ -377,7 +402,9 @@ export default function HomeScreen() {
             roomName={
               sensorState.get("temperatureSensor")?.roomName || "Phòng khách"
             }
-            device={sensorList.filter((d) => d.type === "temperatureSensor")}
+            device={sensorList.filter((d) =>
+              isSensorTypeMatch(d.type, "temperatureSensor"),
+            )}
             onSelect={(device: DeviceResponse) =>
               handleSelectRoom("temperatureSensor", device)
             }
@@ -392,7 +419,9 @@ export default function HomeScreen() {
             roomName={
               sensorState.get("humiditySensor")?.roomName || "Phòng khách"
             }
-            device={sensorList.filter((d) => d.type === "humiditySensor")}
+            device={sensorList.filter((d) =>
+              isSensorTypeMatch(d.type, "humiditySensor"),
+            )}
             onSelect={(device: DeviceResponse) =>
               handleSelectRoom("humiditySensor", device)
             }
@@ -410,7 +439,9 @@ export default function HomeScreen() {
               roomName={
                 sensorState.get("lightSensor")?.roomName || "Phòng khách"
               }
-              device={sensorList.filter((d) => d.type === "lightSensor")}
+              device={sensorList.filter((d) =>
+                isSensorTypeMatch(d.type, "lightSensor"),
+              )}
               onSelect={(device: DeviceResponse) =>
                 handleSelectRoom("lightSensor", device)
               }
@@ -456,7 +487,7 @@ export default function HomeScreen() {
                   key={device.id}
                   style={[
                     styles.deviceItem,
-                    (device.currentAction !== "0") && styles.deviceItemOn,
+                    device.currentAction !== "0" && styles.deviceItemOn,
                   ]}
                   onPress={() =>
                     handleDevicePress(device, device.currentAction)
@@ -471,7 +502,7 @@ export default function HomeScreen() {
                   <Text
                     style={[
                       styles.deviceStatus,
-                      (device.currentAction !== "0")
+                      device.currentAction !== "0"
                         ? styles.deviceStatusOn
                         : null,
                     ]}
@@ -499,14 +530,14 @@ export default function HomeScreen() {
         pendingDoorDevice={pendingDoorDevice}
         setDoorModalVisible={setDoorModalVisible}
       />
-      {quickModalVisible &&
+      {quickModalVisible && (
         <QuickDeviceModal
           visible={quickModalVisible}
           setVisible={setQuickModalVisible}
           selectedDevices={devices}
           onConfirm={updateQuickDevices}
         />
-      }
+      )}
     </SafeAreaView>
   );
 }

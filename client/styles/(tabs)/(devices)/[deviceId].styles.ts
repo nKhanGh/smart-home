@@ -111,4 +111,52 @@ export const styles = StyleSheet.create({
   },
   switchLabelActive: { color: "#fff" },
   switchLabelInactive: { color: "#787878" },
+  settingsSection: {
+    marginTop: 16,
+    gap: 12,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 16,
+  },
+  settingsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+  },
+  settingsOptions: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  settingsOption: {
+    width: "48%",
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "rgba(0,0,0,0.1)",
+  },
+  settingsOptionActive: {
+    borderColor: "#22C55E",
+    backgroundColor: "rgba(34, 197, 94, 0.1)",
+    color: "#22C55E",
+  },
+  settingsOptionIcon: {
+    fontSize: 30,
+  },
+  settingOptionText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#000",
+  },
+  settingOptionDescription: {
+    fontSize: 12,
+    color: "#606060",
+    textAlign: "center",
+  },
 })

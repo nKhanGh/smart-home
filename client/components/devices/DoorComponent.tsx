@@ -1,4 +1,4 @@
-import DoorPasswordModal from "@/components/DoorPasswordModal";
+import DoorPasswordModal from "@/components/modals/DoorPasswordModal";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import React, { useEffect, useRef, useState } from "react";
@@ -168,9 +168,7 @@ const DoorComponent = ({ device }: { device: DeviceResponse }) => {
           </View>
           <Switch
             value={device.currentAction != "0"}
-            onValueChange={() =>
-              handleToggle()
-            }
+            onValueChange={() => handleToggle()}
             trackColor={{ false: "#D1D5DB", true: "#86EFAC" }}
             thumbColor={
               device.currentAction === "0" || device.currentAction === 0
