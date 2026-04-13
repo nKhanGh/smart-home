@@ -10,4 +10,5 @@ export const DeviceService = {
   getCurrentAction: (deviceId: string) => axiosInstance.get(`/devices/${deviceId}/current-action`),
   getThresholdDevices: () => axiosInstance.get<DeviceResponse[]>("/devices/threshold"),
   updateThreshold: (deviceId: string, threshold: number) => axiosInstance.put(`/devices/${deviceId}`, { threshold }),
+  sendVoidCommand: (text: string) => axiosInstance.post<DeviceVoiceCommandResponse>(`/devices/voice-command`, { text }),
 }

@@ -28,3 +28,16 @@ interface CommandInput {
   action: string;
   password?: string;
 }
+
+interface DeviceVoiceCommandResponse {
+  code: string;
+  msg: string;
+  parsed: DeviceVoiceCommandParsed;
+}
+
+interface DeviceVoiceCommandParsed {
+  deviceName: string;
+  action: string;
+  rawText: string;
+  roomName: string;
+}
