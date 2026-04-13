@@ -1,29 +1,27 @@
-import { Tabs, useRouter } from "expo-router";
-import React, { useRef } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  Animated,
-  StyleSheet,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { HapticTab } from "@/components/haptic-tab";
+import VoiceCommandModal from "@/components/modals/VoiceCommandModal";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { Tabs } from "expo-router";
+import React, { useCallback, useRef, useState } from "react";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 
 // Tab config
 const TAB_CONFIGS = [
-  { name: "index",     label: "TRANG CHỦ", icon: "home"            },
-  { name: "(rooms)/index",    label: "PHÒNG",     icon: "grid"             },
-  { name: "(stats)/index",    label: "THỐNG KÊ",  icon: "stats-chart"      },
-  { name: "(settings)/index", label: "CÀI ĐẶT",  icon: "settings" },
+  { name: "index", label: "TRANG CHỦ", icon: "home" },
+  { name: "(rooms)/index", label: "PHÒNG", icon: "grid" },
+  { name: "(stats)/index", label: "THỐNG KÊ", icon: "stats-chart" },
+  { name: "(settings)/index", label: "CÀI ĐẶT", icon: "settings" },
 ] as const;
 
 // Animated Tab Item
 const TabItem = ({
-  icon, label, active, onPress,
+  icon,
+  label,
+  active,
+  onPress,
 }: {
   icon: string;
   label: string;
@@ -34,8 +32,16 @@ const TabItem = ({
 
   const handlePress = () => {
     Animated.sequence([
-      Animated.timing(scale, { toValue: 0.82, duration: 80, useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, friction: 4, useNativeDriver: true }),
+      Animated.timing(scale, {
+        toValue: 0.82,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 4,
+        useNativeDriver: true,
+      }),
     ]).start();
     onPress();
   };
@@ -57,14 +63,23 @@ const TabItem = ({
 };
 
 // ── Mic Button ───────────────────────────────────
-const MicButton = () => {
+const MicButton = ({ onPress }: { onPress: () => void }) => {
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
     Animated.sequence([
-      Animated.timing(scale, { toValue: 0.88, duration: 100, useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, friction: 3, useNativeDriver: true }),
+      Animated.timing(scale, {
+        toValue: 0.88,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }),
     ]).start();
+    onPress();
   };
 
   return (
@@ -78,19 +93,27 @@ const MicButton = () => {
   );
 };
 
-const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
+const CustomTabBar = ({
+  state,
+  navigation,
+  onMicPress,
+}: BottomTabBarProps & { onMicPress: () => void }) => {
   const navigate = (route: (typeof state.routes)[0]) => {
-    navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+    navigation.emit({
+      type: "tabPress",
+      target: route.key,
+      canPreventDefault: true,
+    });
     navigation.navigate(route.name);
   };
 
   // Lấy đúng 4 route theo thứ tự TAB_CONFIG, không phụ thuộc state.routes
   const tabNames = TAB_CONFIGS.map((c) => c.name);
-  const allRoutes = tabNames.map(name =>
-    state.routes.find(r => r.name === name)
-  ).filter(Boolean) as (typeof state.routes)[0][];
+  const allRoutes = tabNames
+    .map((name) => state.routes.find((r) => r.name === name))
+    .filter(Boolean) as (typeof state.routes)[0][];
 
-  const left  = allRoutes.slice(0, 2);
+  const left = allRoutes.slice(0, 2);
   const right = allRoutes.slice(2, 4);
 
   const renderTab = (route: (typeof state.routes)[0]) => {
@@ -112,7 +135,7 @@ const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
   return (
     <View style={styles.tabBar}>
       {left.map(renderTab)}
-      <MicButton />
+      <MicButton onPress={onMicPress} />
       {right.map(renderTab)}
     </View>
   );
@@ -120,24 +143,40 @@ const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const [isVoiceModalVisible, setIsVoiceModalVisible] = useState(false);
+  const renderTabBar = useCallback(
+    (props: BottomTabBarProps) => (
+      <CustomTabBar
+        {...props}
+        onMicPress={() => setIsVoiceModalVisible(true)}
+      />
+    ),
+    [],
+  );
 
   return (
-    <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}
-    >
-      <Tabs.Screen name="index"    options={{ title: "Trang chủ" }} />
-      <Tabs.Screen name="(rooms)"    options={{ title: "Phòng" }} />
-      <Tabs.Screen name="(stats)"    options={{ title: "Thống kê" }} />
-      <Tabs.Screen name="(settings)" options={{ title: "Cài đặt" }} />
-    </Tabs>
+    <>
+      <Tabs
+        tabBar={renderTabBar}
+        screenOptions={{
+          tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+          headerShown: false,
+          tabBarButton: HapticTab,
+        }}
+      >
+        <Tabs.Screen name="index" options={{ title: "Trang chủ" }} />
+        <Tabs.Screen name="(rooms)" options={{ title: "Phòng" }} />
+        <Tabs.Screen name="(stats)" options={{ title: "Thống kê" }} />
+        <Tabs.Screen name="(settings)" options={{ title: "Cài đặt" }} />
+      </Tabs>
+
+      <VoiceCommandModal
+        visible={isVoiceModalVisible}
+        onClose={() => setIsVoiceModalVisible(false)}
+      />
+    </>
   );
 }
-
 
 const styles = StyleSheet.create({
   tabBar: {
