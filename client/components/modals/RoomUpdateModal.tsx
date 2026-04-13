@@ -25,12 +25,12 @@ import Icon from "react-native-vector-icons/FontAwesome5";
 
 
 const roomBackgrounds: RoomBackground[] = [
-  { name: "living-room.png", url: require("../assets/images/living-room.png") },
-  { name: "living-room1.png", url: require("../assets/images/living-room1.png") },
-  { name: "living-room2.png", url: require("../assets/images/living-room2.png") },
-  { name: "bedroom.png", url: require("../assets/images/bedroom.png") },
-  { name: "bedroom1.png", url: require("../assets/images/bedroom1.png") },
-  { name: "bedroom2.png", url: require("../assets/images/bedroom2.png") },
+  { name: "living-room.png", url: require("../../assets/images/living-room.png") },
+  { name: "living-room1.png", url: require("../../assets/images/living-room1.png") },
+  { name: "living-room2.png", url: require("../../assets/images/living-room2.png") },
+  { name: "bedroom.png", url: require("../../assets/images/bedroom.png") },
+  { name: "bedroom1.png", url: require("../../assets/images/bedroom1.png") },
+  { name: "bedroom2.png", url: require("../../assets/images/bedroom2.png") },
 ];
 
 const RoomUpdateModal = ({

@@ -1,28 +1,28 @@
 // app/(tabs)/rooms.tsx
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Animated,
   Image,
   ScrollView,
   Switch,
   Text,
   TouchableOpacity,
   View,
-  Animated,
 } from "react-native";
 
-import DoorPasswordModal from "@/components/DoorPasswordModal";
+import DoorPasswordModal from "@/components/modals/DoorPasswordModal";
+import RoomUpdateModal from "@/components/modals/RoomUpdateModal";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import { RoomService } from "@/service/room.service";
 import { styles } from "@/styles/(tabs)/(rooms)/index.styles";
+import { getAction, getDeviceIcon, getNextAction } from "@/utils/devices.util";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome6";
-import RoomUpdateModal from "@/components/RoomUpdateModal";
-import { useRouter } from "expo-router";
-import { getAction, getDeviceIcon, getNextAction } from "@/utils/devices.util";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const images: Record<string, any> = {
   "living-room.png": require("@/assets/images/living-room.png"),
@@ -91,7 +91,6 @@ const sensorTextColor: Record<string, any> = {
   motionSensor: "#991B1B",
 };
 
-
 const updateDeviceActionInRooms = (
   prevRooms: RoomResponse[],
   deviceId: string,
@@ -130,7 +129,10 @@ const DeviceRow = ({
   const router = useRouter();
 
   return (
-    <TouchableOpacity style={styles.deviceRow} onPress={() => router.push(`/(devices)/${device.id}`)}>
+    <TouchableOpacity
+      style={styles.deviceRow}
+      onPress={() => router.push(`/(devices)/${device.id}`)}
+    >
       {/* Icon */}
       <View
         style={[
@@ -477,7 +479,11 @@ const RoomsScreen = () => {
             <Text style={styles.avatarText}>{user?.avatarInitials}</Text>
           </View>
         </View>
-        {loading ? <View style={{marginTop: 40}}><LoadingSpinner variant="wave" color="#22C55E"/></View> : null}
+        {loading ? (
+          <View style={{ marginTop: 40 }}>
+            <LoadingSpinner variant="wave" color="#22C55E" />
+          </View>
+        ) : null}
 
         {/* Room cards */}
         {rooms.map((room) => (

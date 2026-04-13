@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn src/server.ts",
     "sync": "ts-node src/adafruit/syncAdafruit.ts",
+    "sync:thresholds": "ts-node src/adafruit/syncAdafruit.ts --threshold-only",
     "build": "tsc",
     "start": "node dist/server.js"
   },

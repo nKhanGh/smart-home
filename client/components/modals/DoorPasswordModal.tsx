@@ -1,15 +1,15 @@
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Modal,
   Pressable,
+  StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
-  Text,
-  StyleSheet,
 } from "react-native";
-import LoadingSpinner from "./ui/LoadingSpinner";
-import { useEffect, useRef, useState } from "react";
+import LoadingSpinner from "../ui/LoadingSpinner";
 
 const DoorPasswordModal = ({
   doorModalVisible,
@@ -22,7 +22,11 @@ const DoorPasswordModal = ({
   setDoorModalVisible: (visible: boolean) => void;
   pendingDoorDevice: DeviceInstantControl | null | DeviceResponse;
   pendingAction: string | number;
-  doAction: (id: string, action: string | number, password?: string) => Promise<void>;
+  doAction: (
+    id: string,
+    action: string | number,
+    password?: string,
+  ) => Promise<void>;
 }) => {
   const [pinDigits, setPinDigits] = useState(["", "", "", "", "", ""]);
   const [pinError, setPinError] = useState("");
@@ -32,40 +36,40 @@ const DoorPasswordModal = ({
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-      setPinDigits(["", "", "", "", "", ""]);
-      setPinError("");
-  }, [pendingDoorDevice, pendingAction])
+    setPinDigits(["", "", "", "", "", ""]);
+    setPinError("");
+  }, [pendingDoorDevice, pendingAction]);
 
   const triggerShake = () => {
-      shakeAnim.setValue(0);
-      Animated.sequence([
-        Animated.timing(shakeAnim, {
-          toValue: 10,
-          duration: 60,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: -10,
-          duration: 60,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: 8,
-          duration: 50,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: -8,
-          duration: 50,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: 0,
-          duration: 40,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    };
+    shakeAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(shakeAnim, {
+        toValue: 10,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -10,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 8,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -8,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 0,
+        duration: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const handlePinChange = (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;

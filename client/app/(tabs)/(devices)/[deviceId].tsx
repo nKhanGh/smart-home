@@ -1,5 +1,7 @@
 import DeviceActionLog from "@/components/devices/DeviceActionLog";
+import DeviceAutoComponent from "@/components/devices/DeviceAutoComponent";
 import DeviceDataLog from "@/components/devices/DeviceDataLog";
+import DeviceScheduleComponent from "@/components/devices/DeviceScheduleComponent";
 import DoorComponent from "@/components/devices/DoorComponent";
 import FanComponent from "@/components/devices/FanComponent";
 import LightComponent from "@/components/devices/LightComponent";
@@ -53,6 +55,7 @@ const DeviceDetailScreen = () => {
 
   const [device, setDevice] = useState<DeviceResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [typeSetting, setTypeSetting] = useState<"auto" | "schedule">("auto");
 
   const [active, setActive] = useState<"settings" | "history">("settings");
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -216,6 +219,32 @@ const DeviceDetailScreen = () => {
         {loading ? <LoadingSpinner variant="wave" color="#22C55E" style={{margin: "auto", marginTop: 48}} /> : null}
         {active === "history" && getHistoryComponent(device)}
         {active === "settings" && getSettingsComponent(device)}
+        {active === "settings" && (
+          <View style={styles.settingsSection}>
+            <Text style={styles.settingsTitle}>Cài đặt</Text>
+            <View style={styles.settingsOptions}>
+              <TouchableOpacity 
+                style={[styles.settingsOption, typeSetting === "auto" && styles.settingsOptionActive]} 
+                onPress={() => setTypeSetting("auto")}
+              >
+                <Text style={styles.settingsOptionIcon}>⚡</Text>
+                <Text style={styles.settingOptionText}>Tự động</Text>
+                <Text style={styles.settingOptionDescription}>Theo cảm biến</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.settingsOption, typeSetting === "schedule" && styles.settingsOptionActive]} 
+                onPress={() => setTypeSetting("schedule")}
+              >
+                <Text style={styles.settingsOptionIcon}>🕐</Text>
+                <Text style={styles.settingOptionText}>Lịch hẹn giờ</Text>
+                <Text style={styles.settingOptionDescription}>Tự động theo giờ</Text>
+              </TouchableOpacity>
+            </View>
+            {typeSetting === "auto" && <DeviceAutoComponent device={device as DeviceResponse} />}
+            {typeSetting === "schedule" && <DeviceScheduleComponent device={device as DeviceResponse} />}
+          </View>
+        )
+        }
       </ScrollView>
     </SafeAreaView>
   );

@@ -68,7 +68,7 @@ router.get(
 
 /**
  * @swagger
- * /api/schedules/{id}:
+ * /api/schedules/devices/{id}:
  *   get:
  *     summary: Lấy chi tiết lịch theo ID
  *     tags: [Schedules]
@@ -89,7 +89,7 @@ router.get(
  *       500:
  *         description: Server Error
  */
-router.get("/:id", verifyToken, scheduleController.getScheduleById);
+router.get("/devices/:id", verifyToken, scheduleController.getScheduleById);
 
 /**
  * @swagger

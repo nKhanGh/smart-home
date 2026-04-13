@@ -4,6 +4,7 @@ import http from "http";
 import { Server } from "socket.io";
 import connectDB from "./config/db";
 import mqttService from "./services/mqttService";
+import scheduleRunnerService from "./services/scheduleRunner.service";
 // import { seedDefaults } from "./models/SystemConfigSchema";
 // import { startScheduler } from "./services/schedule.service";
 
@@ -21,19 +22,31 @@ const bootstrap = async (): Promise<void> => {
   io.on("connection", (socket) => {
     console.log(`[Socket] Client kết nối: ${socket.id}`);
     socket.on("disconnect", () =>
-      console.log(`[Socket] Client ngắt kết nối: ${socket.id}`)
+      console.log(`[Socket] Client ngắt kết nối: ${socket.id}`),
     );
   });
 
   mqttService.setIO(io);
   mqttService.connect();
   await mqttService.subscribeAllDeviceFeeds();
+  scheduleRunnerService.start();
 
   httpServer.listen(PORT, () =>
-    console.log(`[Server] Đang chạy tại http://localhost:${PORT}`));
+    console.log(`[Server] Đang chạy tại http://localhost:${PORT}`),
+  );
 };
 
 bootstrap().catch((err) => {
   console.error("[Server] Khởi động thất bại:", err);
   process.exit(1);
+});
+
+process.on("SIGINT", () => {
+  scheduleRunnerService.stop();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  scheduleRunnerService.stop();
+  process.exit(0);
 });

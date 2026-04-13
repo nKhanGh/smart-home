@@ -1,7 +1,7 @@
 import { Router } from "express";
 import validate from "../middleware/validateMiddleware";
 import { verifyToken } from "../middleware/authMiddleware";
-import { UpdateThresholdSchema } from "../models/ThresholdSchema";
+import { CreateThresholdSchema } from "../models/ThresholdSchema";
 import thresholdController from "../controllers/threshold.controller";
 
 const router = Router({ mergeParams: true });
@@ -9,8 +9,8 @@ const router = Router({ mergeParams: true });
 /**
  * @swagger
  * /api/devices/{id}/threshold:
- *   put:
- *     summary: Cập nhật ngưỡng
+ *   post:
+ *     summary: Tạo ngưỡng cho thiết bị
  *     tags: [Thresholds]
  *     security:
  *       - bearerAuth: []
@@ -29,30 +29,44 @@ const router = Router({ mergeParams: true });
  *             type: object
  *             required:
  *               - value
+ *               - sensorId
+ *               - when
+ *               - action
  *             properties:
+ *               sensorId:
+ *                 type: string
+ *                 example: 60c72b2f9b1e8e5d6c8f9a3c
  *               value:
  *                 type: number
  *                 example: 75
+ *               when:
+ *                 type: string
+ *                 enum: [above, below]
+ *                 example: above
+ *               action:
+ *                 type: string
+ *                 enum: [on, off, alert]
+ *                 example: alert
  *     responses:
- *       200:
- *         description: Cập nhật ngưỡng thành công
+ *       201:
+ *         description: Tạo ngưỡng thành công
  *       404:
  *         description: Device not found
  *       500:
  *         description: Server Error
  */
-router.put(
+router.post(
   "/",
   verifyToken,
-  validate(UpdateThresholdSchema),
-  thresholdController.updateThreshold,
+  validate(CreateThresholdSchema),
+  thresholdController.createThreshold,
 );
 
 /**
  * @swagger
  * /api/devices/{id}/threshold:
  *   get:
- *     summary: Lấy ngưỡng
+ *     summary: Lấy danh sách ngưỡng của thiết bị
  *     tags: [Thresholds]
  *     security:
  *       - bearerAuth: []
@@ -65,7 +79,7 @@ router.put(
  *           example: 60c72b2f9b1e8e5d6c8f9a3b
  *     responses:
  *       200:
- *         description: Lấy ngưỡng thành công
+ *         description: Lấy danh sách ngưỡng thành công
  *       404:
  *         description: Device not found
  *       500:
