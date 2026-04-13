@@ -185,12 +185,16 @@ class MqttService {
 
   private publishThresholdAction(
     targetDevice: any,
-    action: "on" | "off",
+    action: "on" | "off" | "alert",
   ): void {
-    if (
-      !targetDevice?.key ||
-      !targetDevice.type?.endsWith("Device")
-    ) {
+    if (!targetDevice?.key || !targetDevice.type?.endsWith("Device")) {
+      return;
+    }
+
+    if (action === "alert") {
+      if (targetDevice.type === "lightDevice") {
+        this.publish(targetDevice.key, "4");
+      }
       return;
     }
 
@@ -211,6 +215,10 @@ class MqttService {
     numericValue: number,
     lastValue: number | null,
   ): Promise<void> {
+    if (!threshold.active) {
+      return;
+    }
+
     const wasTriggered =
       lastValue === null
         ? false
@@ -225,6 +233,8 @@ class MqttService {
       threshold.value,
       threshold.when,
     );
+
+        const targetDevice = threshold.deviceId;
 
     if (isTriggered && !wasTriggered) {
       if (threshold.action === "alert") {
@@ -253,13 +263,14 @@ class MqttService {
           alert,
           text,
         });
+
+        this.publishThresholdAction(targetDevice, "alert");
       } else {
-        const targetDevice = threshold.deviceId;
         this.publishThresholdAction(targetDevice, threshold.action);
       }
     }
 
-    if (!isTriggered && wasTriggered) {
+    if (!isTriggered && wasTriggered && !targetDevice.type.endsWith("Device")) {
       if (threshold.action === "alert") {
         this.emitSensorNormal(device);
       } else {
@@ -296,6 +307,7 @@ class MqttService {
 
     const thresholds = await Threshold.find({
       sensorId: device?._id,
+      active: true,
     }).populate("deviceId", "name key type mode roomId");
 
     const lastValue = lastData ? Number.parseFloat(lastData.value) : null;

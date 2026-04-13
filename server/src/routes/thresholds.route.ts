@@ -1,7 +1,10 @@
 import { Router } from "express";
 import validate from "../middleware/validateMiddleware";
 import { verifyToken } from "../middleware/authMiddleware";
-import { UpdateThresholdSchema } from "../models/ThresholdSchema";
+import {
+  SetThresholdActiveSchema,
+  UpdateThresholdSchema,
+} from "../models/ThresholdSchema";
 import thresholdController from "../controllers/threshold.controller";
 
 const router = Router();
@@ -89,6 +92,48 @@ router.delete(
   "/:thresholdId",
   verifyToken,
   thresholdController.deleteThreshold,
+);
+
+/**
+ * @swagger
+ * /api/thresholds/{thresholdId}/active:
+ *   patch:
+ *     summary: Bật/tắt threshold theo thresholdId
+ *     tags: [Thresholds]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: thresholdId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: 67f2c1d9e8c1a32b1a6f0001
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - active
+ *             properties:
+ *               active:
+ *                 type: boolean
+ *                 example: false
+ *     responses:
+ *       200:
+ *         description: Cập nhật trạng thái active thành công
+ *       404:
+ *         description: Threshold not found
+ *       500:
+ *         description: Server Error
+ */
+router.patch(
+  "/:thresholdId/active",
+  verifyToken,
+  validate(SetThresholdActiveSchema),
+  thresholdController.setThresholdActive,
 );
 
 export default router;

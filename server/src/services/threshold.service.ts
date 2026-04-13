@@ -1,5 +1,6 @@
 import Threshold, {
   CreateThresholdInput,
+  SetThresholdActiveInput,
   UpdateThresholdInput,
 } from "../models/ThresholdSchema";
 import Device, { IDeviceDoc } from "../models/DeviceSchema";
@@ -19,13 +20,6 @@ export class ThresholdService {
   ) {
     if (!this.isSensorType(sensor.type)) {
       throw new ServiceError(400, "sensorId phải là thiết bị cảm biến.");
-    }
-
-    if (device.roomId.toString() !== sensor.roomId.toString()) {
-      throw new ServiceError(
-        400,
-        "Thiết bị điều khiển và cảm biến phải cùng phòng.",
-      );
     }
 
     if (device.type.endsWith("Sensor")) {
@@ -86,6 +80,26 @@ export class ThresholdService {
     }
   }
 
+  private toThresholdResponse(threshold: any) {
+    const thresholdObj = threshold.toObject();
+    const sensor = thresholdObj.sensorId;
+    const roomName =
+      typeof sensor?.roomId === "object" ? (sensor.roomId?.name ?? null) : null;
+
+    return {
+      ...thresholdObj,
+      sensor: sensor
+        ? {
+            id: sensor._id?.toString?.() || "",
+            name: sensor.name,
+            type: sensor.type,
+            roomName,
+          }
+        : null,
+      sensorId: undefined,
+    };
+  }
+
   async createThreshold(
     deviceId: string,
     payload: CreateThresholdInput,
@@ -121,14 +135,23 @@ export class ThresholdService {
       throw new ServiceError(404, "Device not found.");
     }
 
-    const thresholds = await Threshold.find({ deviceId: device._id }).sort({
-      createdAt: -1,
-    });
+    const thresholds = await Threshold.find({ deviceId: device._id })
+      .populate({
+        path: "sensorId",
+        select: "name type roomId",
+        populate: {
+          path: "roomId",
+          select: "name",
+        },
+      })
+      .sort({
+        createdAt: -1,
+      });
     if (thresholds.length === 0) {
       throw new ServiceError(404, "Threshold not found.");
     }
 
-    return thresholds;
+    return thresholds.map((threshold) => this.toThresholdResponse(threshold));
   }
 
   async updateThreshold(
@@ -171,6 +194,24 @@ export class ThresholdService {
     if (!threshold) {
       throw new ServiceError(404, "Threshold not found.");
     }
+
+    return threshold;
+  }
+
+  async setThresholdActive(
+    thresholdId: string,
+    payload: SetThresholdActiveInput,
+    updatedBy?: string,
+  ) {
+    const threshold = await Threshold.findById(thresholdId);
+    if (!threshold) {
+      throw new ServiceError(404, "Threshold not found.");
+    }
+
+    threshold.active = payload.active;
+    threshold.updatedAt = new Date();
+    threshold.updatedBy = updatedBy || "unknown";
+    await threshold.save();
 
     return threshold;
   }

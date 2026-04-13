@@ -7,14 +7,17 @@ export interface IThreshold extends Document {
   value: number;
   when: "above" | "below";
   action: "on" | "off" | "alert";
+  createdAt: Date;
   updatedAt: Date;
   updatedBy: Types.ObjectId | string;
+  active: boolean;
 }
 
 const ThresholdSchema = new Schema<IThreshold>(
   {
     deviceId: { type: Schema.Types.ObjectId, ref: "Device", required: true },
     sensorId: { type: Schema.Types.ObjectId, ref: "Device", required: true },
+    active: { type: Boolean, default: true },
     value: { type: Number, required: true },
     when: { type: String, enum: ["above", "below"], required: true },
     action: {
@@ -23,6 +26,7 @@ const ThresholdSchema = new Schema<IThreshold>(
       required: true,
       default: "on",
     },
+    createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: false },
   },
@@ -44,8 +48,16 @@ export const UpdateThresholdSchema = z.object({
 
 export const CreateThresholdSchema = UpdateThresholdSchema;
 
+export const SetThresholdActiveSchema = z.object({
+  active: z.boolean({
+    message: "active phải là true hoặc false.",
+  }),
+});
+
 export type UpdateThresholdInput = z.infer<typeof UpdateThresholdSchema>;
 
 export type CreateThresholdInput = z.infer<typeof CreateThresholdSchema>;
+
+export type SetThresholdActiveInput = z.infer<typeof SetThresholdActiveSchema>;
 
 export default model<IThreshold>("Threshold", ThresholdSchema);

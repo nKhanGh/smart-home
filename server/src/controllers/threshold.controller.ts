@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../types";
 import {
   CreateThresholdInput,
+  SetThresholdActiveInput,
   UpdateThresholdInput,
 } from "../models/ThresholdSchema";
 import thresholdService, {
@@ -55,6 +56,22 @@ export class ThresholdController {
       res.status(200).json(threshold);
     } catch (err) {
       handleControllerError(err, res, "Error deleting threshold:");
+    }
+  };
+
+  setThresholdActive = async (
+    req: AuthRequest,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const threshold = await this.service.setThresholdActive(
+        req.params.thresholdId,
+        req.body as SetThresholdActiveInput,
+        req.user?.id,
+      );
+      res.status(200).json(threshold);
+    } catch (err) {
+      handleControllerError(err, res, "Error switching threshold active:");
     }
   };
 }
