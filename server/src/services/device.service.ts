@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import Device, {
+  IDeviceDoc,
   SendCommandInput,
   UpdateDeviceInput,
   VoiceCommandInput,
@@ -13,6 +14,8 @@ import mqttService from "./mqttService";
 import { JwtPayload } from "../types";
 import { ServiceError } from "../errors/service.error";
 import bcrypt from "bcryptjs";
+
+type DeviceType = IDeviceDoc["type"];
 
 export class DeviceService {
   private readonly genericRoomTokens = new Set(["phong", "phòng", "room"]);
@@ -127,11 +130,28 @@ export class DeviceService {
     return 10 + matchedTokenCount;
   }
 
+  private mapActionForDevice(
+    deviceType: DeviceType,
+    action: "on" | "off",
+  ): string {
+    if (deviceType === "fanDevice") {
+      return action === "on" ? "100" : "0";
+    }
+
+    if (deviceType === "lightDevice" || deviceType === "doorDevice") {
+      return action === "on" ? "1" : "0";
+    }
+
+    return action;
+  }
+
   async getDevices() {
-    return (await Device.find().populate("roomId", "name key")).map((device) => ({
-      id: device._id,
-      ...device.toObject(),
-    }));
+    return (await Device.find().populate("roomId", "name key")).map(
+      (device) => ({
+        id: device._id,
+        ...device.toObject(),
+      }),
+    );
   }
 
   async getDeviceById(id: string) {
@@ -179,9 +199,7 @@ export class DeviceService {
       }
     }
 
-    return Data.find(query)
-      .sort({ recordedAt: -1 })
-      .limit(100);
+    return Data.find(query).sort({ recordedAt: -1 }).limit(100);
   }
 
   // async addDevice(payload: AddDeviceInput, userId?: string) {
@@ -239,7 +257,7 @@ export class DeviceService {
       await Threshold.findOneAndUpdate(
         { deviceId: device._id },
         { value: threshold },
-        { upsert: true }
+        { upsert: true },
       );
     }
 
@@ -408,7 +426,7 @@ export class DeviceService {
     const roomFilter = matchedRoom ? { roomId: matchedRoom._id } : {};
     const controllableDevices = await Device.find({
       ...roomFilter,
-      type: { $in: ["light", "fan"] },
+      type: { $in: ["lightDevice", "fanDevice", "doorDevice"] },
     }).populate("roomId", "name");
 
     if (controllableDevices.length === 0) {
@@ -447,9 +465,11 @@ export class DeviceService {
       );
     }
 
+    const mappedAction = this.mapActionForDevice(targetDevice.type, action);
+
     const commandResult = await this.sendCommand(
       targetDevice._id.toString(),
-      { action },
+      { action: mappedAction },
       user,
     );
 
@@ -458,7 +478,8 @@ export class DeviceService {
       : (targetDevice.roomId as any)?.name;
 
     return {
-      action: commandResult.action,
+      action,
+      sentValue: commandResult.action,
       deviceName: commandResult.deviceName,
       roomName,
       rawText: payload.text,

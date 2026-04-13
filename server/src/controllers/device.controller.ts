@@ -109,6 +109,7 @@ export class DeviceController {
     res: Response,
   ): Promise<void> => {
     try {
+      console.log("[DeviceController] Received voice command:", req.body);
       const result = await this.service.executeVoiceCommand(
         req.body as VoiceCommandInput,
         req.user,
