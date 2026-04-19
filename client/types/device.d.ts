@@ -41,3 +41,26 @@ interface DeviceVoiceCommandParsed {
   rawText: string;
   roomName: string;
 }
+
+interface DeviceHistoryQuery {
+  startDate?: string;
+  endDate?: string;
+}
+
+interface DeviceActionLogItem {
+  _id: string;
+  userId?: string;
+  deviceId: string;
+  action: string;
+  actor: string;
+  createdAt: string;
+}
+
+interface DeviceDataLogItem {
+  _id: string;
+  deviceId: string;
+  value: string;
+  recordedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
