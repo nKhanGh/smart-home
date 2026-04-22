@@ -8,9 +8,11 @@ import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/FontAwesome6";
+import { useRouter } from "expo-router";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
+  const router = useRouter();
   const [thresholds, setThresholds] = useState<any[]>([]);
   const [updating, setUpdating] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,13 +100,13 @@ export default function SettingsScreen() {
             <Text style={styles.userRoleGreen}>
               {user?.role === "admin" ? "👑 Quản trị viên" : "👤 Thành viên"}
             </Text>
-            <Text style={styles.userEmailGreen}>{user?.username}</Text>
+            <Text style={styles.userEmailGreen}>@{user?.username}</Text>
           </View>
         </View>
 
         {/* User Management */}
         <Text style={styles.sectionLabel}>QUẢN LÝ NGƯỜI DÙNG</Text>
-        <TouchableOpacity style={styles.sectionCard}>
+        <TouchableOpacity style={styles.sectionCard} onPress={() => router.push("/(tabs)/(settings)/user-management")}> 
           <View style={styles.sectionIcon}>
             <Text style={{ fontSize: 20 }}>👥</Text>
           </View>
