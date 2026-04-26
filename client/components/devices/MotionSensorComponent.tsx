@@ -5,10 +5,9 @@
  * Tự quản lý header (back, tên thiết bị), danh sách lịch motion watch, và modal tạo lịch.
  */
 
-import MotionWatchScheduleModal from "../modals/MotionWatchScheduleModal";
 import { ScheduleService } from "@/service/schedule.service";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -21,6 +20,7 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome5";
+import MotionWatchScheduleModal from "../modals/MotionWatchScheduleModal";
 
 const SCREEN_W = Dimensions.get("window").width;
 
@@ -89,14 +89,47 @@ const sc = StyleSheet.create({
 const ScheduleRow = ({
   schedule,
   onDelete,
+  onEdit,
   onToggle,
+  menuVisible,
+  onMenuToggle,
 }: {
   schedule: MotionWatchScheduleResponse;
   onDelete: () => void;
+  onEdit: () => void;
   onToggle: () => void;
+  menuVisible: boolean;
+  onMenuToggle: () => void;
 }) => {
   const days = schedule.repeatDays ?? [];
   const isAllDay = days.length === 7;
+
+  let dayContent: ReactNode;
+  if (isAllDay) {
+    dayContent = (
+      <View style={[sr.chip, sr.chipActive]}>
+        <Text style={[sr.chipText, sr.chipTextActive]}>Mỗi ngày</Text>
+      </View>
+    );
+  } else if (days.length === 0) {
+    dayContent = (
+      <View style={sr.chip}>
+        <Text style={sr.chipText}>Một lần</Text>
+      </View>
+    );
+  } else {
+    dayContent = (
+      <>
+        {ALL_DAYS.map((d) => (
+          <View key={d} style={[sr.chip, days.includes(d) && sr.chipActive]}>
+            <Text style={[sr.chipText, days.includes(d) && sr.chipTextActive]}>
+              {DAY_LABELS[d]}
+            </Text>
+          </View>
+        ))}
+      </>
+    );
+  }
 
   return (
     <View style={sr.wrap}>
@@ -110,30 +143,7 @@ const ScheduleRow = ({
         </View>
 
         {/* Day chips */}
-        <View style={sr.dayRow}>
-          {isAllDay ? (
-            <View style={[sr.chip, sr.chipActive]}>
-              <Text style={[sr.chipText, sr.chipTextActive]}>Mỗi ngày</Text>
-            </View>
-          ) : days.length === 0 ? (
-            <View style={sr.chip}>
-              <Text style={sr.chipText}>Một lần</Text>
-            </View>
-          ) : (
-            ALL_DAYS.map((d) => (
-              <View
-                key={d}
-                style={[sr.chip, days.includes(d) && sr.chipActive]}
-              >
-                <Text
-                  style={[sr.chipText, days.includes(d) && sr.chipTextActive]}
-                >
-                  {DAY_LABELS[d]}
-                </Text>
-              </View>
-            ))
-          )}
-        </View>
+        <View style={sr.dayRow}>{dayContent}</View>
 
         {/* Config badges */}
         <View style={sr.badgeRow}>
@@ -161,6 +171,36 @@ const ScheduleRow = ({
       </View>
 
       <View style={sr.right}>
+        <TouchableOpacity
+          style={sr.moreBtn}
+          onPress={onMenuToggle}
+          activeOpacity={0.7}
+        >
+          <Icon name="ellipsis-v" size={14} color="#6B7280" />
+        </TouchableOpacity>
+
+        {menuVisible ? (
+          <View style={sr.menu}>
+            <TouchableOpacity
+              style={sr.menuItem}
+              onPress={onEdit}
+              activeOpacity={0.7}
+            >
+              <Icon name="pen" size={11} color="#374151" />
+              <Text style={sr.menuItemText}>Chỉnh sửa</Text>
+            </TouchableOpacity>
+            <View style={sr.menuDivider} />
+            <TouchableOpacity
+              style={sr.menuItem}
+              onPress={onDelete}
+              activeOpacity={0.7}
+            >
+              <Icon name="trash-alt" size={11} color="#EF4444" />
+              <Text style={[sr.menuItemText, sr.menuItemTextDanger]}>Xóa</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         {/* Toggle */}
         <TouchableOpacity
           style={[sr.toggle, schedule.active && sr.toggleActive]}
@@ -168,15 +208,6 @@ const ScheduleRow = ({
           activeOpacity={0.7}
         >
           <View style={[sr.thumb, schedule.active && sr.thumbActive]} />
-        </TouchableOpacity>
-
-        {/* Delete */}
-        <TouchableOpacity
-          style={sr.deleteBtn}
-          onPress={onDelete}
-          activeOpacity={0.7}
-        >
-          <Icon name="trash-alt" size={13} color="#EF4444" />
         </TouchableOpacity>
       </View>
     </View>
@@ -196,7 +227,45 @@ const sr = StyleSheet.create({
     gap: 10,
   },
   left: { flex: 1, gap: 8 },
-  right: { alignItems: "center", gap: 12 },
+  right: { alignItems: "center", gap: 12, position: "relative" },
+  moreBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menu: {
+    position: "absolute",
+    top: 36,
+    right: 0,
+    minWidth: 126,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 50,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  menuItemText: { fontSize: 12, fontWeight: "600", color: "#374151" },
+  menuItemTextDanger: { color: "#DC2626" },
+  menuDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#E5E7EB",
+  },
   timeRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   time: { fontSize: 15, fontWeight: "700", color: "#111827" },
   dayRow: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
@@ -245,14 +314,6 @@ const sr = StyleSheet.create({
     elevation: 2,
   },
   thumbActive: { alignSelf: "flex-end" },
-  deleteBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: "#FEF2F2",
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -260,11 +321,14 @@ interface Props {
   device: DeviceResponse;
 }
 
-export default function MotionSensorComponent({ device }: Props) {
+export default function MotionSensorComponent({ device }: Readonly<Props>) {
   const [schedules, setSchedules] = useState<MotionWatchScheduleResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [editingSchedule, setEditingSchedule] =
+    useState<MotionWatchScheduleResponse | null>(null);
+  const [menuScheduleId, setMenuScheduleId] = useState<string | null>(null);
 
   const loadSchedules = useCallback(
     async (silent = false) => {
@@ -293,6 +357,7 @@ export default function MotionSensorComponent({ device }: Props) {
     try {
       await ScheduleService.deleteMotionWatchSchedule(id);
       Toast.show({ type: "success", text1: "Đã xoá lịch." });
+      setMenuScheduleId(null);
       loadSchedules(true);
     } catch {
       Toast.show({ type: "error", text1: "Xoá thất bại." });
@@ -301,6 +366,7 @@ export default function MotionSensorComponent({ device }: Props) {
 
   const handleToggle = async (schedule: MotionWatchScheduleResponse) => {
     try {
+      setMenuScheduleId(null);
       const payload: MotionWatchScheduleRequest = {
         deviceId: schedule.deviceId._id, // hoặc schedule.deviceId.id tùy object của bạn
         active: !schedule.active,
@@ -328,6 +394,64 @@ export default function MotionSensorComponent({ device }: Props) {
 
   const activeCount = schedules.filter((s) => s.active).length;
 
+  const openCreateModal = () => {
+    setMenuScheduleId(null);
+    setEditingSchedule(null);
+    setModalVisible(true);
+  };
+
+  const openEditModal = (schedule: MotionWatchScheduleResponse) => {
+    setMenuScheduleId(null);
+    setEditingSchedule(schedule);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setEditingSchedule(null);
+  };
+
+  const toggleRowMenu = (scheduleId: string) => {
+    setMenuScheduleId((prev) => (prev === scheduleId ? null : scheduleId));
+  };
+
+  let scheduleContent: ReactNode;
+  if (loading) {
+    scheduleContent = (
+      <View style={s.loadingWrap}>
+        <ActivityIndicator color="#16A34A" />
+      </View>
+    );
+  } else if (schedules.length === 0) {
+    scheduleContent = (
+      <View style={s.emptyWrap}>
+        <View style={s.emptyIcon}>
+          <Icon name="calendar-times" size={22} color="#D1D5DB" />
+        </View>
+        <Text style={s.emptyTitle}>Chưa có lịch nào</Text>
+        <Text style={s.emptyBody}>
+          Nhấn "Thêm" để tạo lịch theo dõi chuyển động.
+        </Text>
+      </View>
+    );
+  } else {
+    scheduleContent = (
+      <View style={s.list}>
+        {schedules.map((sch) => (
+          <ScheduleRow
+            key={sch._id}
+            schedule={sch}
+            onEdit={() => openEditModal(sch)}
+            onDelete={() => handleDelete(sch._id)}
+            onToggle={() => handleToggle(sch)}
+            menuVisible={menuScheduleId === sch._id}
+            onMenuToggle={() => toggleRowMenu(sch._id)}
+          />
+        ))}
+      </View>
+    );
+  }
+
   return (
     <View style={s.root}>
       {/* ── Header — dùng lại đúng format header của [deviceId].tsx ── */}
@@ -350,6 +474,7 @@ export default function MotionSensorComponent({ device }: Props) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={s.scroll}
+        onScrollBeginDrag={() => setMenuScheduleId(null)}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -417,7 +542,7 @@ export default function MotionSensorComponent({ device }: Props) {
             <Text style={s.sectionTitle}>Lịch theo dõi chuyển động</Text>
             <TouchableOpacity
               style={s.addBtn}
-              onPress={() => setModalVisible(true)}
+              onPress={openCreateModal}
               activeOpacity={0.8}
             >
               <Icon name="plus" size={11} color="#fff" />
@@ -425,39 +550,15 @@ export default function MotionSensorComponent({ device }: Props) {
             </TouchableOpacity>
           </View>
 
-          {loading ? (
-            <View style={s.loadingWrap}>
-              <ActivityIndicator color="#16A34A" />
-            </View>
-          ) : schedules.length === 0 ? (
-            <View style={s.emptyWrap}>
-              <View style={s.emptyIcon}>
-                <Icon name="calendar-times" size={22} color="#D1D5DB" />
-              </View>
-              <Text style={s.emptyTitle}>Chưa có lịch nào</Text>
-              <Text style={s.emptyBody}>
-                Nhấn "Thêm" để tạo lịch theo dõi chuyển động.
-              </Text>
-            </View>
-          ) : (
-            <View style={s.list}>
-              {schedules.map((sch) => (
-                <ScheduleRow
-                  key={sch._id}
-                  schedule={sch}
-                  onDelete={() => handleDelete(sch._id)}
-                  onToggle={() => handleToggle(sch)}
-                />
-              ))}
-            </View>
-          )}
+          {scheduleContent}
         </View>
       </ScrollView>
 
       <MotionWatchScheduleModal
         visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        onClose={closeModal}
         device={device}
+        initialSchedule={editingSchedule}
         onSuccess={() => loadSchedules(true)}
       />
     </View>

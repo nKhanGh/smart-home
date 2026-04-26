@@ -63,6 +63,8 @@ const getIconBg = (type: DeviceResponse["type"]) => {
       return "#DBEAFE";
     case "doorDevice":
       return "#e5ffe7";
+    case "motionSensor":
+      return "#FECACA";
     default:
       return "#F3F4F6";
   }
@@ -154,10 +156,10 @@ const DeviceRow = ({
             ]}
           >
             {sensor ? "" : getAction(device.type, device.currentAction ?? "0")}
-            {sensor &&
+            {sensor && device.type !== "motionSensor" &&
               `Ngưỡng cảnh báo: ${device.threshold + getUnit(device.type)}`}
           </Text>
-          {!sensor && (
+          {/* {!sensor && (
             <View
               style={[
                 styles.modeBadge,
@@ -175,11 +177,11 @@ const DeviceRow = ({
                 {!sensor && device.mode}
               </Text>
             </View>
-          )}
+          )} */}
         </View>
       </View>
 
-      {sensor ? (
+      {device.type !== "motionSensor" &&(sensor ? (
         <View style={[styles.sensorValue, sensorStyles[device.type]]}>
           <Text
             style={[
@@ -209,7 +211,7 @@ const DeviceRow = ({
             ios_backgroundColor="#D1D5DB"
           />
         </TouchableOpacity>
-      )}
+      ))}
     </TouchableOpacity>
   );
 };

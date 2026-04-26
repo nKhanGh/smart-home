@@ -118,7 +118,7 @@ const DeviceDetailScreen = () => {
   if (!loading && isMotionSensor(device?.type)) {
     return (
       <SafeAreaView style={styles.safe}>
-        <MotionSensorComponent device={device!} />
+        <MotionSensorComponent device={device} />
       </SafeAreaView>
     );
   }
@@ -164,7 +164,7 @@ const DeviceDetailScreen = () => {
                     {" "}{getAction(
                       device?.type || "",
                       device?.currentAction || "",
-                    ).toUpperCase() + " - " + device?.mode.toUpperCase()}
+                    ).toUpperCase()}
                   </Text>
                 )}
               </View>

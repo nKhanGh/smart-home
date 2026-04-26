@@ -50,6 +50,8 @@ export const getDeviceIcon = (type: DeviceResponse["type"]) => {
       return "🔆";
     case "doorDevice":
       return "🚪";
+    case "motionSensor":
+      return "🚶";
     default:
       return "🔌";
   }
