@@ -1,4 +1,4 @@
-import Schedule from "../models/ScheduleSchema";
+import DeviceActionSchedule from "../models/DeviceActionScheduleSchema";
 import { IDeviceDoc } from "../models/DeviceSchema";
 import ActionLog from "../models/ActionLogSchema";
 import mqttService from "./mqttService";
@@ -72,7 +72,7 @@ class ScheduleRunnerService {
     const currentDay = WEEKDAY_MAP[now.getDay()];
     const minuteKey = this.getMinuteKey(now);
 
-    const schedules = await Schedule.find({
+    const schedules = await DeviceActionSchedule.find({
       active: true,
       triggerTime: currentTime,
     }).populate("deviceId", "name key type");
@@ -105,6 +105,13 @@ class ScheduleRunnerService {
       if (!device?.key) {
         console.warn(
           `[ScheduleRunner] Skip schedule ${schedule._id.toString()} because device is missing.`,
+        );
+        continue;
+      }
+
+      if (!schedule.action) {
+        console.warn(
+          `[ScheduleRunner] Skip schedule ${schedule._id.toString()} because action is missing.`,
         );
         continue;
       }

@@ -1,11 +1,21 @@
 import { Router } from "express";
+import { z } from "zod";
 import { verifyToken } from "../middleware/authMiddleware";
 import validate from "../middleware/validateMiddleware";
 import scheduleController from "../controllers/schedule.controller";
 import {
-  AddScheduleSchema,
-  UpdateScheduleSchema,
-} from "../models/ScheduleSchema";
+  AddDeviceActionScheduleSchema,
+  UpdateDeviceActionScheduleSchema,
+} from "../models/DeviceActionScheduleValidation";
+import {
+  AddMotionWatchScheduleSchema,
+  UpdateMotionWatchScheduleSchema,
+} from "../models/MotionWatchScheduleValidation";
+
+const UpdateScheduleSchema = z.union([
+  UpdateDeviceActionScheduleSchema,
+  UpdateMotionWatchScheduleSchema,
+]);
 
 const router = Router();
 
@@ -93,9 +103,9 @@ router.get("/devices/:id", verifyToken, scheduleController.getScheduleById);
 
 /**
  * @swagger
- * /api/schedules:
+ * /api/schedules/device-actions:
  *   post:
- *     summary: Tạo lịch mới
+ *     summary: Tạo lịch điều khiển thiết bị theo giờ
  *     tags: [Schedules]
  *     security:
  *       - bearerAuth: []
@@ -126,7 +136,7 @@ router.get("/devices/:id", verifyToken, scheduleController.getScheduleById);
  *                   enum: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
  *     responses:
  *       201:
- *         description: Tạo lịch thành công
+ *         description: Tạo lịch điều khiển thiết bị thành công
  *       400:
  *         description: Dữ liệu không hợp lệ
  *       404:
@@ -135,10 +145,203 @@ router.get("/devices/:id", verifyToken, scheduleController.getScheduleById);
  *         description: Server Error
  */
 router.post(
-  "/",
+  "/device-actions",
   verifyToken,
-  validate(AddScheduleSchema),
-  scheduleController.addSchedule,
+  validate(AddDeviceActionScheduleSchema),
+  scheduleController.addDeviceActionSchedule,
+);
+
+/**
+ * @swagger
+ * /api/schedules/motion-watch:
+ *   post:
+ *     summary: Tạo lịch giám sát motion sensor theo khung giờ
+ *     tags: [Schedules]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - deviceId
+ *               - startTime
+ *               - endTime
+ *             properties:
+ *               deviceId:
+ *                 type: string
+ *                 example: 65f2c1d9e8c1a32b1a6f1234
+ *               startTime:
+ *                 type: string
+ *                 example: "22:00"
+ *               endTime:
+ *                 type: string
+ *                 example: "05:30"
+ *               repeatDays:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+ *               triggerCount:
+ *                 type: integer
+ *                 example: 3
+ *               countWindowMinutes:
+ *                 type: integer
+ *                 example: 5
+ *               minSignalIntervalSeconds:
+ *                 type: integer
+ *                 example: 8
+ *               cooldownMinutes:
+ *                 type: integer
+ *                 example: 10
+ *               active:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       201:
+ *         description: Tạo lịch giám sát chuyển động thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ hoặc không phải motion sensor
+ *       404:
+ *         description: Device not found
+ *       500:
+ *         description: Server Error
+ */
+router.post(
+  "/motion-watch",
+  verifyToken,
+  validate(AddMotionWatchScheduleSchema),
+  scheduleController.addMotionWatchSchedule,
+);
+
+/**
+ * @swagger
+ * /api/schedules/motion-watch:
+ *   get:
+ *     summary: Lấy danh sách lịch motion watch theo thiết bị
+ *     tags: [Schedules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: deviceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: 65f2c1d9e8c1a32b1a6f1234
+ *     responses:
+ *       200:
+ *         description: Danh sách lịch motion watch
+ *       400:
+ *         description: deviceId không hợp lệ hoặc thiếu deviceId
+ *       404:
+ *         description: Device not found
+ *       500:
+ *         description: Server Error
+ */
+router.get(
+  "/motion-watch",
+  verifyToken,
+  scheduleController.getMotionWatchSchedules,
+);
+
+/**
+ * @swagger
+ * /api/schedules/motion-watch/{id}:
+ *   patch:
+ *     summary: Cập nhật lịch motion watch
+ *     tags: [Schedules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: 65f2c1d9e8c1a32b1a6f9999
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               deviceId:
+ *                 type: string
+ *                 example: 65f2c1d9e8c1a32b1a6f1234
+ *               startTime:
+ *                 type: string
+ *                 example: "22:00"
+ *               endTime:
+ *                 type: string
+ *                 example: "05:30"
+ *               repeatDays:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+ *               triggerCount:
+ *                 type: integer
+ *                 example: 3
+ *               countWindowMinutes:
+ *                 type: integer
+ *                 example: 5
+ *               minSignalIntervalSeconds:
+ *                 type: integer
+ *                 example: 8
+ *               cooldownMinutes:
+ *                 type: integer
+ *                 example: 10
+ *               active:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Cập nhật lịch motion watch thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ *       404:
+ *         description: MotionWatch schedule not found
+ *       500:
+ *         description: Server Error
+ */
+router.patch(
+  "/motion-watch/:id",
+  verifyToken,
+  validate(UpdateMotionWatchScheduleSchema),
+  scheduleController.updateMotionWatchSchedule,
+);
+
+/**
+ * @swagger
+ * /api/schedules/motion-watch/{id}:
+ *   delete:
+ *     summary: Xóa lịch motion watch
+ *     tags: [Schedules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: 65f2c1d9e8c1a32b1a6f9999
+ *     responses:
+ *       200:
+ *         description: Xóa lịch motion watch thành công
+ *       404:
+ *         description: MotionWatch schedule not found
+ *       500:
+ *         description: Server Error
+ */
+router.delete(
+  "/motion-watch/:id",
+  verifyToken,
+  scheduleController.deleteMotionWatchSchedule,
 );
 
 /**
@@ -219,7 +422,6 @@ router.put(
  */
 router.delete("/:id", verifyToken, scheduleController.deleteSchedule);
 
-
 /**
  * @swagger
  * /api/schedules/{id}/switch:
@@ -243,6 +445,10 @@ router.delete("/:id", verifyToken, scheduleController.deleteSchedule);
  *       500:
  *         description: Server Error
  */
-router.patch("/:id/switch", verifyToken, scheduleController.switchScheduleStatus);
+router.patch(
+  "/:id/switch",
+  verifyToken,
+  scheduleController.switchScheduleStatus,
+);
 
 export default router;
