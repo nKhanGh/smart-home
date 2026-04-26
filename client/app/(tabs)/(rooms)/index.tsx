@@ -431,6 +431,7 @@ const RoomsScreen = () => {
     const fetchRooms = async () => {
       try {
         const response = await RoomService.getRooms();
+        console.log("Fetched rooms:", response.data);
         setRooms(
           response.data.map((r) => {
             r.devices = r.devices.filter(
