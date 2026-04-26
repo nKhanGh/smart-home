@@ -7,6 +7,42 @@ import Device from "../models/DeviceSchema";
 import deviceService from "./device.service";
 
 export class HomeDisplayService {
+  private async findDefaultHomeDisplayDevices() {
+    const [tempDevice, briDevice, humDevice] = await Promise.all([
+      Device.findOne({ type: "temperatureSensor" }).select("_id"),
+      Device.findOne({ type: "lightSensor" }).select("_id"),
+      Device.findOne({ type: "humiditySensor" }).select("_id"),
+    ]);
+
+    if (!tempDevice || !briDevice || !humDevice) {
+      return null;
+    }
+
+    return {
+      tempId: tempDevice._id,
+      briId: briDevice._id,
+      humId: humDevice._id,
+    };
+  }
+
+  async ensureDefaultHomeDisplay(userId: string) {
+    const existing = await HomeDisplay.findOne({ userId });
+    if (existing) {
+      return existing;
+    }
+
+    const defaultDevices = await this.findDefaultHomeDisplayDevices();
+    if (!defaultDevices) {
+      return null;
+    }
+
+    return HomeDisplay.create({
+      userId,
+      ...defaultDevices,
+      instantControl: [],
+    });
+  }
+
   async createHomeDisplay(userId: string, input: CreateHomeDisplayInput) {
     const existing = await HomeDisplay.findOne({ userId });
     if (existing) {
@@ -17,14 +53,27 @@ export class HomeDisplayService {
   }
 
   async getHomeDisplayByUserId(userId: string) {
-    const homeDisplay = await HomeDisplay.findOne({ userId }).populate([
+    let homeDisplay = await HomeDisplay.findOne({ userId }).populate([
       { path: "tempId", populate: { path: "roomId", select: "name _id" } },
       { path: "briId", populate: { path: "roomId", select: "name _id" } },
       { path: "humId", populate: { path: "roomId", select: "name _id" } },
     ]);
 
     if (!homeDisplay) {
-      throw new ServiceError(404, "Home display not found for this user.");
+      const created = await this.ensureDefaultHomeDisplay(userId);
+      if (!created) {
+        throw new ServiceError(404, "Home display not found for this user.");
+      }
+
+      homeDisplay = await HomeDisplay.findById(created._id).populate([
+        { path: "tempId", populate: { path: "roomId", select: "name _id" } },
+        { path: "briId", populate: { path: "roomId", select: "name _id" } },
+        { path: "humId", populate: { path: "roomId", select: "name _id" } },
+      ]);
+
+      if (!homeDisplay) {
+        throw new ServiceError(404, "Home display not found for this user.");
+      }
     }
 
     const tempDevice = homeDisplay.tempId as any;

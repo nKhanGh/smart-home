@@ -144,22 +144,12 @@ export default function HomeScreen() {
         }
         return [...prev, data];
       });
-      Toast.show({
-        type: "error",
-        text1: data.alert,
-        text2: data.text,
-      });
     };
 
     const handleSensorNormal = (data: any) => {
       setAlerts((prev) =>
         prev.filter((alert) => alert.deviceId !== data.deviceId),
       );
-      Toast.show({
-        type: "info",
-        text1: "Cảnh báo đã được giải quyết",
-        text2: data.text,
-      });
     };
 
     const handleData = (data: any) => {

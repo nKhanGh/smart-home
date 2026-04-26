@@ -11,6 +11,7 @@ export interface IDeviceDoc extends Document {
     | "lightSensor"
     | "temperatureSensor"
     | "humiditySensor"
+    | "motionSensor"
     | "device"
     | "threshold"
     | "lightDevice"
@@ -34,6 +35,7 @@ const DeviceSchema = new Schema<IDeviceDoc>(
         "lightSensor",
         "temperatureSensor",
         "humiditySensor",
+        "motionSensor",
         "device",
         "threshold",
         "lightDevice",

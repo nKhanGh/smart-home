@@ -16,8 +16,16 @@ import Threshold from "../models/ThresholdSchema";
 import SensorAlert from "../models/SensorAlertSchema";
 import { Server as SocketIOServer } from "socket.io";
 import deviceService from "./device.service";
+import { getRedisClient } from "../config/redis";
 
+import MotionWatchSchedule from "../models/MotionWatchScheduleSchema";
 type MqttHandler = (feedKey: string, value: string) => void;
+
+interface MotionWatchRuntimeState {
+  hitTimestamps: number[];
+  lastHitAt: number;
+  lastAlertAt: number;
+}
 
 const getName = (type: string) => {
   switch (type) {
@@ -27,6 +35,8 @@ const getName = (type: string) => {
       return "Độ ẩm";
     case "lightSensor":
       return "Ánh sáng";
+    case "motionSensor":
+      return "Chuyển động";
     case "threshold":
       return "Ngưỡng cảnh báo";
     default:
@@ -52,9 +62,17 @@ class MqttService {
   private client: MqttClient | null = null;
   private readonly prefix: string;
   private io: SocketIOServer | null = null;
+  private readonly motionWatchRuntimeFallback = new Map<
+    string,
+    MotionWatchRuntimeState
+  >();
 
   // Observer registry: feedKey -> handler
   private readonly handlers: Map<string, MqttHandler> = new Map();
+
+  private isMotionWatchDebugEnabled(): boolean {
+    return process.env.DEBUG_MOTION_WATCH === "true";
+  }
 
   private constructor() {
     this.prefix = process.env.AIO_USERNAME as string;
@@ -72,6 +90,8 @@ class MqttService {
 
   // ─── Kết nối ─────────────────────────────────────────────────
   connect(): void {
+    void getRedisClient();
+
     this.client = mqtt.connect("mqtts://io.adafruit.com:8883", {
       username: process.env.AIO_USERNAME as string,
       password: process.env.AIO_KEY as string,
@@ -123,6 +143,264 @@ class MqttService {
     this.client.publish(topic, value, { qos: 1 });
   }
 
+  private parseTimeToMinutes(time: string): number {
+    const [hour, minute] = time.split(":").map(Number);
+    return hour * 60 + minute;
+  }
+
+  private isInScheduleWindow(
+    nowMinutes: number,
+    startTime: string,
+    endTime: string,
+  ): boolean {
+    const startMinutes = this.parseTimeToMinutes(startTime);
+    const endMinutes = this.parseTimeToMinutes(endTime);
+
+    if (startMinutes < endMinutes) {
+      return nowMinutes >= startMinutes && nowMinutes < endMinutes;
+    }
+
+    // Window qua đêm, ví dụ 22:00 -> 05:00
+    return nowMinutes >= startMinutes || nowMinutes < endMinutes;
+  }
+
+  private isMotionTriggered(rawValue: string, numericValue: number): boolean {
+    if (Number.isFinite(numericValue)) {
+      return numericValue > 0;
+    }
+
+    const normalized = rawValue.trim().toLowerCase();
+    return ["1", "true", "on", "motion", "detected", "yes"].includes(
+      normalized,
+    );
+  }
+
+  private getMotionWatchRedisKey(scheduleId: string): string {
+    return `motion-watch:${scheduleId}`;
+  }
+
+  private getMotionWatchStateTtlSeconds(schedule: any): number {
+    const countWindowSeconds = (schedule.countWindowMinutes ?? 5) * 60;
+    const cooldownSeconds = (schedule.cooldownMinutes ?? 10) * 60;
+    const minSignalSeconds = schedule.minSignalIntervalSeconds ?? 8;
+
+    return Math.max(120, countWindowSeconds + cooldownSeconds, minSignalSeconds);
+  }
+
+  private async getMotionWatchState(
+    scheduleId: string,
+  ): Promise<MotionWatchRuntimeState> {
+    const key = this.getMotionWatchRedisKey(scheduleId);
+    const redis = await getRedisClient();
+
+    if (redis) {
+      try {
+        const serialized = await redis.get(key);
+        if (serialized) {
+          const parsed = JSON.parse(serialized) as MotionWatchRuntimeState;
+          if (
+            Array.isArray(parsed.hitTimestamps) &&
+            typeof parsed.lastHitAt === "number" &&
+            typeof parsed.lastAlertAt === "number"
+          ) {
+            return parsed;
+          }
+        }
+      } catch (err) {
+        console.error("[MQTT] Đọc motion-watch state từ Redis thất bại:", err);
+      }
+    }
+
+    const current = this.motionWatchRuntimeFallback.get(scheduleId);
+    if (current) {
+      return current;
+    }
+
+    const created: MotionWatchRuntimeState = {
+      hitTimestamps: [],
+      lastHitAt: 0,
+      lastAlertAt: 0,
+    };
+    this.motionWatchRuntimeFallback.set(scheduleId, created);
+    return created;
+  }
+
+  private async saveMotionWatchState(
+    scheduleId: string,
+    schedule: any,
+    state: MotionWatchRuntimeState,
+  ): Promise<void> {
+    const key = this.getMotionWatchRedisKey(scheduleId);
+    const redis = await getRedisClient();
+
+    if (redis) {
+      try {
+        await redis.set(key, JSON.stringify(state), {
+          EX: this.getMotionWatchStateTtlSeconds(schedule),
+        });
+        this.motionWatchRuntimeFallback.delete(scheduleId);
+        return;
+      } catch (err) {
+        console.error("[MQTT] Lưu motion-watch state vào Redis thất bại:", err);
+      }
+    }
+
+    this.motionWatchRuntimeFallback.set(scheduleId, state);
+  }
+
+  private async clearMotionWatchState(scheduleId: string): Promise<void> {
+    const key = this.getMotionWatchRedisKey(scheduleId);
+    const redis = await getRedisClient();
+
+    if (redis) {
+      try {
+        await redis.del(key);
+      } catch (err) {
+        console.error("[MQTT] Xóa motion-watch state trên Redis thất bại:", err);
+      }
+    }
+
+    this.motionWatchRuntimeFallback.delete(scheduleId);
+  }
+
+  private async processMotionWatchSchedules(
+    device: any,
+    rawValue: string,
+    numericValue: number,
+  ): Promise<void> {
+    const now = new Date();
+    const nowMs = now.getTime();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentDay = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+      now.getDay()
+    ];
+
+    const schedules = await MotionWatchSchedule.find({
+      active: true,
+      deviceId: device._id,
+    });
+
+    if (this.isMotionWatchDebugEnabled()) {
+      console.log(
+        `[MQTT][MotionWatch] device=${device._id.toString()} schedules=${schedules.length} raw=${rawValue} numeric=${Number.isNaN(numericValue) ? "NaN" : numericValue}`,
+      );
+    }
+
+    const motionDetected = this.isMotionTriggered(rawValue, numericValue);
+
+    for (const schedule of schedules) {
+      if (!schedule.startTime || !schedule.endTime) {
+        continue;
+      }
+
+      const shouldRunOnDay =
+        !schedule.repeatDays?.length ||
+        schedule.repeatDays.includes(currentDay);
+      const inWindow = this.isInScheduleWindow(
+        nowMinutes,
+        schedule.startTime,
+        schedule.endTime,
+      );
+
+      const scheduleId = schedule._id.toString();
+      const state = await this.getMotionWatchState(scheduleId);
+
+      if (!shouldRunOnDay || !inWindow) {
+        if (this.isMotionWatchDebugEnabled()) {
+          console.log(
+            `[MQTT][MotionWatch] skip schedule=${scheduleId} shouldRunOnDay=${shouldRunOnDay} inWindow=${inWindow} nowMinutes=${nowMinutes} currentDay=${currentDay} window=${schedule.startTime}-${schedule.endTime} repeatDays=${(schedule.repeatDays ?? []).join(",") || "ALL"}`,
+          );
+        }
+        await this.clearMotionWatchState(scheduleId);
+        continue;
+      }
+
+      if (!motionDetected) {
+        await this.saveMotionWatchState(scheduleId, schedule, state);
+        continue;
+      }
+
+      const minSignalIntervalMs =
+        (schedule.minSignalIntervalSeconds ?? 8) * 1000;
+      if (nowMs - state.lastHitAt < minSignalIntervalMs) {
+        if (this.isMotionWatchDebugEnabled()) {
+          console.log(
+            `[MQTT][MotionWatch] skip schedule=${scheduleId} reason=minSignalInterval elapsedMs=${nowMs - state.lastHitAt} requiredMs=${minSignalIntervalMs}`,
+          );
+        }
+        await this.saveMotionWatchState(scheduleId, schedule, state);
+        continue;
+      }
+
+      state.lastHitAt = nowMs;
+
+      const countWindowMs = (schedule.countWindowMinutes ?? 5) * 60_000;
+      state.hitTimestamps = state.hitTimestamps.filter(
+        (timestamp) => nowMs - timestamp <= countWindowMs,
+      );
+      state.hitTimestamps.push(nowMs);
+
+      const triggerCount = schedule.triggerCount ?? 3;
+      if (state.hitTimestamps.length < triggerCount) {
+        if (this.isMotionWatchDebugEnabled()) {
+          console.log(
+            `[MQTT][MotionWatch] counting schedule=${scheduleId} count=${state.hitTimestamps.length}/${triggerCount}`,
+          );
+        }
+        await this.saveMotionWatchState(scheduleId, schedule, state);
+        continue;
+      }
+
+      const cooldownMs = (schedule.cooldownMinutes ?? 10) * 60_000;
+      if (nowMs - state.lastAlertAt < cooldownMs) {
+        if (this.isMotionWatchDebugEnabled()) {
+          console.log(
+            `[MQTT][MotionWatch] skip schedule=${scheduleId} reason=cooldown elapsedMs=${nowMs - state.lastAlertAt} requiredMs=${cooldownMs}`,
+          );
+        }
+        await this.saveMotionWatchState(scheduleId, schedule, state);
+        continue;
+      }
+
+      const room = await Room.findById(device?.roomId);
+      const alert = `Cảnh báo chuyển động bất thường - ${room?.name ?? "Không rõ phòng"}`;
+      const text =
+        `Phát hiện ${state.hitTimestamps.length}/${triggerCount} lần chuyển động ` +
+        `trong ${schedule.countWindowMinutes ?? 5} phút (${schedule.startTime}-${schedule.endTime}).`;
+        console.log(`[MQTT] ${alert} - ${text}`);
+      await SensorAlert.create({
+        deviceId: device._id,
+        value: String(state.hitTimestamps.length),
+        threshold: triggerCount,
+        createdAt: Date.now(),
+      });
+
+      this.io?.emit("motion:alert", {
+        type: device.type,
+        deviceId: device._id,
+        roomId: device.roomId ? device.roomId._id : null,
+        alert,
+        text,
+        triggerCount,
+        detectedCount: state.hitTimestamps.length,
+        windowMinutes: schedule.countWindowMinutes ?? 5,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+      });
+
+      // Giữ tương thích FE đang lắng nghe sensor:alert.
+      this.io?.emit("sensor:alert", {
+        type: device.type,
+        deviceId: device._id,
+        alert,
+        text,
+      });
+
+      state.lastAlertAt = nowMs;
+      state.hitTimestamps = [];
+      await this.saveMotionWatchState(scheduleId, schedule, state);
+    }
+  }
   // ─── Publish system config đến Yolo:Bit ──────────────────────
   publishSystem(sysKey: SystemFeedKey, value: string): void {
     const feedKey = SYSTEM_FEEDS[sysKey];
@@ -234,7 +512,7 @@ class MqttService {
       threshold.when,
     );
 
-        const targetDevice = threshold.deviceId;
+    const targetDevice = threshold.deviceId;
 
     if (isTriggered && !wasTriggered) {
       if (threshold.action === "alert") {
@@ -302,6 +580,11 @@ class MqttService {
 
     if (Number.isNaN(numericValue)) {
       console.warn(`[MQTT] Giá trị sensor không hợp lệ: ${value}`);
+
+      if (device.type === "motionSensor") {
+        await this.processMotionWatchSchedules(device, value, numericValue);
+      }
+
       return;
     }
 
@@ -320,6 +603,10 @@ class MqttService {
         numericValue,
         lastValue,
       );
+    }
+
+    if (device.type === "motionSensor") {
+      await this.processMotionWatchSchedules(device, value, numericValue);
     }
   }
 

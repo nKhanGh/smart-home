@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F0FAF2", marginBottom: -24 },
-    scroll: {
+  scroll: {
     paddingHorizontal: 20,
     // paddingTop: 16,
     // paddingBottom: 20,
@@ -83,13 +83,13 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 5,
     position: "relative",
-    width: 340,
+    width: "100%",
     alignSelf: "center",
   },
   switchSlider: {
     position: "absolute",
     top: 5,
-    width: "50%",
+    width: "30%",
     bottom: 5,
     backgroundColor: "#22c55e",
     borderRadius: 16,
@@ -159,4 +159,4 @@ export const styles = StyleSheet.create({
     color: "#606060",
     textAlign: "center",
   },
-})
+});

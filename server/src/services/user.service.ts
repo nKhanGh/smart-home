@@ -1,6 +1,7 @@
 import { ServiceError } from "../errors/service.error";
 import User, { AddUserInput } from "../models/UserSchema";
 import bcrypt from "bcryptjs";
+import homeDisplayService from "./homeDisplay.service";
 
 export class UserService {
   async addUser(payload: AddUserInput) {
@@ -28,6 +29,12 @@ export class UserService {
         .toUpperCase()
         .slice(0, 2),
     });
+
+    try {
+      await homeDisplayService.ensureDefaultHomeDisplay(user._id.toString());
+    } catch (err) {
+      console.error("Không thể tạo HomeDisplay mặc định cho user mới:", err);
+    }
 
     return { userId: user._id };
   }
