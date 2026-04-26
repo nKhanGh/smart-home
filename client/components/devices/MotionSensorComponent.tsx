@@ -454,22 +454,6 @@ export default function MotionSensorComponent({ device }: Readonly<Props>) {
 
   return (
     <View style={s.root}>
-      {/* ── Header — dùng lại đúng format header của [deviceId].tsx ── */}
-      <View style={s.header}>
-        <TouchableOpacity
-          style={s.backBtn}
-          onPress={() => router.replace("/(tabs)/(rooms)")}
-          activeOpacity={0.7}
-        >
-          <Icon name="angle-left" size={20} color="#000" />
-        </TouchableOpacity>
-        <View style={s.headerCenter}>
-          <Text style={s.headerTitle}>{device.name}</Text>
-          <Text style={s.headerSubtitle}>{device.roomId?.name}</Text>
-        </View>
-        {/* Placeholder để căn giữa title */}
-        <View style={{ width: 36 }} />
-      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -486,25 +470,6 @@ export default function MotionSensorComponent({ device }: Readonly<Props>) {
           />
         }
       >
-        {/* ── Device card ── */}
-        <View style={s.deviceCard}>
-          <View style={s.deviceIconWrap}>
-            <Icon name="satellite-dish" size={26} color="#16A34A" />
-          </View>
-          <View style={s.deviceInfo}>
-            <Text style={s.deviceName}>{device.name}</Text>
-            <View style={s.roomRow}>
-              <View style={s.dot} />
-              <Text style={s.roomText}>{device.roomId?.name}</Text>
-            </View>
-            {/* <View style={[s.onlineBadge, { backgroundColor: device.isOnline ? "#DCFCE7" : "#F3F4F6" }]}>
-              <View style={[s.onlineDot, { backgroundColor: device.isOnline ? "#22C55E" : "#9CA3AF" }]} />
-              <Text style={[s.onlineText, { color: device.isOnline ? "#16A34A" : "#6B7280" }]}>
-                {device.isOnline ? "Đang hoạt động" : "Ngoại tuyến"}
-              </Text>
-            </View> */}
-          </View>
-        </View>
 
         {/* ── Stats ── */}
         <View style={s.statsGrid}>

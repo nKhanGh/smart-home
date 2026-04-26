@@ -30,7 +30,8 @@ export const getUnit = (type: string) => {
   return "";
 }
 
-export const isSensor = (type: string) => {
+export const isSensor = (type?: string) => {
+  if (!type) return false;
   return type.endsWith("Sensor");
 }
 
