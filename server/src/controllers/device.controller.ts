@@ -29,14 +29,24 @@ export class DeviceController {
     }
   };
 
-  getDeviceData = async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      const data = await this.service.getDeviceData(req.params.id, req.query.startDate as string | undefined, req.query.endDate as string | undefined);
-      res.status(200).json(data);
-    } catch (err) {
-      handleControllerError(err, res, "Error fetching device data:");
-    }
-  };
+  getDeviceData = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const data = await this.service.getDeviceData(
+      req.params.id,
+      req.query.page,
+      req.query.size,
+      req.query.startDate,
+      req.query.endDate,
+    );
+
+    res.status(200).json(data);
+  } catch (err) {
+    handleControllerError(err, res, "Error fetching device data:");
+  }
+};
 
   // addDevice = async (req: AuthRequest, res: Response): Promise<void> => {
   //   try {
@@ -73,7 +83,9 @@ export class DeviceController {
         req.body.newPassword,
         req.body.oldPassword,
       );
-      res.status(200).json({ code: "200", msg: "Cập nhật mật khẩu thành công." });
+      res
+        .status(200)
+        .json({ code: "200", msg: "Cập nhật mật khẩu thành công." });
     } catch (err) {
       handleControllerError(err, res, "Error updating device password:");
     }
@@ -133,9 +145,12 @@ export class DeviceController {
     try {
       const logs = await this.service.getLogs(
         req.params.id,
-        req.query.startDate as string | undefined,
-        req.query.endDate as string | undefined,
+        req.query.page,
+        req.query.size,
+        req.query.startDate,
+        req.query.endDate,
       );
+
       res.status(200).json(logs);
     } catch (err) {
       handleControllerError(err, res, "Error fetching logs:");
@@ -167,16 +182,19 @@ export class DeviceController {
     } catch (err) {
       handleControllerError(err, res, "Error fetching sensor devices:");
     }
-  }
+  };
 
-  getThresholdDevices = async (req: AuthRequest, res: Response): Promise<void> => {
+  getThresholdDevices = async (
+    req: AuthRequest,
+    res: Response,
+  ): Promise<void> => {
     try {
       const devices = await this.service.getThresholdDevices();
       res.status(200).json(devices);
     } catch (err) {
       handleControllerError(err, res, "Error fetching threshold devices:");
     }
-  }
+  };
 }
 
 const deviceController = new DeviceController(deviceService);

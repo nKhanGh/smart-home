@@ -145,6 +145,48 @@ export class DeviceService {
     return action;
   }
 
+  private parsePositiveInt(
+    value: unknown,
+    fallback: number,
+    min = 1,
+    max = Number.MAX_SAFE_INTEGER,
+  ): number {
+    const parsed = typeof value === "string" ? Number(value) : Number.NaN;
+    if (!Number.isFinite(parsed)) {
+      return fallback;
+    }
+
+    const rounded = Math.trunc(parsed);
+    return Math.min(Math.max(rounded, min), max);
+  }
+
+  private parseDateParam(value: unknown, fieldName: string): Date | null {
+    if (typeof value !== "string" || !value.trim()) {
+      return null;
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new ServiceError(400, `${fieldName} không hợp lệ.`);
+    }
+
+    return parsed;
+  }
+  private buildPaginatedResult<T>(
+    totalElement: number,
+    page: number,
+    size: number,
+    items: T[],
+  ) {
+    return {
+      currentPage: page,
+      size,
+      totalPage: totalElement === 0 ? 0 : Math.ceil(totalElement / size),
+      totalElement,
+      items,
+    };
+  }
+
   async getDevices() {
     return (await Device.find().populate("roomId", "name key")).map(
       (device) => ({
@@ -181,25 +223,91 @@ export class DeviceService {
     }
   }
 
-  async getDeviceData(id: string, startDate?: string, endDate?: string) {
-    const device = await Device.findOne({ _id: id });
-    console.log("Fetching data for device:", id, "found device:", !!device);
+  async getDeviceData(
+    id: string,
+    page?: unknown,
+    size?: unknown,
+    startDate?: unknown,
+    endDate?: unknown,
+  ) {
+    const device = await Device.findById(id);
+
     if (!device) {
       throw new ServiceError(404, "Device not found.");
     }
 
-    const query: any = { deviceId: device._id };
-    if (startDate || endDate) {
+    const safePage = this.parsePositiveInt(page, 1, 1);
+    const safeSize = this.parsePositiveInt(size, 20, 1, 500);
+    const skip = (safePage - 1) * safeSize;
+
+    const start = this.parseDateParam(startDate, "startDate");
+    const end = this.parseDateParam(endDate, "endDate");
+
+    if (end) {
+      end.setHours(23, 59, 59, 999);
+    }
+
+    if (start && end && start > end) {
+      throw new ServiceError(400, "startDate phải nhỏ hơn hoặc bằng endDate.");
+    }
+
+    const query: any = {
+      deviceId: device._id,
+    };
+
+    if (start || end) {
       query.recordedAt = {};
-      if (startDate) {
-        query.recordedAt.$gte = new Date(startDate);
+
+      if (start) {
+        query.recordedAt.$gte = start;
       }
-      if (endDate) {
-        query.recordedAt.$lte = new Date(endDate);
+
+      if (end) {
+        query.recordedAt.$lte = end;
       }
     }
 
-    return Data.find(query).sort({ recordedAt: -1 }).limit(100);
+    const [totalElement, items, statsResult] = await Promise.all([
+      Data.countDocuments(query),
+
+      Data.find(query).sort({ recordedAt: -1 }).skip(skip).limit(safeSize),
+
+      Data.aggregate([
+        {
+          $match: query,
+        },
+        {
+          $group: {
+            _id: null,
+            maxValue: {
+              $max: { $toDouble: "$value" },
+            },
+            minValue: {
+              $min: { $toDouble: "$value" },
+            },
+            averageValue: {
+              $avg: { $toDouble: "$value" },
+            },
+          },
+        },
+      ]),
+    ]);
+
+    const stats = statsResult[0] || {
+      maxValue: null,
+      minValue: null,
+      averageValue: null,
+    };
+
+    return {
+      ...this.buildPaginatedResult(totalElement, safePage, safeSize, items),
+      max: stats.maxValue,
+      min: stats.minValue,
+      average:
+        stats.averageValue === null
+          ? null
+          : Number(stats.averageValue.toFixed(2)),
+    };
   }
 
   // async addDevice(payload: AddDeviceInput, userId?: string) {
@@ -486,17 +594,57 @@ export class DeviceService {
     };
   }
 
-  async getLogs(id: string, startDate?: string, endDate?: string) {
-    const device = await Device.findOne({ _id: id });
+  async getLogs(
+    id: string,
+    page?: unknown,
+    size?: unknown,
+    startDate?: unknown,
+    endDate?: unknown,
+  ) {
+    const device = await Device.findById(id);
+
     if (!device) {
       throw new ServiceError(404, "Device not found.");
     }
 
-    return ActionLog.find({ deviceId: device._id })
-      .where("createdAt")
-      .gte(new Date(startDate || 0).getTime())
-      .lte(new Date(endDate || Date.now()).getTime())
-      .sort({ createdAt: -1 });
+    const safePage = this.parsePositiveInt(page, 1, 1);
+    const safeSize = this.parsePositiveInt(size, 20, 1, 500);
+    const skip = (safePage - 1) * safeSize;
+
+    const start = this.parseDateParam(startDate, "startDate");
+    const end = this.parseDateParam(endDate, "endDate");
+
+    if (end) {
+      end.setHours(23, 59, 59, 999);
+    }
+
+    if (start && end && start > end) {
+      throw new ServiceError(400, "startDate phải nhỏ hơn hoặc bằng endDate.");
+    }
+
+    const query: any = {
+      deviceId: device._id,
+    };
+
+    if (start || end) {
+      query.createdAt = {};
+
+      if (start) {
+        query.createdAt.$gte = start;
+      }
+
+      if (end) {
+        query.createdAt.$lte = end;
+      }
+    }
+
+    const [totalElement, items] = await Promise.all([
+      ActionLog.countDocuments(query),
+
+      ActionLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(safeSize),
+    ]);
+
+    return this.buildPaginatedResult(totalElement, safePage, safeSize, items);
   }
 
   async getCurrentData(id: string) {

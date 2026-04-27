@@ -172,6 +172,18 @@ router.get("/:id", verifyToken, deviceController.getDeviceById);
  *           type: string
  *           format: date
  *           example: "2024-12-31"
+ *       - name: page
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 0
+ *       - name: size
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 20
  *     responses:
  *       200:
  *         description: Dữ liệu sensor
@@ -209,6 +221,18 @@ router.get("/:id/data", verifyToken, deviceController.getDeviceData);
  *           type: string
  *           format: date
  *           example: "2024-12-31"
+ *       - name: page
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 0
+ *       - name: size
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 20
  *     responses:
  *       200:
  *         description: Danh sách log
