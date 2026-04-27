@@ -16,6 +16,7 @@ const getType = (key: string) => {
     return "lightDevice";
   else if (key.endsWith("-door")) return "doorDevice";
   else if (key.endsWith("-fan")) return "fanDevice";
+  else if (key.endsWith("-motion")) return "motionSensor";
   return "device";
 };
 

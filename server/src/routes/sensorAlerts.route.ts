@@ -9,7 +9,7 @@ const router = Router();
  * /api/sensor-alerts:
  *   get:
  *     summary: Xem danh sách cảnh báo cảm biến
- *     description: Có thể lọc theo deviceId và giới hạn số bản ghi bằng limit
+ *     description: Có thể lọc theo deviceId và phân trang bằng page, size
  *     tags: [SensorAlerts]
  *     security:
  *       - bearerAuth: []
@@ -21,14 +21,20 @@ const router = Router();
  *           type: string
  *           example: 65f2c1d9e8c1a32b1a6f1234
  *       - in: query
- *         name: limit
+ *         name: page
  *         required: false
  *         schema:
  *           type: integer
- *           example: 100
+ *           example: 1
+ *       - in: query
+ *         name: size
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 20
  *     responses:
  *       200:
- *         description: Danh sách cảnh báo cảm biến
+ *         description: Kết quả phân trang gồm totalPage, totalElement và listSensorAlert
  *       400:
  *         description: deviceId không hợp lệ
  *       500:
@@ -41,6 +47,7 @@ router.get("/", verifyToken, sensorAlertController.getSensorAlerts);
  * /api/sensor-alerts/device/{deviceId}:
  *   get:
  *     summary: Xem cảnh báo cảm biến theo id thiết bị
+ *     description: Hỗ trợ phân trang bằng page, size và lọc theo khoảng thời gian createdAt
  *     tags: [SensorAlerts]
  *     security:
  *       - bearerAuth: []
@@ -52,14 +59,34 @@ router.get("/", verifyToken, sensorAlertController.getSensorAlerts);
  *           type: string
  *           example: 65f2c1d9e8c1a32b1a6f1234
  *       - in: query
- *         name: limit
+ *         name: page
  *         required: false
  *         schema:
  *           type: integer
- *           example: 100
+ *           example: 1
+ *       - in: query
+ *         name: size
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 20
+ *       - in: query
+ *         name: startDate
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *           example: 2026-04-01T00:00:00.000Z
+ *       - in: query
+ *         name: endDate
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *           example: 2026-04-30T23:59:59.999Z
  *     responses:
  *       200:
- *         description: Danh sách cảnh báo theo thiết bị
+ *         description: Kết quả phân trang gồm totalPage, totalElement và listSensorAlert
  *       400:
  *         description: deviceId không hợp lệ
  *       404:

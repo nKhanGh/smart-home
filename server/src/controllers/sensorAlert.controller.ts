@@ -12,7 +12,8 @@ export class SensorAlertController {
     try {
       const alerts = await this.service.getSensorAlerts(
         req.query.deviceId,
-        req.query.limit,
+        req.query.page,
+        req.query.size,
       );
       res.status(200).json(alerts);
     } catch (err) {
@@ -39,7 +40,10 @@ export class SensorAlertController {
     try {
       const alerts = await this.service.getSensorAlertsByDeviceId(
         req.params.deviceId,
-        req.query.limit,
+        req.query.page,
+        req.query.size,
+        req.query.startDate,
+        req.query.endDate,
       );
       res.status(200).json(alerts);
     } catch (err) {
