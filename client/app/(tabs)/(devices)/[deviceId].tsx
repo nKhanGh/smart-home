@@ -172,6 +172,7 @@ const DeviceDetailScreen = () => {
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.replace("/(tabs)/(rooms)")}>
