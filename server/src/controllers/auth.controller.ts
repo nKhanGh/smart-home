@@ -7,6 +7,14 @@ import handleControllerError from "../utils/handleControllerError";
 export class AuthController {
   constructor(private readonly service: AuthService) {}
 
+  private getBearerToken(req: Request): string | null {
+    const header = req.headers["authorization"];
+    if (!header) {
+      return null;
+    }
+    return header.startsWith("Bearer ") ? header.slice(7) : header;
+  }
+
   register = async (req: Request, res: Response): Promise<void> => {
     try {
       const result = await this.service.register(req.body as RegisterInput);
@@ -46,7 +54,12 @@ export class AuthController {
       console.log("Login successful for user:", result);
       res
         .status(200)
-        .json({ code: "200", token: result.token, refreshToken: result.refreshToken, user: result.user });
+        .json({
+          code: "200",
+          token: result.token,
+          refreshToken: result.refreshToken,
+          user: result.user,
+        });
     } catch (err) {
       handleControllerError(err, res, "Error logging in:");
     }
@@ -58,6 +71,21 @@ export class AuthController {
       res.status(200).json(user);
     } catch (err) {
       handleControllerError(err, res, "Error fetching current user:");
+    }
+  };
+
+  logout = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const token = this.getBearerToken(req);
+      if (!token) {
+        res.status(401).json({ code: "401", msg: "Không có token." });
+        return;
+      }
+
+      await this.service.logout(token);
+      res.status(200).json({ code: "200", msg: "Đăng xuất thành công." });
+    } catch (err) {
+      handleControllerError(err, res, "Error logging out:");
     }
   };
 }

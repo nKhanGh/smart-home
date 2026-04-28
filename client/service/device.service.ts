@@ -19,4 +19,10 @@ export const DeviceService = {
   getThresholdDevices: () => axiosInstance.get<DeviceResponse[]>("/devices/threshold"),
   updateThreshold: (deviceId: string, threshold: number) => axiosInstance.put(`/devices/${deviceId}`, { threshold }),
   sendVoidCommand: (text: string) => axiosInstance.post<DeviceVoiceCommandResponse>(`/devices/voice-command`, { text }),
+  changePassword(deviceId: string, newPassword: string, oldPassword: string) {
+    return axiosInstance.patch(`/devices/${deviceId}/password`, { newPassword, oldPassword });
+  },
+  updateDevice(id: string, data: { name?: string; description?: string }) {
+    return axiosInstance.put(`/devices/${id}`, data);
+  },
 }

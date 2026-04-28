@@ -1,5 +1,6 @@
-import axios from "axios";
+import { authEvents } from "@/contexts/auth-events";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 declare module "axios" {
   interface AxiosRequestConfig {
@@ -38,7 +39,9 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem("smart-home-refresh-token");
+        const refreshToken = await AsyncStorage.getItem(
+          "smart-home-refresh-token",
+        );
 
         const res = await axiosNoAuth.post("/auth/refresh", {
           token: refreshToken,
@@ -51,7 +54,7 @@ axiosInstance.interceptors.response.use(
         await AsyncStorage.setItem("smart-home-refresh-token", newRefreshToken);
 
         axiosInstance.defaults.headers.common["Authorization"] =
-         `Bearer ${newAccessToken}`;
+          `Bearer ${newAccessToken}`;
 
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
@@ -60,14 +63,14 @@ axiosInstance.interceptors.response.use(
         await AsyncStorage.removeItem("smart-home-access-token");
         await AsyncStorage.removeItem("smart-home-refresh-token");
 
-        globalThis.dispatchEvent(new Event("logout"));
+        authEvents.emit("logout");
 
         throw refreshError;
       }
     }
 
     throw error;
-  }
+  },
 );
 
 export default axiosInstance;

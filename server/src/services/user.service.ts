@@ -78,9 +78,6 @@ export class UserService {
       }
       user.username = payload.username;
     }
-    if (payload.password) {
-      user.passwordHash = await bcrypt.hash(payload.password, 10);
-    }
     if (payload.fullName) {
       user.fullName = payload.fullName;
       user.avatarInitials = payload.fullName
@@ -95,6 +92,82 @@ export class UserService {
     }
     await user.save();
     return { code: "200", msg: "Cập nhật người dùng thành công." };
+  }
+
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ServiceError(404, "User not found.");
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new ServiceError(400, "Mật khẩu cũ không đúng.");
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    return { code: "200", msg: "Đổi mật khẩu thành công." };
+  }
+
+  async updateProfile(
+    userId: string,
+    payload: { fullName?: string; username?: string },
+  ) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ServiceError(404, "User not found.");
+    }
+
+    if (payload.username && payload.username !== user.username) {
+      if (await User.findOne({ username: payload.username })) {
+        throw new ServiceError(400, "Username đã tồn tại.");
+      }
+      user.username = payload.username;
+    }
+
+    if (payload.fullName) {
+      user.fullName = payload.fullName;
+      user.avatarInitials = payload.fullName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+
+    await user.save();
+    return { code: "200", msg: "Cập nhật hồ sơ thành công." };
+  }
+  
+  async inactivateUser(userId: string, targetUserId: string) {
+    const user = await User.findById(targetUserId);
+    if (!user) {
+      throw new ServiceError(404, "User not found.");
+    }
+
+    if (user._id.toString() === userId) {
+      throw new ServiceError(400, "Bạn không thể vô hiệu hóa chính mình.");
+    }
+
+    user.isActive = false;
+    await user.save();
+    return { code: "200", msg: "Vô hiệu hóa người dùng thành công." };
+  }
+
+  async reactivateUser(userId: string, targetUserId: string) {
+    const user = await User.findById(targetUserId);
+    if (!user) {
+      throw new ServiceError(404, "User not found.");
+    }
+
+    user.isActive = true;
+    await user.save();
+    return { code: "200", msg: "Kích hoạt lại người dùng thành công." };
   }
 }
 

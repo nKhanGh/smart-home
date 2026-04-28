@@ -220,12 +220,14 @@ const RoomCard = ({
   room,
   onClickDevice,
   onEditRoom,
+  user,
 }: {
   room: RoomResponse;
   onClickDevice: (
     device: DeviceResponse,
     currentAction: string | number,
   ) => void;
+  user: UserResponse | null,
   onEditRoom: (roomId: string) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -321,7 +323,7 @@ const RoomCard = ({
                 )}
               </View>
             ))}
-            {expanded && (
+            {expanded && user?.role === "admin" && (
               <TouchableOpacity
                 style={styles.editBtn}
                 onPress={() => onEditRoom(room.id)}
@@ -495,6 +497,7 @@ const RoomsScreen = () => {
             room={room}
             onClickDevice={handleDevicePress}
             onEditRoom={handleEditRoom}
+            user={user}
           />
         ))}
       </ScrollView>

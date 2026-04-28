@@ -47,17 +47,17 @@ export class ThresholdService {
             return {
               on: ["lightSensor"],
               off: ["lightSensor"],
-              alert: ["lightSensor", "temperatureSensor"],
+              alert: ["temperatureSensor"],
             };
           case "fanDevice":
             return {
               on: ["temperatureSensor", "humiditySensor"],
               off: ["temperatureSensor", "humiditySensor"],
-              alert: ["temperatureSensor", "humiditySensor"],
+              // alert: ["temperatureSensor", "humiditySensor"],
             };
           case "doorDevice":
             return {
-              alert: ["lightSensor"],
+              // alert: ["lightSensor"],
             };
           default:
             return {};

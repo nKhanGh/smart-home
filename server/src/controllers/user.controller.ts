@@ -2,7 +2,7 @@ import { AddUserInput } from "../models/UserSchema";
 import userService, { UserService } from "../services/user.service";
 import { AuthRequest } from "../types";
 import handleControllerError from "../utils/handleControllerError";
-import { Request, Response } from "express";
+import { Response } from "express";
 
 export class UserController {
   constructor(private readonly service: UserService) {}
@@ -53,9 +53,65 @@ export class UserController {
   updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       await this.service.updateUser(req.params.id, req.body);
-      res.status(200).json({ code: "200", msg: "Cập nhật người dùng thành công." });
+      res
+        .status(200)
+        .json({ code: "200", msg: "Cập nhật người dùng thành công." });
     } catch (err) {
       handleControllerError(err, res, "Error updating user:");
+    }
+  };
+
+  changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { oldPassword, newPassword } = req.body as {
+        oldPassword: string;
+        newPassword: string;
+      };
+      const result = await this.service.changePassword(
+        req.user?.id || "",
+        oldPassword,
+        newPassword,
+      );
+      res.status(200).json(result);
+    } catch (err) {
+      handleControllerError(err, res, "Error changing password:");
+    }
+  };
+
+  updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const result = await this.service.updateProfile(
+        req.user?.id || "",
+        req.body,
+      );
+      res.status(200).json(result);
+    } catch (err) {
+      handleControllerError(err, res, "Error updating profile:");
+    }
+  };
+
+  
+  inactivateUser = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const result = await this.service.inactivateUser(
+        req.user?.id || "",
+        req.params.id,
+      );
+      res.status(200).json(result);
+    } catch (err) {
+      handleControllerError(err, res, "Error inactivating user:");
+    }
+  };
+
+  reactivateUser = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const result = await this.service.reactivateUser(
+        req.user?.id || "",
+        req.params.id,
+      );
+      res.status(200).json(result);
+    } catch (err) {
+      handleControllerError(err, res, "Error reactivating user:");
     }
   };
 }

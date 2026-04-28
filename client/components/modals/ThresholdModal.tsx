@@ -15,6 +15,7 @@ import {
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { getUnit } from "@/utils/devices.util";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -55,13 +56,13 @@ const getSensorByAction = (
       };
     case "doorDevice":
       return {
-        alert: ["lightSensor"],
+        // alert: ["lightSensor"],
       };
     default:
       return {
-        on: ["lightSensor", "temperatureSensor", "humiditySensor"],
-        off: ["lightSensor", "temperatureSensor", "humiditySensor"],
-        alert: ["lightSensor", "temperatureSensor", "humiditySensor"],
+        // on: ["lightSensor", "temperatureSensor", "humiditySensor"],
+        // off: ["lightSensor", "temperatureSensor", "humiditySensor"],
+        // alert: ["lightSensor", "temperatureSensor", "humiditySensor"],
       };
   }
 };
@@ -638,7 +639,7 @@ const ThresholdModal = ({
                         Nếu{" "}
                         <Text style={s.previewBold}>{form.sensor.name}</Text>{" "}
                         {WHEN_CONFIG[form.when].label.toLowerCase()}{" "}
-                        <Text style={s.previewBold}>{form.value}</Text>
+                        <Text style={s.previewBold}>{form.value}{getUnit(form.sensor?.type)}</Text>
                         {" → "}
                         <Text
                           style={[

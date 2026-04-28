@@ -8,7 +8,9 @@ import LightComponent from "@/components/devices/LightComponent";
 import MotionSensorComponent from "@/components/devices/MotionSensorComponent";
 import SensorAlertComponent from "@/components/devices/SensorAlertComponent";
 import SensorComponent from "@/components/devices/SensorComponent";
+import DeviceEditModal from "@/components/modals/DeviceEditModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import { styles } from "@/styles/(tabs)/(devices)/[deviceId].styles";
@@ -41,9 +43,9 @@ const isSensorLikeType = (type?: string) =>
 const getHistoryComponent = (device: DeviceResponse | null) => {
   if (!device) return null;
   if (device.type.endsWith("Sensor"))
-    return <DeviceDataLog deviceId={device.id} />;
+    return <DeviceDataLog deviceId={device?.id} />;
   else if (device.type.endsWith("Device"))
-    return <DeviceActionLog deviceId={device.id} />;
+    return <DeviceActionLog deviceId={device?.id} />;
 };
 
 const getSettingsComponent = (device: DeviceResponse | null) => {
@@ -83,14 +85,17 @@ type TabKey = "settings" | "history" | "alerts";
 
 const DeviceDetailScreen = () => {
   const { deviceId } = useLocalSearchParams();
+  const { user } = useAuth();
 
   const [device, setDevice] = useState<DeviceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [typeSetting, setTypeSetting] = useState<"auto" | "schedule">("auto");
   const [active, setActive] = useState<TabKey>("settings");
+  const [editModalVisible, setEditModalVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const { subscribe } = useSocket();
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     const handleDeviceUpdate = (data: any) => {
@@ -107,15 +112,15 @@ const DeviceDetailScreen = () => {
   }, [subscribe, deviceId]);
 
   const showAlertTab = !!device && isSensorLikeType(device.type);
+  const isDoorDevice = device?.type === "doorDevice";
 
-  const tabs = showAlertTab
+  const visibleTabs = showAlertTab
     ? (["settings", "history", "alerts"] as const)
     : (["settings", "history"] as const);
 
   const getTabIndex = (tab: TabKey) => {
-    if (tab === "settings") return 0;
-    if (tab === "history") return 1;
-    return showAlertTab ? 2 : 0;
+    const index = visibleTabs.indexOf(tab as any);
+    return Math.max(index, 0);
   };
 
   const switchTab = (tab: TabKey) => {
@@ -137,8 +142,10 @@ const DeviceDetailScreen = () => {
   }, [showAlertTab]);
 
   const sliderLeft = slideAnim.interpolate({
-    inputRange: tabs.map((_, idx) => idx),
-    outputRange: tabs.map((_, idx) => `${(100 / tabs.length) * idx}%`),
+    inputRange: visibleTabs.map((_, idx) => idx),
+    outputRange: visibleTabs.map(
+      (_, idx) => `${(100 / visibleTabs.length) * idx}%`,
+    ),
   });
 
   useEffect(() => {
@@ -148,6 +155,9 @@ const DeviceDetailScreen = () => {
       try {
         const response = await DeviceService.getDeviceById(deviceId as string);
         setDevice(response.data);
+        setTypeSetting(
+          response.data?.type === "doorDevice" ? "schedule" : "auto",
+        );
       } catch (error) {
         console.error("Error fetching device details:", error);
       } finally {
@@ -178,10 +188,15 @@ const DeviceDetailScreen = () => {
           <TouchableOpacity onPress={() => router.replace("/(tabs)/(rooms)")}>
             <Icon name="angle-left" size={20} color="#000" />
           </TouchableOpacity>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}> {device?.name}</Text>
             <Text style={styles.headerSubTitle}>{device?.roomId.name}</Text>
           </View>
+          {isAdmin && (
+            <TouchableOpacity onPress={() => setEditModalVisible(true)}>
+              <Icon name="edit" size={20} color="#22C55E" />
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.subHeader}>
@@ -204,7 +219,10 @@ const DeviceDetailScreen = () => {
                   <View style={styles.dot} />
                   <Text style={styles.roomInfoText}>{device?.roomId.name}</Text>
                 </View>
-                {device?.type !== "motionSensor" &&
+                <Text style={styles.deviceDescription}>
+                  {device?.description || "Không có mô tả nào cho thiết bị này."}
+                </Text>
+                {/* {device?.type !== "motionSensor" &&
                   (isSensor(device?.type || "") ? (
                     <Text style={styles.deviceStatus}>
                       {" "}
@@ -219,7 +237,7 @@ const DeviceDetailScreen = () => {
                         device?.currentAction || "",
                       ).toUpperCase()}
                     </Text>
-                  ))}
+                  ))} */}
               </View>
             </>
           )}
@@ -229,7 +247,7 @@ const DeviceDetailScreen = () => {
           <Animated.View
             style={[
               styles.switchSlider,
-              { left: sliderLeft, width: `${100 / tabs.length}%` },
+              { left: sliderLeft, width: `${100 / visibleTabs.length}%` },
             ]}
           />
           <Pressable
@@ -311,7 +329,7 @@ const DeviceDetailScreen = () => {
         {active === "settings" && device?.type !== "motionSensor" && (
           <View style={styles.settingsSection}>
             <Text style={styles.settingsTitle}>Cài đặt</Text>
-            {!isSensor(device?.type || "") && (
+            {!isSensor(device?.type || "") && !isDoorDevice && (
               <View style={styles.settingsOptions}>
                 <TouchableOpacity
                   style={[
@@ -341,15 +359,31 @@ const DeviceDetailScreen = () => {
                 </TouchableOpacity>
               </View>
             )}
-            {typeSetting === "auto" && (
+            {typeSetting === "auto" && !isDoorDevice && (
               <DeviceAutoComponent device={device as DeviceResponse} />
             )}
-            {typeSetting === "schedule" && (
+            {(typeSetting === "schedule" || isDoorDevice) && (
               <DeviceScheduleComponent device={device as DeviceResponse} />
             )}
           </View>
         )}
       </ScrollView>
+
+      <DeviceEditModal
+        visible={editModalVisible}
+        device={device || undefined}
+        onClose={() => setEditModalVisible(false)}
+        onSuccess={async () => {
+          try {
+            const response = await DeviceService.getDeviceById(
+              deviceId as string,
+            );
+            setDevice(response.data);
+          } catch (error) {
+            console.error("Error refreshing device details:", error);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 };

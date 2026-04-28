@@ -3,7 +3,6 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { ThresholdService } from "@/service/threshold.service";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   Modal,
   Pressable,
   StyleSheet,
@@ -14,6 +13,7 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome5";
+import ConfirmationModal from "../modals/ConfirmationModal";
 
 const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
   const [thresholds, setThresholds] = useState<ThresholdResponse[]>([]);
@@ -33,10 +33,16 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
     );
   }, [thresholds]);
 
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deletingThreshold, setDeletingThreshold] = useState(false);
+  const [thresholdToDelete, setThresholdToDelete] = useState<string | null>(
+    null,
+  );
+
   const fetchThresholds = async () => {
     try {
       setLoading(true);
-      const response = await ThresholdService.getThresholdDevices(device.id);
+      const response = await ThresholdService.getThresholdDevices(device?.id);
       const mapped = (response.data || []).map((item: any) => ({
         _id: item._id,
         deviceId: item.deviceId,
@@ -50,6 +56,7 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
       })) as ThresholdResponse[];
       setThresholds(mapped);
     } catch (e) {
+      console.error(e);
       setThresholds([]);
     } finally {
       setLoading(false);
@@ -88,31 +95,31 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
     }
   };
 
+  const handleDeleteThreshold = async () => {
+    if (!thresholdToDelete) return;
+    setDeletingThreshold(true);
+    try {
+      await ThresholdService.deleteThreshold(thresholdToDelete);
+      await fetchThresholds();
+      setDeleteConfirmVisible(false);
+    } catch (e) {
+      console.log(e);
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Không thể xóa ngưỡng. Vui lòng thử lại.",
+      });
+    } finally {
+      setDeletingThreshold(false);
+      setThresholdToDelete(null);
+    }
+  };
+
   const onDeleteThreshold = (thresholdId: string) => {
-    Alert.alert("Xóa ngưỡng", "Bạn có chắc chắn muốn xóa ngưỡng này không?", [
-      { text: "Hủy", style: "cancel" },
-      {
-        text: "Xóa",
-        style: "destructive",
-        onPress: async () => {
-          setProcessingId(thresholdId);
-          try {
-            await ThresholdService.deleteThreshold(thresholdId);
-            setThresholds((prev) =>
-              prev.filter((item) => item._id !== thresholdId),
-            );
-          } catch {
-            Toast.show({
-              type: "error",
-              text1: "Lỗi",
-              text2: "Không thể xóa ngưỡng.",
-            });
-          } finally {
-            setProcessingId(null);
-          }
-        },
-      },
-    ]);
+    setMenuThreshold(null);
+    setDeleteConfirmVisible(true);
+    setDeletingThreshold(false);
+    setThresholdToDelete(thresholdId);
   };
 
   const onPressEdit = (threshold: ThresholdResponse) => {
@@ -122,8 +129,8 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
   };
 
   const onPressCreate = () => {
-    // setMenuThreshold(null);
-    // setEditingThreshold(null);
+    setMenuThreshold(null);
+    setEditingThreshold(null);
     setModalVisible(true);
   };
 
@@ -270,7 +277,9 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
                   style={[styles.actionBadge, { backgroundColor: action.bg }]}
                 >
                   <Icon name={action.icon} size={11} color={action.color} />
-                  <Text style={[styles.actionBadgeText, { color: action.color }]}>
+                  <Text
+                    style={[styles.actionBadgeText, { color: action.color }]}
+                  >
                     {action.label}
                   </Text>
                 </View>
@@ -375,7 +384,7 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
           </Pressable>
         </Pressable>
       </Modal>
-      {modalVisible &&
+      {modalVisible && (
         <ThresholdModal
           visible={modalVisible}
           onClose={onCloseThresholdModal}
@@ -383,7 +392,20 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
           editingThreshold={editingThreshold}
           onSuccess={fetchThresholds}
         />
-      }
+      )}
+      <ConfirmationModal
+        visible={deleteConfirmVisible}
+        title="Xác nhận xóa ngưỡng"
+        message="Bạn có chắc chắn muốn xóa ngưỡng này không? Hành động này không thể hoàn tác."
+        confirmText="Xóa ngưỡng"
+        cancelText="Hủy bỏ"
+        iconName="alert"
+        isDangerous
+        loading={deletingThreshold}
+        onConfirm={handleDeleteThreshold}
+        onCancel={() => setDeleteConfirmVisible(false)}
+        notificationMessage="Ngưỡng đã được xóa"
+      />
     </View>
   );
 };

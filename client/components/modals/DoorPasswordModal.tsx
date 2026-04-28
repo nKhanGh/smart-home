@@ -10,6 +10,8 @@ import {
   View,
 } from "react-native";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { DeviceService } from "@/service/device.service";
+import Toast from "react-native-toast-message";
 
 const DoorPasswordModal = ({
   doorModalVisible,
@@ -100,12 +102,24 @@ const DoorPasswordModal = ({
     }
     setPinLoading(true);
     try {
-      await doAction(pendingDoorDevice!.id, pendingAction, pin);
-      setDoorModalVisible(false);
+      const response = await DeviceService.sendCommand(pendingDoorDevice!.id, String(pendingAction), pin);
+      if (response.data.code === 403) {
+        Toast.show({
+          type: "error",
+          text1: "Mật khẩu không đúng. Vui lòng thử lại.",
+        });
+        setPinError("Mật khẩu không đúng. Thử lại.");
+        inputRefs.current[0]?.focus();
+      } else {
+        setDoorModalVisible(false);
+        Toast.show({
+          type: "success",
+          text1: `Đã ${pendingAction === "1" ? "đóng" : "mở"} ${pendingDoorDevice?.name ?? "thiết bị"}.`,
+        });
+      }
     } catch {
       setPinError("Mật khẩu không đúng. Thử lại.");
       triggerShake();
-      setPinDigits(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
       setPinLoading(false);

@@ -1,4 +1,6 @@
+import DoorChangePasswordModal from "@/components/modals/DoorChangePasswordModal";
 import DoorPasswordModal from "@/components/modals/DoorPasswordModal";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import React, { useEffect, useRef, useState } from "react";
@@ -9,6 +11,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -75,7 +78,9 @@ const DoorComponent = ({ device }: { device: DeviceResponse }) => {
     String(device.currentAction ?? "0"),
   );
   const [modalVisible, setModalVisible] = useState(false);
+  const [changePassVisible, setChangePassVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<string>("0");
+  const { user } = useAuth();
 
   const openAnim = useRef(
     new Animated.Value(currentAction === "1" ? 1 : 0),
@@ -177,6 +182,15 @@ const DoorComponent = ({ device }: { device: DeviceResponse }) => {
             }
             ios_backgroundColor="#D1D5DB"
           />
+          {user?.role === "admin" && (
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => setChangePassVisible(true)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.actionBtnText}>Đổi mật khẩu khóa</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -186,6 +200,11 @@ const DoorComponent = ({ device }: { device: DeviceResponse }) => {
         pendingDoorDevice={device}
         pendingAction={pendingAction}
         doAction={doAction}
+      />
+      <DoorChangePasswordModal
+        visible={changePassVisible}
+        setVisible={setChangePassVisible}
+        device={device}
       />
     </>
   );
@@ -351,17 +370,22 @@ const styles = StyleSheet.create({
   },
 
   actionBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 11,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.25)",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 0,
+    backgroundColor: "#16A34A",
+    shadowColor: "#16A34A",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 6,
+    marginTop: 6,
   },
   actionBtnText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#E2E8F0",
+    fontWeight: "700",
+    color: "#FFFFFF",
     letterSpacing: 0.2,
   },
 });

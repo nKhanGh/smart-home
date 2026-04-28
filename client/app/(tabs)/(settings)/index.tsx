@@ -1,65 +1,31 @@
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
+import UserChangePasswordModal from "@/components/modals/UserChangePasswordModal";
+import UserProfileModal from "@/components/modals/UserProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { DeviceService } from "@/service/device.service";
 import { styles } from "@/styles/(tabs)/(settings)/index.styles";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import Slider from "@react-native-community/slider";
-import React, { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/FontAwesome6";
-import { useRouter } from "expo-router";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const [thresholds, setThresholds] = useState<any[]>([]);
-  const [updating, setUpdating] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [sliderValues, setSliderValues] = useState<{ [type: string]: number }>(
-    {},
-  );
-
-  useEffect(() => {
-    DeviceService.getThresholdDevices()
-      .then((res) => {
-        setThresholds(res.data);
-        const initial: { [type: string]: number } = {};
-        res.data.forEach((d: any) => {
-          initial[d.type] =
-            typeof d.threshold === "number" ? d.threshold : Number(d.threshold);
-        });
-        setSliderValues(initial);
-      })
-      .catch(() => {
-        setThresholds([]);
-        setSliderValues({});
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleSliderValueChange = (deviceType: string, value: number) => {
-    setSliderValues((prev) => ({ ...prev, [deviceType]: value }));
-  };
-
-  const handleThresholdChange = async (
-    deviceId: string,
-    value: number,
-    deviceType: string,
-  ) => {
-    setUpdating(deviceType);
-    try {
-      await DeviceService.updateThreshold(deviceId, value);
-    } finally {
-      setUpdating(null);
-    }
-  };
+  const [changePasswordVisible, setChangePasswordVisible] = useState(false);
+  const [profileVisible, setProfileVisible] = useState(false);
+  const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    setLoggingOut(true);
     try {
       await logout();
+      setLogoutConfirmVisible(false);
     } catch (e) {
       console.error("Logout failed:", e);
+      setLoggingOut(false);
       Alert.alert("Lỗi", "Đăng xuất thất bại");
     }
   };
@@ -104,9 +70,30 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* User Action Buttons */}
+        <View style={styles.userActionRow}>
+          <TouchableOpacity
+            style={styles.userActionBtn}
+            onPress={() => setProfileVisible(true)}
+          >
+            <Ionicons name="pencil-outline" size={18} color="#fff" />
+            <Text style={styles.userActionText}>Hồ sơ</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.userActionBtn}
+            onPress={() => setChangePasswordVisible(true)}
+          >
+            <Ionicons name="lock-closed-outline" size={18} color="#fff" />
+            <Text style={styles.userActionText}>Mật khẩu</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* User Management */}
         <Text style={styles.sectionLabel}>QUẢN LÝ NGƯỜI DÙNG</Text>
-        <TouchableOpacity style={styles.sectionCard} onPress={() => router.push("/(tabs)/(settings)/user-management")}> 
+        <TouchableOpacity
+          style={styles.sectionCard}
+          onPress={() => router.push("/(tabs)/(settings)/user-management")}
+        >
           <View style={styles.sectionIcon}>
             <Text style={{ fontSize: 20 }}>👥</Text>
           </View>
@@ -120,7 +107,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         {/* Data Section */}
-        <Text style={styles.sectionLabel}>DỮ LIỆU</Text>
+        {/* <Text style={styles.sectionLabel}>DỮ LIỆU</Text>
         <TouchableOpacity style={styles.sectionCard}>
           <View style={styles.sectionIcon}>
             <Text style={{ fontSize: 20 }}>📋</Text>
@@ -132,14 +119,45 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <Icon name="angle-right" size={20} color="#A0A0A0" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => setLogoutConfirmVisible(true)}
+        >
           <Ionicons name="exit-outline" size={22} color="#DC2626" />
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <UserChangePasswordModal
+        visible={changePasswordVisible}
+        onClose={() => setChangePasswordVisible(false)}
+      />
+
+      <UserProfileModal
+        visible={profileVisible}
+        onClose={() => setProfileVisible(false)}
+        initialFullName={user?.fullName}
+        initialUsername={user?.username}
+        onSuccess={() => {
+          // Optionally refresh user data
+        }}
+      />
+
+      <ConfirmationModal
+        visible={logoutConfirmVisible}
+        title="Xác nhận đăng xuất"
+        message="Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?"
+        confirmText="Đăng xuất"
+        cancelText="Hủy bỏ"
+        iconName="exit-outline"
+        isDangerous
+        loading={loggingOut}
+        onConfirm={handleLogout}
+        onCancel={() => setLogoutConfirmVisible(false)}
+      />
     </SafeAreaView>
   );
 }

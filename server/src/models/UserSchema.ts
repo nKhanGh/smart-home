@@ -6,6 +6,7 @@ export interface IUserDoc extends Document {
   passwordHash: string;
   fullName: string;
   role: "admin" | "user";
+  isActive: boolean;
   avatarColor: string;
   avatarInitials: string;
 }
@@ -16,6 +17,7 @@ const UserSchema = new Schema<IUserDoc>(
     passwordHash: { type: String, required: true },
     fullName: { type: String, required: true },
     role: { type: String, enum: ["admin", "user"], default: "user" },
+    isActive: { type: Boolean, default: true },
     avatarColor: { type: String, default: "#000000" },
     avatarInitials: { type: String, default: "" },
   },
@@ -59,5 +61,22 @@ export const AddUserSchema = z.object({
 });
 
 export type AddUserInput = z.infer<typeof AddUserSchema>;
+
+export const ChangePasswordSchema = z.object({
+  oldPassword: z.string().min(8, "Mật khẩu cũ phải có ít nhất 8 ký tự."),
+  newPassword: z.string().min(8, "Mật khẩu mới phải có ít nhất 8 ký tự."),
+});
+
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
+
+export const UpdateProfileSchema = z.object({
+  fullName: z.string().min(1, "Họ tên không được để trống.").optional(),
+  username: z
+    .string()
+    .min(6, "Tên đăng nhập phải có ít nhất 6 ký tự.")
+    .optional(),
+});
+
+export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 
 export default model<IUserDoc>("User", UserSchema);
