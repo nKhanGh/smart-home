@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyToken } from "../middleware/authMiddleware";
+import { authorizeRoles, verifyToken } from "../middleware/authMiddleware";
 import roomController from "../controllers/room.controller";
 import validate from "../middleware/validateMiddleware";
 import { AddRoomSchema } from "../models/RoomSchema";
@@ -185,7 +185,7 @@ router.get("/:id", verifyToken, roomController.getRoomById);
 *         description: Server Error
  */
 
-router.put("/:id", verifyToken, validate(AddRoomSchema), roomController.updateRoom);
+router.put("/:id", verifyToken, authorizeRoles(["admin"]), validate(AddRoomSchema), roomController.updateRoom);
 
 // /**
 //  * @swagger

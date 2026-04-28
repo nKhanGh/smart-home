@@ -62,13 +62,6 @@ const DeviceSchema = new Schema<IDeviceDoc>(
 export const UpdateDeviceSchema = z.object({
   name: z.string().min(1, "Tên thiết bị không được để trống.").optional(),
   description: z.string().optional(),
-  roomId: z.string().min(1, "Phòng không được để trống.").optional(),
-  mode: z
-    .enum(["auto", "manual"], {
-      message: "Chế độ phải là 'auto' hoặc 'manual'.",
-    })
-    .optional(),
-  threshold: z.number().optional(),
 });
 
 export type UpdateDeviceInput = z.infer<typeof UpdateDeviceSchema>;

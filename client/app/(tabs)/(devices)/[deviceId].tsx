@@ -8,7 +8,9 @@ import LightComponent from "@/components/devices/LightComponent";
 import MotionSensorComponent from "@/components/devices/MotionSensorComponent";
 import SensorAlertComponent from "@/components/devices/SensorAlertComponent";
 import SensorComponent from "@/components/devices/SensorComponent";
+import DeviceEditModal from "@/components/modals/DeviceEditModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import { styles } from "@/styles/(tabs)/(devices)/[deviceId].styles";
@@ -83,14 +85,17 @@ type TabKey = "settings" | "history" | "alerts";
 
 const DeviceDetailScreen = () => {
   const { deviceId } = useLocalSearchParams();
+  const { user } = useAuth();
 
   const [device, setDevice] = useState<DeviceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [typeSetting, setTypeSetting] = useState<"auto" | "schedule">("auto");
   const [active, setActive] = useState<TabKey>("settings");
+  const [editModalVisible, setEditModalVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const { subscribe } = useSocket();
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     const handleDeviceUpdate = (data: any) => {
@@ -115,7 +120,7 @@ const DeviceDetailScreen = () => {
 
   const getTabIndex = (tab: TabKey) => {
     const index = visibleTabs.indexOf(tab as any);
-    return index >= 0 ? index : 0;
+    return Math.max(index, 0);
   };
 
   const switchTab = (tab: TabKey) => {
@@ -183,10 +188,15 @@ const DeviceDetailScreen = () => {
           <TouchableOpacity onPress={() => router.replace("/(tabs)/(rooms)")}>
             <Icon name="angle-left" size={20} color="#000" />
           </TouchableOpacity>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}> {device?.name}</Text>
             <Text style={styles.headerSubTitle}>{device?.roomId.name}</Text>
           </View>
+          {isAdmin && (
+            <TouchableOpacity onPress={() => setEditModalVisible(true)}>
+              <Icon name="edit" size={20} color="#22C55E" />
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.subHeader}>
@@ -209,7 +219,10 @@ const DeviceDetailScreen = () => {
                   <View style={styles.dot} />
                   <Text style={styles.roomInfoText}>{device?.roomId.name}</Text>
                 </View>
-                {device?.type !== "motionSensor" &&
+                <Text style={styles.deviceDescription}>
+                  {device?.description || "Không có mô tả nào cho thiết bị này."}
+                </Text>
+                {/* {device?.type !== "motionSensor" &&
                   (isSensor(device?.type || "") ? (
                     <Text style={styles.deviceStatus}>
                       {" "}
@@ -224,7 +237,7 @@ const DeviceDetailScreen = () => {
                         device?.currentAction || "",
                       ).toUpperCase()}
                     </Text>
-                  ))}
+                  ))} */}
               </View>
             </>
           )}
@@ -355,6 +368,22 @@ const DeviceDetailScreen = () => {
           </View>
         )}
       </ScrollView>
+
+      <DeviceEditModal
+        visible={editModalVisible}
+        device={device || undefined}
+        onClose={() => setEditModalVisible(false)}
+        onSuccess={async () => {
+          try {
+            const response = await DeviceService.getDeviceById(
+              deviceId as string,
+            );
+            setDevice(response.data);
+          } catch (error) {
+            console.error("Error refreshing device details:", error);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 };

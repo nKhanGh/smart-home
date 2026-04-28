@@ -38,8 +38,10 @@ const PERMISSIONS = [
   { label: "Xem cảm biến", admin: true, user: true },
   { label: "Điều khiển thiết bị", admin: true, user: true },
   { label: "Xuất dữ liệu", admin: true, user: true },
-  { label: "Thêm / xóa phòng", admin: true, user: false },
-  { label: "Thay đổi ngưỡng", admin: true, user: false },
+  { label: "Thay đổi ngưỡng", admin: true, user: true },
+  { label: "Thiết lập lịch", admin: true, user: true },
+  { label: "Chỉnh sửa phòng", admin: true, user: false },
+  { label: "Chỉnh sửa thiết bị", admin: true, user: false },
   { label: "Quản lý người dùng", admin: true, user: false },
 ];
 

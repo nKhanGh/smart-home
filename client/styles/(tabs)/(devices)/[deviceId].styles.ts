@@ -77,6 +77,14 @@ export const styles = StyleSheet.create({
     fontSize: 12,
   },
 
+  deviceDescription: {
+    color: "#d2d2d2",
+    fontSize: 12,
+    marginTop: 6,
+    flexShrink: 1,
+    flexWrap: "wrap",
+  },
+
   switchContainer: {
     flexDirection: "row",
     backgroundColor: "#e1e1e1",

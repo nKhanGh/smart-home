@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyToken } from "../middleware/authMiddleware";
+import { verifyToken, authorizeRoles } from "../middleware/authMiddleware";
 import deviceController from "../controllers/device.controller";
 import validate from "../middleware/validateMiddleware";
 import {
@@ -57,7 +57,6 @@ router.get("/sensors", verifyToken, deviceController.getSensorDevices);
  */
 router.get("/threshold", verifyToken, deviceController.getThresholdDevices);
 
-
 /**
  * @swagger
  * /api/devices/{id}/password:
@@ -114,6 +113,7 @@ router.get("/threshold", verifyToken, deviceController.getThresholdDevices);
 router.patch(
   "/:id/password",
   verifyToken,
+  authorizeRoles(["admin"]),
   validate(UpdateDevicePasswordSchema),
   deviceController.updatePassword,
 );
@@ -309,12 +309,6 @@ router.get("/:id/logs", verifyToken, deviceController.getLogs);
  *               name:
  *                 type: string
  *                 example: Đèn phòng khách
- *               roomId:
- *                 type: string
- *                 example: room1
- *               mode:
- *                 type: string
- *                 example: manual
  *               description:
  *                 type: string
  *                 example: Đèn LED phòng khách
@@ -325,6 +319,7 @@ router.get("/:id/logs", verifyToken, deviceController.getLogs);
 router.put(
   "/:id",
   verifyToken,
+  authorizeRoles(["admin"]),
   validate(UpdateDeviceSchema),
   deviceController.updateDevice,
 );
@@ -484,6 +479,5 @@ router.get(
   verifyToken,
   deviceController.getCurrentAction,
 );
-
 
 export default router;

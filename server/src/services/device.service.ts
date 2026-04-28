@@ -1,4 +1,3 @@
-import { Types } from "mongoose";
 import Device, {
   IDeviceDoc,
   SendCommandInput,
@@ -351,58 +350,12 @@ export class DeviceService {
       throw new ServiceError(404, "Device not found.");
     }
 
-    const { name, description, roomId, mode, threshold } = payload;
-    const newRoom = roomId ? await Room.findById(roomId) : null;
-    if (roomId && !newRoom) {
-      throw new ServiceError(404, "Room not found.");
-    }
+    const { name, description } = payload;
 
     device.name = name ?? device.name;
     device.description = description ?? device.description;
-    device.mode = mode ?? device.mode;
 
-    if (threshold !== undefined) {
-      await Threshold.findOneAndUpdate(
-        { deviceId: device._id },
-        { value: threshold },
-        { upsert: true },
-      );
-    }
-
-    const isRoomChanged = roomId && roomId !== device.roomId.toString();
-    if (isRoomChanged) {
-      mqttService.unsubscribeFeed(device.key);
-
-      const oldRoom = await Room.findById(device.roomId);
-      if (oldRoom) {
-        await adafruitAPI.delete(`/feeds/${device.key}`);
-        oldRoom.devices = oldRoom.devices.filter(
-          (deviceId) => deviceId.toString() !== device._id.toString(),
-        );
-        await oldRoom.save();
-      }
-
-      const { data: feed } = await adafruitAPI.post(
-        `/feeds?group_key=${newRoom?.key}`,
-        {
-          feed: { name, description },
-        },
-      );
-
-      newRoom?.devices.push(device._id as never);
-      await newRoom?.save();
-
-      device.key = feed.key;
-      device.roomId = new Types.ObjectId(roomId);
-
-      mqttService.registerHandler(
-        feed.key,
-        mqttService.onDeviceData.bind(mqttService),
-      );
-      mqttService.subscribeFeed(device.key);
-    }
-
-    if (!isRoomChanged && (name !== undefined || description !== undefined)) {
+    if (name !== undefined || description !== undefined) {
       const feedPayload: any = {};
       if (name !== undefined) feedPayload.name = name;
       if (description !== undefined) feedPayload.description = description;

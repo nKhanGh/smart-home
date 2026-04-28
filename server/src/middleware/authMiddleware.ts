@@ -43,3 +43,24 @@ export const verifyToken = (
     }
   })();
 };
+
+export const authorizeRoles =
+  (allowedRoles: Array<"admin" | "user">) =>
+  (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      res.status(401).json({ code: "401", msg: "Không có token." });
+      return;
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      res
+        .status(403)
+        .json({
+          code: "403",
+          msg: "Bạn không có quyền thực hiện hành động này.",
+        });
+      return;
+    }
+
+    next();
+  };

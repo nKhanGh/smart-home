@@ -77,6 +77,11 @@ export class AuthService {
       throw new ServiceError(401, "Sai tên đăng nhập hoặc mật khẩu.");
     }
 
+    
+    if (!user.isActive) {
+      throw new ServiceError(403, "Tài khoản đã bị vô hiệu hóa.");
+    }
+
     const secret = process.env.JWT_SECRET || "your-secret-key";
     const signOptionsAccess: SignOptions = {
       expiresIn: (process.env.JWT_EXPIRES_IN as number | undefined) || "1h",

@@ -101,7 +101,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         {/* Data Section */}
-        <Text style={styles.sectionLabel}>DỮ LIỆU</Text>
+        {/* <Text style={styles.sectionLabel}>DỮ LIỆU</Text>
         <TouchableOpacity style={styles.sectionCard}>
           <View style={styles.sectionIcon}>
             <Text style={{ fontSize: 20 }}>📋</Text>
@@ -113,7 +113,7 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <Icon name="angle-right" size={20} color="#A0A0A0" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
