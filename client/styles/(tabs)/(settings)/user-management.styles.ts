@@ -151,6 +151,61 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  confirmCard: {
+    width: "100%",
+    maxWidth: 420,
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 20,
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#111",
+    marginBottom: 10,
+  },
+  confirmMessage: {
+    fontSize: 15,
+    color: "#4B5563",
+    lineHeight: 21,
+  },
+  confirmActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 20,
+  },
+  confirmCancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+  },
+  confirmCancelText: {
+    color: "#374151",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  confirmPrimaryBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    backgroundColor: "#16A34A",
+  },
+  confirmPrimaryText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
   // Permissions table
   permissionTable: {
     backgroundColor: "#fff",

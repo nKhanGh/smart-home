@@ -18,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 interface User {
   id?: string;
@@ -270,6 +271,11 @@ export default function UserManagementScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editTarget, setEditTarget] = useState<User | null>(null);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<User | null>(null);
+  const [confirmType, setConfirmType] = useState<
+    "inactive" | "reactivate" | null
+  >(null);
 
   const isAdmin = user?.role === "admin";
 
@@ -322,51 +328,39 @@ export default function UserManagementScreen() {
     }
   };
 
-  const handleDelete = (u: User) => {
-    const name = u.fullName || u.username || "người dùng này";
-    Alert.alert(
-      "Xác nhận vô hiệu hóa",
-      `Bạn có chắc muốn vô hiệu hóa "${name}"?`,
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Vô hiệu hóa",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const id = u._id || u.id || "";
-              await userService.inactivateUser(id);
-              fetchUsers();
-            } catch {
-              Alert.alert("Lỗi", "Không thể vô hiệu hóa người dùng");
-            }
-          },
-        },
-      ],
-    );
+  const closeConfirm = () => {
+    setConfirmVisible(false);
+    setConfirmTarget(null);
+    setConfirmType(null);
   };
 
-  const handleReactivate = (u: User) => {
-    const name = u.fullName || u.username || "người dùng này";
-    Alert.alert(
-      "Xác nhận kích hoạt lại",
-      `Bạn có chắc muốn kích hoạt lại "${name}"?`,
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Kích hoạt lại",
-          onPress: async () => {
-            try {
-              const id = u._id || u.id || "";
-              await userService.activateUser(id);
-              fetchUsers();
-            } catch {
-              Alert.alert("Lỗi", "Không thể kích hoạt lại người dùng");
-            }
-          },
-        },
-      ],
-    );
+  const askConfirm = (u: User, type: "inactive" | "reactivate") => {
+    setConfirmTarget(u);
+    setConfirmType(type);
+    setConfirmVisible(true);
+  };
+
+  const handleDelete = async (u: User) => {
+    try {
+      const id = u._id || u.id || "";
+      await userService.inactivateUser(id);
+      fetchUsers();
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Không thể vô hiệu hóa người dùng",
+      });
+    }
+  };
+
+  const handleReactivate = async (u: User) => {
+    try {
+      const id = u._id || u.id || "";
+      await userService.activateUser(id);
+      fetchUsers();
+    } catch {
+      Alert.alert("Lỗi", "Không thể kích hoạt lại người dùng");
+    }
   };
 
   const sortedUsers = [...users].sort((a, b) => {
@@ -401,7 +395,7 @@ export default function UserManagementScreen() {
         {/* Danh sách thành viên */}
         <Text style={styles.memberListHeader}>DANH SÁCH THÀNH VIÊN</Text>
         {loading ? (
-          <LoadingSpinner />
+          <LoadingSpinner variant={"wave"} color="#16A34A" />
         ) : (
           <View style={styles.userList}>
             {sortedUsers.map((u, idx) => {
@@ -415,14 +409,14 @@ export default function UserManagementScreen() {
               const actionButton = isActive ? (
                 <TouchableOpacity
                   style={styles.inactiveBtn}
-                  onPress={() => handleDelete(u)}
+                  onPress={() => askConfirm(u, "inactive")}
                 >
                   <Ionicons name="pause-outline" size={18} color="#fff" />
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
                   style={styles.reactivateBtn}
-                  onPress={() => handleReactivate(u)}
+                  onPress={() => askConfirm(u, "reactivate")}
                 >
                   <Ionicons name="refresh-outline" size={18} color="#fff" />
                 </TouchableOpacity>
@@ -569,6 +563,60 @@ export default function UserManagementScreen() {
         onClose={() => setModalVisible(false)}
         onSave={handleSave}
       />
+
+      <Modal
+        visible={confirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeConfirm}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>
+              {confirmType === "reactivate"
+                ? "Xác nhận kích hoạt lại"
+                : "Xác nhận vô hiệu hóa"}
+            </Text>
+            <Text style={styles.confirmMessage}>
+              {confirmTarget?.fullName ||
+                confirmTarget?.username ||
+                "Người dùng này"}
+              {confirmType === "reactivate"
+                ? " sẽ được kích hoạt lại và có thể đăng nhập lại."
+                : " sẽ bị vô hiệu hóa và không thể đăng nhập."}
+            </Text>
+
+            <View style={styles.confirmActions}>
+              <TouchableOpacity
+                style={styles.confirmCancelBtn}
+                onPress={closeConfirm}
+              >
+                <Text style={styles.confirmCancelText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmPrimaryBtn}
+                onPress={async () => {
+                  const target = confirmTarget;
+                  const type = confirmType;
+                  closeConfirm();
+                  if (!target || !type) return;
+                  if (type === "reactivate") {
+                    await handleReactivate(target);
+                    return;
+                  }
+                  await handleDelete(target);
+                }}
+              >
+                <Text style={styles.confirmPrimaryText}>
+                  {confirmType === "reactivate"
+                    ? "Kích hoạt lại"
+                    : "Vô hiệu hóa"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
