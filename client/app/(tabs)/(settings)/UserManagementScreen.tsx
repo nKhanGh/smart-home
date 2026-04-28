@@ -1,15 +1,23 @@
-import React, { useEffect, useState } from "react";
-import {
-  View, Text, ScrollView, TouchableOpacity, Alert,
-  Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator,
-} from "react-native";
-import { styles } from "@/styles/(tabs)/(settings)/user-management.styles";
-import { SafeAreaView } from "react-native-safe-area-context";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
+import { userService } from "@/service/user.service";
+import { styles } from "@/styles/(tabs)/(settings)/user-management.styles";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { userService } from "@/service/user.service";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface User {
   id?: string;
@@ -18,6 +26,9 @@ interface User {
   username?: string;
   email?: string;
   role: "admin" | "user";
+  active?: boolean;
+  isActive?: boolean;
+  status?: string;
   avatarColor?: string;
   avatarInitials?: string;
 }
@@ -31,30 +42,61 @@ const PERMISSIONS = [
   { label: "Quản lý người dùng", admin: true, user: false },
 ];
 
-const AVATAR_COLORS = ["#4CAF50", "#2196F3", "#9C27B0", "#FF9800", "#F44336", "#00BCD4"];
+const AVATAR_COLORS = [
+  "#4CAF50",
+  "#2196F3",
+  "#9C27B0",
+  "#FF9800",
+  "#F44336",
+  "#00BCD4",
+];
 
 function getInitials(fullName?: string, username?: string) {
   const name = fullName || username || "";
-  return name.split(" ").filter(Boolean).map((n) => n[0].toUpperCase()).slice(-2).join("") || "?";
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0].toUpperCase())
+      .slice(-2)
+      .join("") || "?"
+  );
 }
 
 function getAvatarColor(id?: string) {
   if (!id) return AVATAR_COLORS[0];
-  const idx = id.charCodeAt(id.length - 1) % AVATAR_COLORS.length;
+  const idx = (id.codePointAt(id.length - 1) ?? 0) % AVATAR_COLORS.length;
   return AVATAR_COLORS[idx];
+}
+
+function getUserActiveState(user: User) {
+  if (typeof user.active === "boolean") return user.active;
+  if (typeof user.isActive === "boolean") return user.isActive;
+  if (typeof user.status === "string") {
+    const status = user.status.toLowerCase();
+    return status !== "inactive" && status !== "disabled";
+  }
+  return true;
 }
 
 // ---------- Add/Edit Modal ----------
 interface UserFormProps {
-  visible: boolean;
-  mode: "add" | "edit";
-  initial?: User | null;
-  existingUsernames: string[];
-  onClose: () => void;
-  onSave: (data: any) => Promise<void>;
+  readonly visible: boolean;
+  readonly mode: "add" | "edit";
+  readonly initial?: User | null;
+  readonly existingUsernames: string[];
+  readonly onClose: () => void;
+  readonly onSave: (data: any) => Promise<void>;
 }
 
-function UserFormModal({ visible, mode, initial, existingUsernames, onClose, onSave }: UserFormProps) {
+function UserFormModal({
+  visible,
+  mode,
+  initial,
+  existingUsernames,
+  onClose,
+  onSave,
+}: UserFormProps) {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -88,7 +130,7 @@ function UserFormModal({ visible, mode, initial, existingUsernames, onClose, onS
       return;
     }
     const isDuplicate = existingUsernames
-      .filter((u) => mode === "edit" ? u !== initial?.username : true)
+      .filter((u) => (mode === "edit" ? u !== initial?.username : true))
       .includes(username.trim().toLowerCase());
     if (isDuplicate) {
       Alert.alert("Lỗi", "Tên đăng nhập này đã tồn tại");
@@ -96,7 +138,11 @@ function UserFormModal({ visible, mode, initial, existingUsernames, onClose, onS
     }
     setSaving(true);
     try {
-      const data: any = { fullName: fullName.trim(), username: username.trim(), role };
+      const data: any = {
+        fullName: fullName.trim(),
+        username: username.trim(),
+        role,
+      };
       if (mode === "add") data.password = password.trim();
       await onSave(data);
     } finally {
@@ -105,7 +151,12 @@ function UserFormModal({ visible, mode, initial, existingUsernames, onClose, onS
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         style={styles.modalOverlay}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -156,29 +207,51 @@ function UserFormModal({ visible, mode, initial, existingUsernames, onClose, onS
           <Text style={styles.inputLabel}>Vai trò</Text>
           <View style={styles.roleToggleRow}>
             <TouchableOpacity
-              style={[styles.roleToggleBtn, role === "user" && styles.roleToggleBtnActive]}
+              style={[
+                styles.roleToggleBtn,
+                role === "user" && styles.roleToggleBtnActive,
+              ]}
               onPress={() => setRole("user")}
             >
-              <Text style={[styles.roleToggleTxt, role === "user" && styles.roleToggleTxtActive]}>
-                👤  User
+              <Text
+                style={[
+                  styles.roleToggleTxt,
+                  role === "user" && styles.roleToggleTxtActive,
+                ]}
+              >
+                👤 User
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.roleToggleBtn, role === "admin" && styles.roleToggleBtnAdminActive]}
+              style={[
+                styles.roleToggleBtn,
+                role === "admin" && styles.roleToggleBtnAdminActive,
+              ]}
               onPress={() => setRole("admin")}
             >
-              <Text style={[styles.roleToggleTxt, role === "admin" && styles.roleToggleTxtAdminActive]}>
-                👑  Admin
+              <Text
+                style={[
+                  styles.roleToggleTxt,
+                  role === "admin" && styles.roleToggleTxtAdminActive,
+                ]}
+              >
+                👑 Admin
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.modalFooter}>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+            <TouchableOpacity
+              style={styles.saveBtn}
+              onPress={handleSave}
+              disabled={saving}
+            >
               {saving ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.saveBtnText}>{mode === "add" ? "Thêm" : "Lưu"}</Text>
+                <Text style={styles.saveBtnText}>
+                  {mode === "add" ? "Thêm" : "Lưu"}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -239,29 +312,61 @@ export default function UserManagementScreen() {
       setModalVisible(false);
       fetchUsers();
     } catch {
-      Alert.alert("Lỗi", modalMode === "add" ? "Không thể thêm người dùng" : "Không thể cập nhật người dùng");
+      Alert.alert(
+        "Lỗi",
+        modalMode === "add"
+          ? "Không thể thêm người dùng"
+          : "Không thể cập nhật người dùng",
+      );
       throw new Error("save failed");
     }
   };
 
   const handleDelete = (u: User) => {
     const name = u.fullName || u.username || "người dùng này";
-    Alert.alert("Xác nhận xóa", `Bạn có chắc muốn xóa "${name}"?`, [
-      { text: "Hủy", style: "cancel" },
-      {
-        text: "Xóa",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const id = u._id || u.id || "";
-            await userService.deleteUser(id);
-            fetchUsers();
-          } catch {
-            Alert.alert("Lỗi", "Không thể xóa người dùng");
-          }
+    Alert.alert(
+      "Xác nhận vô hiệu hóa",
+      `Bạn có chắc muốn vô hiệu hóa "${name}"?`,
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Vô hiệu hóa",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const id = u._id || u.id || "";
+              await userService.inactivateUser(id);
+              fetchUsers();
+            } catch {
+              Alert.alert("Lỗi", "Không thể vô hiệu hóa người dùng");
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
+  };
+
+  const handleReactivate = (u: User) => {
+    const name = u.fullName || u.username || "người dùng này";
+    Alert.alert(
+      "Xác nhận kích hoạt lại",
+      `Bạn có chắc muốn kích hoạt lại "${name}"?`,
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Kích hoạt lại",
+          onPress: async () => {
+            try {
+              const id = u._id || u.id || "";
+              await userService.activateUser(id);
+              fetchUsers();
+            } catch {
+              Alert.alert("Lỗi", "Không thể kích hoạt lại người dùng");
+            }
+          },
+        },
+      ],
+    );
   };
 
   const sortedUsers = [...users].sort((a, b) => {
@@ -276,7 +381,6 @@ export default function UserManagementScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F7FAF9" }}>
       <ScrollView contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 }}>
-
         {/* Header */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => router.push("/(tabs)/(settings)")}>
@@ -304,46 +408,116 @@ export default function UserManagementScreen() {
               const uId = u._id || u.id;
               const selfId = (user as any)?._id || user?.id;
               const isSelf = uId === selfId;
-              const initials = u.avatarInitials || getInitials(u.fullName, u.username);
+              const isActive = getUserActiveState(u);
+              const initials =
+                u.avatarInitials || getInitials(u.fullName, u.username);
               const avatarBg = u.avatarColor || getAvatarColor(uId);
+              const actionButton = isActive ? (
+                <TouchableOpacity
+                  style={styles.inactiveBtn}
+                  onPress={() => handleDelete(u)}
+                >
+                  <Ionicons name="pause-outline" size={18} color="#fff" />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.reactivateBtn}
+                  onPress={() => handleReactivate(u)}
+                >
+                  <Ionicons name="refresh-outline" size={18} color="#fff" />
+                </TouchableOpacity>
+              );
+              let actionContent: React.ReactNode = null;
+
+              if (isSelf) {
+                actionContent = (
+                  <View style={styles.selfBadge}>
+                    <Text style={styles.selfBadgeText}>Bạn</Text>
+                  </View>
+                );
+              } else if (isAdmin) {
+                actionContent = (
+                  <View style={styles.actionCol}>
+                    <TouchableOpacity
+                      style={styles.editBtn}
+                      onPress={() => openEdit(u)}
+                    >
+                      <Ionicons name="create-outline" size={18} color="#fff" />
+                    </TouchableOpacity>
+                    {actionButton}
+                  </View>
+                );
+              }
 
               return (
                 <View key={uId || idx} style={styles.userCard}>
-                  <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
-                    <Text style={styles.avatarText}>{initials}</Text>
+                  <View
+                    style={[styles.avatarWrap, { backgroundColor: avatarBg }]}
+                  >
+                    <View style={styles.avatar}>
+                      <Text style={styles.avatarText}>{initials}</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusDot,
+                        isActive
+                          ? styles.statusDotActive
+                          : styles.statusDotInactive,
+                      ]}
+                    />
                   </View>
 
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.userName}>{u.fullName || u.username || "—"}</Text>
+                    <Text style={styles.userName}>
+                      {u.fullName || u.username || "—"}
+                    </Text>
                     {u.username && (
                       <Text style={styles.userUsername}>@{u.username}</Text>
                     )}
-                    {u.email && (
-                      <Text style={styles.userEmail}>{u.email}</Text>
-                    )}
+                    {u.email && <Text style={styles.userEmail}>{u.email}</Text>}
                     <View style={styles.roleRow}>
-                      <View style={[styles.roleBadge, u.role === "admin" ? styles.adminBadge : styles.userBadge]}>
-                        <Text style={[styles.roleBadgeText, u.role === "admin" ? styles.adminBadgeText : styles.userBadgeText]}>
+                      <View
+                        style={[
+                          styles.roleBadge,
+                          u.role === "admin"
+                            ? styles.adminBadge
+                            : styles.userBadge,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.roleBadgeText,
+                            u.role === "admin"
+                              ? styles.adminBadgeText
+                              : styles.userBadgeText,
+                          ]}
+                        >
                           {u.role === "admin" ? "👑  Admin" : "👤  User"}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.activeBadge,
+                          isActive
+                            ? styles.activeBadgeOn
+                            : styles.activeBadgeOff,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.activeBadgeText,
+                            isActive
+                              ? styles.activeBadgeTextOn
+                              : styles.activeBadgeTextOff,
+                          ]}
+                        >
+                          {isActive ? "Đang hoạt động" : "Đã vô hiệu hóa"}
                         </Text>
                       </View>
                     </View>
                   </View>
 
-                  {isSelf ? (
-                    <View style={styles.selfBadge}>
-                      <Text style={styles.selfBadgeText}>Bạn</Text>
-                    </View>
-                  ) : isAdmin ? (
-                    <View style={styles.actionCol}>
-                      <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(u)}>
-                        <Ionicons name="create-outline" size={18} color="#fff" />
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(u)}>
-                        <Ionicons name="trash-outline" size={18} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
-                  ) : null}
+                  {actionContent}
                 </View>
               );
             })}
@@ -352,7 +526,7 @@ export default function UserManagementScreen() {
 
         {/* Permissions Table */}
         <View style={styles.permissionTable}>
-          <Text style={styles.permissionTitle}>🔒  Quyền hạn theo vai trò</Text>
+          <Text style={styles.permissionTitle}>🔒 Quyền hạn theo vai trò</Text>
           <View style={styles.permissionHeaderRow}>
             <Text style={styles.permissionFeatureCell}>Tính năng</Text>
             <Text style={styles.permissionAdminHeader}>Admin</Text>
@@ -362,7 +536,10 @@ export default function UserManagementScreen() {
           {PERMISSIONS.map((p, i) => (
             <View
               key={p.label}
-              style={[styles.permissionRow, i < PERMISSIONS.length - 1 && styles.permissionRowBorder]}
+              style={[
+                styles.permissionRow,
+                i < PERMISSIONS.length - 1 && styles.permissionRowBorder,
+              ]}
             >
               <Text style={styles.permissionLabel}>{p.label}</Text>
               <View style={styles.permissionIconCell}>
