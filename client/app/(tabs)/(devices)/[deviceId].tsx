@@ -107,15 +107,14 @@ const DeviceDetailScreen = () => {
   }, [subscribe, deviceId]);
 
   const showAlertTab = !!device && isSensorLikeType(device.type);
+  const isDoorDevice = device?.type === "doorDevice";
 
-  const tabs = showAlertTab
-    ? (["settings", "history", "alerts"] as const)
-    : (["settings", "history"] as const);
+  const tabs = ["settings", "history", "alerts"] as const;
 
   const getTabIndex = (tab: TabKey) => {
     if (tab === "settings") return 0;
     if (tab === "history") return 1;
-    return showAlertTab ? 2 : 0;
+    return 2;
   };
 
   const switchTab = (tab: TabKey) => {
@@ -148,6 +147,9 @@ const DeviceDetailScreen = () => {
       try {
         const response = await DeviceService.getDeviceById(deviceId as string);
         setDevice(response.data);
+        setTypeSetting(
+          response.data?.type === "doorDevice" ? "schedule" : "auto",
+        );
       } catch (error) {
         console.error("Error fetching device details:", error);
       } finally {
@@ -311,7 +313,7 @@ const DeviceDetailScreen = () => {
         {active === "settings" && device?.type !== "motionSensor" && (
           <View style={styles.settingsSection}>
             <Text style={styles.settingsTitle}>Cài đặt</Text>
-            {!isSensor(device?.type || "") && (
+            {!isSensor(device?.type || "") && !isDoorDevice && (
               <View style={styles.settingsOptions}>
                 <TouchableOpacity
                   style={[
@@ -341,10 +343,10 @@ const DeviceDetailScreen = () => {
                 </TouchableOpacity>
               </View>
             )}
-            {typeSetting === "auto" && (
+            {typeSetting === "auto" && !isDoorDevice && (
               <DeviceAutoComponent device={device as DeviceResponse} />
             )}
-            {typeSetting === "schedule" && (
+            {(typeSetting === "schedule" || isDoorDevice) && (
               <DeviceScheduleComponent device={device as DeviceResponse} />
             )}
           </View>

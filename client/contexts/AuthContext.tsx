@@ -1,9 +1,16 @@
 import { authService } from "@/service/auth.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-import { EventEmitter } from 'eventemitter3';
+import { EventEmitter } from "eventemitter3";
 export const emitter = new EventEmitter();
 
 interface AuthContextType {
@@ -35,17 +42,22 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   const logout = useCallback(async () => {
-    await AsyncStorage.removeItem('smart-home-access-token');
-    await AsyncStorage.removeItem('smart-home-refresh-token');
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error("Logout API error:", error);
+    }
+    await AsyncStorage.removeItem("smart-home-access-token");
+    await AsyncStorage.removeItem("smart-home-refresh-token");
     setIsLoggedIn(false);
     setAccessToken(null);
     setUser(null);
-    emitter.emit('logout');
+    emitter.emit("logout");
   }, []);
 
   const fetchUserInfo = useCallback(async () => {
     const accessToken = await AsyncStorage.getItem("smart-home-access-token");
-    if (accessToken){
+    if (accessToken) {
       setIsLoggedIn(true);
       setAccessToken(accessToken);
       try {
@@ -64,20 +76,20 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const handleLogout = () => {
       setIsLoggedIn(false);
       setAccessToken(null);
-      AsyncStorage.removeItem('smart-home-access-token');
-      AsyncStorage.removeItem('smart-home-refresh-token');
+      AsyncStorage.removeItem("smart-home-access-token");
+      AsyncStorage.removeItem("smart-home-refresh-token");
       setUser(null);
       router.replace("/login");
     };
 
     fetchUserInfo();
 
-     emitter.on('logout', handleLogout);
+    emitter.on("logout", handleLogout);
 
     return () => {
-      emitter.off('logout', handleLogout);
+      emitter.off("logout", handleLogout);
     };
-  }, [])
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -94,7 +106,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+};
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
@@ -102,6 +114,6 @@ export const useAuth = () => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return ctx;
-}
+};
 
 export default AuthProvider;

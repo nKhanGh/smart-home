@@ -134,6 +134,22 @@ router.post("/login", validate(LoginSchema), authController.login);
 
 /**
  * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Đăng xuất
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Đăng xuất thành công
+ *       401:
+ *         description: Token không hợp lệ hoặc hết hạn
+ */
+router.post("/logout", verifyToken, authController.logout);
+
+/**
+ * @swagger
  * /api/auth/me:
  *   get:
  *     summary: Lấy thông tin user hiện tại

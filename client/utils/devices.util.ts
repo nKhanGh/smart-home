@@ -26,7 +26,7 @@ export const getNextAction = (
 export const getUnit = (type: string) => {
   if (type === "temperatureSensor") return "°C";
   if (type === "lightSensor") return " lux";
-  if (type === "humiditySensor") return " %";
+  if (type === "humiditySensor") return "%";
   return "";
 }
 

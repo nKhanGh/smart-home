@@ -1,9 +1,30 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
-import User, { AddUserInput, LoginInput, RegisterInput } from "../models/UserSchema";
+import User, {
+  AddUserInput,
+  LoginInput,
+  RegisterInput,
+} from "../models/UserSchema";
 import { ServiceError } from "../errors/service.error";
+import { getRedisClient } from "../config/redis";
 
 export class AuthService {
+  private readonly tokenBlacklistPrefix = "auth:blacklist:token:";
+
+  private getTokenBlacklistKey(token: string): string {
+    return `${this.tokenBlacklistPrefix}${token}`;
+  }
+
+  private getTokenTtlSeconds(token: string): number {
+    const decoded = jwt.decode(token) as { exp?: number } | null;
+    if (!decoded?.exp) {
+      return 1;
+    }
+
+    const ttlSeconds = Math.floor(decoded.exp - Date.now() / 1000);
+    return ttlSeconds > 0 ? ttlSeconds : 1;
+  }
+
   async register(payload: RegisterInput) {
     const { username, password, fullName } = payload;
 
@@ -17,8 +38,17 @@ export class AuthService {
       passwordHash: hash,
       fullName,
       role: "admin",
-      avatarColor: "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0"),
-      avatarInitials: fullName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2),
+      avatarColor:
+        "#" +
+        Math.floor(Math.random() * 16777215)
+          .toString(16)
+          .padStart(6, "0"),
+      avatarInitials: fullName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2),
     });
 
     return { userId: user._id };
@@ -27,7 +57,11 @@ export class AuthService {
   async introspect(token: string) {
     const secret = process.env.JWT_SECRET || "your-secret-key";
     try {
-      const payload = jwt.verify(token, secret) as { id: string; username: string; role: string };
+      const payload = jwt.verify(token, secret) as {
+        id: string;
+        username: string;
+        role: string;
+      };
       return { valid: true, payload };
     } catch (err) {
       console.log(err);
@@ -49,17 +83,28 @@ export class AuthService {
     };
 
     const token = jwt.sign(
-      { id: user._id, username: user.username, role: user.role, type: "access" },
+      {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+        type: "access",
+      },
       secret,
       signOptionsAccess,
     );
 
     const signOptionsRefresh: SignOptions = {
-      expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as number | undefined) || "2h",
+      expiresIn:
+        (process.env.JWT_REFRESH_EXPIRES_IN as number | undefined) || "2h",
     };
 
     const refreshToken = jwt.sign(
-      { id: user._id, username: user.username, role: user.role, type: "refresh" },
+      {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+        type: "refresh",
+      },
       secret,
       signOptionsRefresh,
     );
@@ -80,7 +125,12 @@ export class AuthService {
     const secret = process.env.JWT_SECRET || "your-secret-key";
     console.log("Refreshing token:", token);
     try {
-      const payload = jwt.verify(token, secret) as { id: string; username: string; role: string; type: string };
+      const payload = jwt.verify(token, secret) as {
+        id: string;
+        username: string;
+        role: string;
+        type: string;
+      };
       if (payload.type !== "refresh") {
         throw new ServiceError(400, "Invalid token type.");
       }
@@ -88,16 +138,27 @@ export class AuthService {
         expiresIn: (process.env.JWT_EXPIRES_IN as number | undefined) || "1h",
       };
       const newToken = jwt.sign(
-        { id: payload.id, username: payload.username, role: payload.role, type: "access" },
+        {
+          id: payload.id,
+          username: payload.username,
+          role: payload.role,
+          type: "access",
+        },
         secret,
         accessSignOptions,
       );
 
       const refreshSignOptions: SignOptions = {
-        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as number | undefined) || "2h",
+        expiresIn:
+          (process.env.JWT_REFRESH_EXPIRES_IN as number | undefined) || "2h",
       };
       const newRefreshToken = jwt.sign(
-        { id: payload.id, username: payload.username, role: payload.role, type: "refresh" },
+        {
+          id: payload.id,
+          username: payload.username,
+          role: payload.role,
+          type: "refresh",
+        },
         secret,
         refreshSignOptions,
       );
@@ -109,6 +170,19 @@ export class AuthService {
     }
   }
 
+  async logout(token: string) {
+    const redis = await getRedisClient();
+
+    if (redis){
+      const key = this.getTokenBlacklistKey(token);
+      const ttlSeconds = this.getTokenTtlSeconds(token);
+      await redis.set(key, "1", { EX: ttlSeconds });
+    }
+
+    console.log("Token blacklisted:", token);
+
+    return { success: true };
+  }
 
   async getMe(userId?: string) {
     const user = await User.findById(userId, { passwordHash: 0 });
