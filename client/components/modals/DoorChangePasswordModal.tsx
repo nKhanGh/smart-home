@@ -182,8 +182,8 @@ export default function DoorChangePasswordModal({ visible, setVisible, device }:
 
   const validate = () => {
     const e: typeof errors = {};
-    if (oldPassword.length < 4) e.old = "Mật khẩu cũ phải có ít nhất 4 chữ số.";
-    if (newPassword.length < 4) e.new = "Mật khẩu mới phải có ít nhất 4 chữ số.";
+    if (oldPassword.length != 6) e.old = "Mật khẩu cũ phải có 6 chữ số.";
+    if (newPassword.length != 6) e.new = "Mật khẩu mới phải có 6 chữ số.";
     else if (newPassword === oldPassword) e.new = "Mật khẩu mới phải khác mật khẩu cũ.";
     if (confirmPassword !== newPassword) e.confirm = "Xác nhận mật khẩu không khớp.";
     setErrors(e);

@@ -18,6 +18,9 @@ export default function SettingsScreen() {
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  const {fetchUserInfo} = useAuth();
+  
+
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
@@ -141,9 +144,7 @@ export default function SettingsScreen() {
         onClose={() => setProfileVisible(false)}
         initialFullName={user?.fullName}
         initialUsername={user?.username}
-        onSuccess={() => {
-          // Optionally refresh user data
-        }}
+        onSuccess={fetchUserInfo}
       />
 
       <ConfirmationModal

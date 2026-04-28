@@ -1,6 +1,7 @@
 import { DeviceService } from "@/service/device.service";
 import { ThresholdService } from "@/service/threshold.service";
-import { useEffect, useRef, useState } from "react";
+import { getUnit } from "@/utils/devices.util";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Modal,
@@ -15,12 +16,12 @@ import {
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import LoadingSpinner from "../ui/LoadingSpinner";
-import { getUnit } from "@/utils/devices.util";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type ActionType = "on" | "off" | "alert";
 type WhenType = "above" | "below";
+type StepType = 1 | 2 | 3;
 
 interface ThresholdFormData {
   sensor: DeviceResponse | ThresholdSensorResponse | null;
@@ -62,7 +63,7 @@ const getSensorByAction = (
       return {
         // on: ["lightSensor", "temperatureSensor", "humiditySensor"],
         // off: ["lightSensor", "temperatureSensor", "humiditySensor"],
-        // alert: ["lightSensor", "temperatureSensor", "humiditySensor"],
+        alert: ["lightSensor", "temperatureSensor", "humiditySensor"],
       };
   }
 };
@@ -140,8 +141,9 @@ const ThresholdModal = ({
   onSuccess,
 }: ThresholdModalProps) => {
   const isEditing = Boolean(editingThreshold);
+  const isSensorDevice = device.type.toLowerCase().includes("sensor");
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<StepType>(1);
   const [form, setForm] = useState<ThresholdFormData>({
     sensor: null,
     action: null,
@@ -155,16 +157,26 @@ const ThresholdModal = ({
   const slideAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  const sensorByAction = getSensorByAction(device.type);
-  const availableActions = Object.keys(sensorByAction) as ActionType[];
+  const sensorByAction = useMemo(
+    () => getSensorByAction(device.type),
+    [device.type],
+  );
+  const availableActions = useMemo(
+    () => Object.keys(sensorByAction) as ActionType[],
+    [sensorByAction],
+  );
 
   // ── Init for edit mode ──
   useEffect(() => {
     if (!visible) return;
     if (editingThreshold) {
       setForm({
-        sensor: editingThreshold.sensor as unknown as DeviceResponse,
-        action: editingThreshold.action as ActionType,
+        sensor: isSensorDevice
+          ? device
+          : (editingThreshold.sensor as unknown as DeviceResponse),
+        action: isSensorDevice
+          ? "alert"
+          : (editingThreshold.action as ActionType),
         when: editingThreshold.when as WhenType,
         value: String(editingThreshold.value),
       });
@@ -174,15 +186,24 @@ const ThresholdModal = ({
         when: editingThreshold.when,
         value: String(editingThreshold.value),
       });
-      setStep(1);
+      setStep(isSensorDevice ? 3 : 1);
     } else {
-      setForm({ sensor: null, action: null, when: null, value: "" });
-      setStep(1);
+      setForm({
+        sensor: isSensorDevice ? device : null,
+        action: isSensorDevice ? "alert" : null,
+        when: null,
+        value: "",
+      });
+      setStep(isSensorDevice ? 3 : 1);
     }
-  }, [visible, editingThreshold]);
+  }, [visible, editingThreshold, isSensorDevice, device]);
 
   // ── Fetch sensors when action selected ──
   useEffect(() => {
+    if (isSensorDevice) {
+      setSensors([device]);
+      return;
+    }
     if (!form.action) return;
     const allowedTypes = sensorByAction[form.action] ?? [];
     if (!allowedTypes.length) return;
@@ -205,7 +226,7 @@ const ThresholdModal = ({
       }
     };
     fetch();
-  }, [form.action]);
+  }, [form.action, isSensorDevice, device, sensorByAction]);
 
   // ── Animate step change ──
   const animateStep = (direction: "next" | "back") => {
@@ -313,6 +334,7 @@ const ThresholdModal = ({
   const step3Complete = Boolean(form.when) && form.value.trim().length > 0;
   const canProceed1 = step1Complete;
   const canProceed2 = step2Complete;
+  const hasSensors = sensors.length > 0;
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -347,25 +369,32 @@ const ThresholdModal = ({
             </TouchableOpacity>
           </View>
 
-          {/* Step indicator */}
-          <View style={s.stepIndicator}>
-            <StepDot active={step === 1} done={step > 1} />
-            <StepBar done={step > 1} />
-            <StepDot active={step === 2} done={step > 2} />
-            <StepBar done={step > 2} />
-            <StepDot active={step === 3} done={step3Complete && step === 3} />
-          </View>
-          <View style={s.stepLabels}>
-            <Text style={[s.stepLabel, step === 1 && s.stepLabelActive]}>
-              Hành động
-            </Text>
-            <Text style={[s.stepLabel, step === 2 && s.stepLabelActive]}>
-              Cảm biến
-            </Text>
-            <Text style={[s.stepLabel, step === 3 && s.stepLabelActive]}>
-              Điều kiện
-            </Text>
-          </View>
+          {!isSensorDevice && (
+            <>
+              {/* Step indicator */}
+              <View style={s.stepIndicator}>
+                <StepDot active={step === 1} done={step > 1} />
+                <StepBar done={step > 1} />
+                <StepDot active={step === 2} done={step > 2} />
+                <StepBar done={step > 2} />
+                <StepDot
+                  active={step === 3}
+                  done={step3Complete && step === 3}
+                />
+              </View>
+              <View style={s.stepLabels}>
+                <Text style={[s.stepLabel, step === 1 && s.stepLabelActive]}>
+                  Hành động
+                </Text>
+                <Text style={[s.stepLabel, step === 2 && s.stepLabelActive]}>
+                  Cảm biến
+                </Text>
+                <Text style={[s.stepLabel, step === 3 && s.stepLabelActive]}>
+                  Điều kiện
+                </Text>
+              </View>
+            </>
+          )}
 
           {/* ── Content ── */}
           <Animated.View
@@ -466,7 +495,7 @@ const ThresholdModal = ({
                     </View>
                   )}
 
-                  {loadingSensors ? (
+                  {loadingSensors && (
                     <View style={s.loadingBox}>
                       <LoadingSpinner
                         variant="wave"
@@ -475,14 +504,17 @@ const ThresholdModal = ({
                       />
                       <Text style={s.loadingText}>Đang tải cảm biến...</Text>
                     </View>
-                  ) : sensors.length === 0 ? (
+                  )}
+                  {!loadingSensors && !hasSensors && (
                     <View style={s.emptyBox}>
                       <Icon name="microchip" size={22} color="#D1D5DB" />
                       <Text style={s.emptyText}>
                         Không tìm thấy cảm biến phù hợp.
                       </Text>
                     </View>
-                  ) : (
+                  )}
+                  {!loadingSensors &&
+                    hasSensors &&
                     sensors.map((sensor) => {
                       const sensorId = getSensorItemId(sensor);
                       const selected =
@@ -525,7 +557,7 @@ const ThresholdModal = ({
                               {SENSOR_LABEL[sensor.type] ?? sensor.type}
                             </Text>
                           </View>
-                          
+
                           <View
                             style={[
                               s.radioOuter,
@@ -536,8 +568,7 @@ const ThresholdModal = ({
                           </View>
                         </TouchableOpacity>
                       );
-                    })
-                  )}
+                    })}
                 </View>
               )}
 
@@ -632,14 +663,17 @@ const ThresholdModal = ({
                   </Animated.View>
 
                   {/* Live preview */}
-                  {form.when && form.value && form.sensor && form.action && (
+                  {form.when && !!form.value && form.sensor && form.action && (
                     <View style={s.previewBox}>
                       <Icon name="eye" size={11} color="#6B7280" />
                       <Text style={s.previewText}>
                         Nếu{" "}
                         <Text style={s.previewBold}>{form.sensor.name}</Text>{" "}
                         {WHEN_CONFIG[form.when].label.toLowerCase()}{" "}
-                        <Text style={s.previewBold}>{form.value}{getUnit(form.sensor?.type)}</Text>
+                        <Text style={s.previewBold}>
+                          {form.value}
+                          {getUnit(form.sensor?.type)}
+                        </Text>
                         {" → "}
                         <Text
                           style={[
@@ -662,11 +696,15 @@ const ThresholdModal = ({
             {step > 1 ? (
               <TouchableOpacity
                 style={s.backBtn}
-                onPress={goBack}
+                onPress={isSensorDevice ? onClose : goBack}
                 activeOpacity={0.7}
               >
-                <Icon name="arrow-left" size={12} color="#6B7280" />
-                <Text style={s.backBtnText}>Quay lại</Text>
+                {!isSensorDevice && (
+                  <Icon name="arrow-left" size={12} color="#6B7280" />
+                )}
+                <Text style={s.backBtnText}>
+                  {isSensorDevice ? "Huỷ" : "Quay lại"}
+                </Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity

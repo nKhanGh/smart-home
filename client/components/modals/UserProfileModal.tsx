@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/AuthContext";
 import { userService } from "@/service/user.service";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
