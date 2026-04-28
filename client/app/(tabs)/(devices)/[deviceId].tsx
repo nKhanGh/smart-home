@@ -109,12 +109,13 @@ const DeviceDetailScreen = () => {
   const showAlertTab = !!device && isSensorLikeType(device.type);
   const isDoorDevice = device?.type === "doorDevice";
 
-  const tabs = ["settings", "history", "alerts"] as const;
+  const visibleTabs = showAlertTab
+    ? (["settings", "history", "alerts"] as const)
+    : (["settings", "history"] as const);
 
   const getTabIndex = (tab: TabKey) => {
-    if (tab === "settings") return 0;
-    if (tab === "history") return 1;
-    return 2;
+    const index = visibleTabs.indexOf(tab as any);
+    return index >= 0 ? index : 0;
   };
 
   const switchTab = (tab: TabKey) => {
@@ -136,8 +137,10 @@ const DeviceDetailScreen = () => {
   }, [showAlertTab]);
 
   const sliderLeft = slideAnim.interpolate({
-    inputRange: tabs.map((_, idx) => idx),
-    outputRange: tabs.map((_, idx) => `${(100 / tabs.length) * idx}%`),
+    inputRange: visibleTabs.map((_, idx) => idx),
+    outputRange: visibleTabs.map(
+      (_, idx) => `${(100 / visibleTabs.length) * idx}%`,
+    ),
   });
 
   useEffect(() => {
@@ -231,7 +234,7 @@ const DeviceDetailScreen = () => {
           <Animated.View
             style={[
               styles.switchSlider,
-              { left: sliderLeft, width: `${100 / tabs.length}%` },
+              { left: sliderLeft, width: `${100 / visibleTabs.length}%` },
             ]}
           />
           <Pressable
