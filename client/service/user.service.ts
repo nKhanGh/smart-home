@@ -14,4 +14,8 @@ export const userService = {
   ) => AxiosInstance.put(`/users/${id}`, data),
   inactivateUser: (id: string) => AxiosInstance.post(`/users/${id}/inactivate`),
   activateUser: (id: string) => AxiosInstance.post(`/users/${id}/reactivate`),
+  changePassword: (oldPassword: string, newPassword: string) =>
+    AxiosInstance.patch("/users/password", { oldPassword, newPassword }),
+  updateProfile: (data: { fullName?: string; username?: string }) =>
+    AxiosInstance.put("/users/profile", data),
 };
