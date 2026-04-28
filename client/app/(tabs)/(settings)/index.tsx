@@ -1,3 +1,4 @@
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 import UserChangePasswordModal from "@/components/modals/UserChangePasswordModal";
 import UserProfileModal from "@/components/modals/UserProfileModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,12 +15,17 @@ export default function SettingsScreen() {
   const router = useRouter();
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
   const [profileVisible, setProfileVisible] = useState(false);
+  const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    setLoggingOut(true);
     try {
       await logout();
+      setLogoutConfirmVisible(false);
     } catch (e) {
       console.error("Logout failed:", e);
+      setLoggingOut(false);
       Alert.alert("Lỗi", "Đăng xuất thất bại");
     }
   };
@@ -116,7 +122,10 @@ export default function SettingsScreen() {
         </TouchableOpacity> */}
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => setLogoutConfirmVisible(true)}
+        >
           <Ionicons name="exit-outline" size={22} color="#DC2626" />
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
@@ -135,6 +144,19 @@ export default function SettingsScreen() {
         onSuccess={() => {
           // Optionally refresh user data
         }}
+      />
+
+      <ConfirmationModal
+        visible={logoutConfirmVisible}
+        title="Xác nhận đăng xuất"
+        message="Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?"
+        confirmText="Đăng xuất"
+        cancelText="Hủy bỏ"
+        iconName="exit-outline"
+        isDangerous
+        loading={loggingOut}
+        onConfirm={handleLogout}
+        onCancel={() => setLogoutConfirmVisible(false)}
       />
     </SafeAreaView>
   );

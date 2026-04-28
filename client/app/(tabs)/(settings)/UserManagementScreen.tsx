@@ -1,3 +1,4 @@
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { userService } from "@/service/user.service";
@@ -278,6 +279,7 @@ export default function UserManagementScreen() {
   const [confirmType, setConfirmType] = useState<
     "inactive" | "reactivate" | null
   >(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const isAdmin = user?.role === "admin";
 
@@ -343,25 +345,28 @@ export default function UserManagementScreen() {
   };
 
   const handleDelete = async (u: User) => {
+    setActionLoading(true);
     try {
       const id = u._id || u.id || "";
       await userService.inactivateUser(id);
-      fetchUsers();
+      await fetchUsers();
     } catch {
-      Toast.show({
-        type: "error",
-        text1: "Không thể vô hiệu hóa người dùng",
-      });
+      Toast.show({ type: "error", text1: "Không thể vô hiệu hóa người dùng" });
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleReactivate = async (u: User) => {
+    setActionLoading(true);
     try {
       const id = u._id || u.id || "";
       await userService.activateUser(id);
-      fetchUsers();
+      await fetchUsers();
     } catch {
       Alert.alert("Lỗi", "Không thể kích hoạt lại người dùng");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -566,59 +571,38 @@ export default function UserManagementScreen() {
         onSave={handleSave}
       />
 
-      <Modal
+      <ConfirmationModal
         visible={confirmVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeConfirm}
-      >
-        <View style={styles.confirmOverlay}>
-          <View style={styles.confirmCard}>
-            <Text style={styles.confirmTitle}>
-              {confirmType === "reactivate"
-                ? "Xác nhận kích hoạt lại"
-                : "Xác nhận vô hiệu hóa"}
-            </Text>
-            <Text style={styles.confirmMessage}>
-              {confirmTarget?.fullName ||
-                confirmTarget?.username ||
-                "Người dùng này"}
-              {confirmType === "reactivate"
-                ? " sẽ được kích hoạt lại và có thể đăng nhập lại."
-                : " sẽ bị vô hiệu hóa và không thể đăng nhập."}
-            </Text>
-
-            <View style={styles.confirmActions}>
-              <TouchableOpacity
-                style={styles.confirmCancelBtn}
-                onPress={closeConfirm}
-              >
-                <Text style={styles.confirmCancelText}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.confirmPrimaryBtn}
-                onPress={async () => {
-                  const target = confirmTarget;
-                  const type = confirmType;
-                  closeConfirm();
-                  if (!target || !type) return;
-                  if (type === "reactivate") {
-                    await handleReactivate(target);
-                    return;
-                  }
-                  await handleDelete(target);
-                }}
-              >
-                <Text style={styles.confirmPrimaryText}>
-                  {confirmType === "reactivate"
-                    ? "Kích hoạt lại"
-                    : "Vô hiệu hóa"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title={
+          confirmType === "reactivate"
+            ? "Xác nhận kích hoạt lại"
+            : "Xác nhận vô hiệu hóa"
+        }
+        message={`${confirmTarget?.fullName || confirmTarget?.username || "Người dùng này"} ${
+          confirmType === "reactivate"
+            ? "sẽ được kích hoạt lại và có thể đăng nhập lại."
+            : "sẽ bị vô hiệu hóa và không thể đăng nhập."
+        }`}
+        confirmText={
+          confirmType === "reactivate" ? "Kích hoạt lại" : "Vô hiệu hóa"
+        }
+        cancelText="Hủy"
+        iconName={confirmType === "reactivate" ? "refresh" : "pause"}
+        isDangerous={confirmType !== "reactivate"}
+        loading={actionLoading}
+        onConfirm={async () => {
+          const target = confirmTarget;
+          const type = confirmType;
+          if (!target || !type) return;
+          if (type === "reactivate") await handleReactivate(target);
+          else await handleDelete(target);
+          closeConfirm();
+        }}
+        onCancel={closeConfirm}
+        notificationMessage={confirmType === "reactivate"
+          ? "Người dùng đã được kích hoạt lại"
+          : "Người dùng đã bị vô hiệu hóa"}
+      />
     </SafeAreaView>
   );
 }

@@ -1,8 +1,8 @@
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { ScheduleService } from "@/service/schedule.service";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   Modal,
   Pressable,
   StyleSheet,
@@ -62,6 +62,9 @@ const DeviceScheduleComponent = ({ device }: { device: DeviceResponse }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingSchedule, setEditingSchedule] =
     useState<ScheduleResponse | null>(null);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deletingSchedule, setDeletingSchedule] = useState(false);
+  const [scheduleToDelete, setScheduleToDelete] = useState<string | null>(null);
 
   const orderedSchedules = useMemo(() => {
     return [...schedules].sort((a, b) =>
@@ -108,25 +111,25 @@ const DeviceScheduleComponent = ({ device }: { device: DeviceResponse }) => {
   };
 
   const onDelete = (scheduleId: string) => {
-    Alert.alert("Xóa lịch", "Bạn có chắc muốn xóa lịch này không?", [
-      { text: "Hủy", style: "cancel" },
-      {
-        text: "Xóa",
-        style: "destructive",
-        onPress: async () => {
-          setProcessingId(scheduleId);
-          try {
-            await ScheduleService.deleteSchedule(scheduleId);
-            setSchedules((prev) => prev.filter((s) => s._id !== scheduleId));
-            Toast.show({ type: "success", text1: "Đã xóa lịch." });
-          } catch {
-            Toast.show({ type: "error", text1: "Không thể xóa lịch." });
-          } finally {
-            setProcessingId(null);
-          }
-        },
-      },
-    ]);
+    setMenuSchedule(null);
+    setDeleteConfirmVisible(true);
+    setDeletingSchedule(false);
+    setScheduleToDelete(scheduleId);
+  };
+
+  const handleDeleteSchedule = async () => {
+    if (!scheduleToDelete) return;
+    setDeletingSchedule(true);
+    try {
+      await ScheduleService.deleteSchedule(scheduleToDelete);
+      setSchedules((prev) => prev.filter((s) => s._id !== scheduleToDelete));
+      setDeleteConfirmVisible(false);
+    } catch {
+      Toast.show({ type: "error", text1: "Không thể xóa lịch." });
+    } finally {
+      setDeletingSchedule(false);
+      setScheduleToDelete(null);
+    }
   };
 
   const onPressCreate = () => {
@@ -386,6 +389,19 @@ const DeviceScheduleComponent = ({ device }: { device: DeviceResponse }) => {
           onSuccess={fetchSchedules}
         />
       )}
+      <ConfirmationModal
+        visible={deleteConfirmVisible}
+        title="Xác nhận xóa lịch"
+        message="Bạn có chắc chắn muốn xóa lịch này không? Hành động này không thể hoàn tác."
+        confirmText="Xóa lịch"
+        cancelText="Hủy bỏ"
+        iconName="alert"
+        isDangerous
+        loading={deletingSchedule}
+        onConfirm={handleDeleteSchedule}
+        onCancel={() => setDeleteConfirmVisible(false)}
+        notificationMessage="Đã xóa lịch thành công"
+      />
     </View>
   );
 };

@@ -9,9 +9,7 @@ import {
   useMemo,
   useState,
 } from "react";
-
-import { EventEmitter } from "eventemitter3";
-export const emitter = new EventEmitter();
+import { authEvents } from "./auth-events";
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -52,8 +50,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoggedIn(false);
     setAccessToken(null);
     setUser(null);
-    emitter.emit("logout");
-  }, []);
+    router.replace("/login");
+  }, [router]);
 
   const fetchUserInfo = useCallback(async () => {
     const accessToken = await AsyncStorage.getItem("smart-home-access-token");
@@ -73,21 +71,26 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const handleLogout = () => {
+    const handleLogout = async () => {
+      try {
+        await authService.logout();
+      } catch (error) {
+        console.error("Logout API error:", error);
+      }
       setIsLoggedIn(false);
       setAccessToken(null);
-      AsyncStorage.removeItem("smart-home-access-token");
-      AsyncStorage.removeItem("smart-home-refresh-token");
+      await AsyncStorage.removeItem("smart-home-access-token");
+      await AsyncStorage.removeItem("smart-home-refresh-token");
       setUser(null);
       router.replace("/login");
     };
 
     fetchUserInfo();
 
-    emitter.on("logout", handleLogout);
+    authEvents.on("logout", handleLogout);
 
     return () => {
-      emitter.off("logout", handleLogout);
+      authEvents.off("logout", handleLogout);
     };
   }, []);
 

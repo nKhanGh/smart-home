@@ -43,9 +43,9 @@ const isSensorLikeType = (type?: string) =>
 const getHistoryComponent = (device: DeviceResponse | null) => {
   if (!device) return null;
   if (device.type.endsWith("Sensor"))
-    return <DeviceDataLog deviceId={device.id} />;
+    return <DeviceDataLog deviceId={device?.id} />;
   else if (device.type.endsWith("Device"))
-    return <DeviceActionLog deviceId={device.id} />;
+    return <DeviceActionLog deviceId={device?.id} />;
 };
 
 const getSettingsComponent = (device: DeviceResponse | null) => {
