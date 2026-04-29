@@ -29,7 +29,7 @@ axiosInstance.interceptors.request.use(async (config) => {
 
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log("Response:", response.data);
+    console.log(`✅ Response [${response.status}]:`, response.config.url, JSON.stringify(response.data).substring(0, 200));
     return response;
   },
   async (error) => {

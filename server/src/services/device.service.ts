@@ -627,15 +627,21 @@ export class DeviceService {
   }
 
   async getSensorDevices() {
-    return Device.find({
+    return (await Device.find({
       type: { $in: ["temperatureSensor", "lightSensor", "humiditySensor"] },
-    }).populate("roomId", "name");
+    }).populate("roomId", "name")).map((device) => ({
+      id: device._id,
+      ...device.toObject(),
+    }));
   }
 
   async getThresholdDevices() {
-    return Device.find({
+    return (await Device.find({
       type: { $in: ["temperatureSensor", "lightSensor"] },
-    }).populate("roomId", "name");
+    }).populate("roomId", "name")).map((device) => ({
+      id: device._id,
+      ...device.toObject(),
+    }));
   }
 }
 
