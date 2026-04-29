@@ -9,11 +9,11 @@ export const DeviceService = {
   getCurrentData: (deviceId: string) => axiosInstance.get(`/devices/${deviceId}/current-data`),
   getCurrentAction: (deviceId: string) => axiosInstance.get(`/devices/${deviceId}/current-action`),
   getDeviceDataLogs: (deviceId: string, query?: DeviceHistoryQuery) =>
-    axiosInstance.get<DeviceDataLogItem[]>(`/devices/${deviceId}/data`, {
+    axiosInstance.get<DeviceDataLogResponse>(`/devices/${deviceId}/data`, {
       params: query,
     }),
   getDeviceLogs: (deviceId: string, query?: DeviceHistoryQuery) =>
-    axiosInstance.get<DeviceActionLogItem[]>(`/devices/${deviceId}/logs`, {
+    axiosInstance.get<DeviceActionLogResponse>(`/devices/${deviceId}/logs`, {
       params: query,
     }),
   getThresholdDevices: () => axiosInstance.get<DeviceResponse[]>("/devices/threshold"),

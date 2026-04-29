@@ -1,6 +1,6 @@
-import DeviceActionLog from "@/components/devices/DeviceActionLog";
+import DeviceActionLog from "../../../components/devices/DeviceActionLog";
 import DeviceAutoComponent from "@/components/devices/DeviceAutoComponent";
-import DeviceDataLog from "@/components/devices/DeviceDataLog";
+import DeviceDataLog from "../../../components/devices/DeviceDataLog";
 import DeviceScheduleComponent from "@/components/devices/DeviceScheduleComponent";
 import DoorComponent from "@/components/devices/DoorComponent";
 import FanComponent from "@/components/devices/FanComponent";
@@ -42,10 +42,13 @@ const isSensorLikeType = (type?: string) =>
 
 const getHistoryComponent = (device: DeviceResponse | null) => {
   if (!device) return null;
-  if (device.type.endsWith("Sensor"))
-    return <DeviceDataLog deviceId={device?.id} />;
-  else if (device.type.endsWith("Device"))
-    return <DeviceActionLog deviceId={device?.id} />;
+  if (device.type.endsWith("Sensor")) {
+    return <DeviceDataLog deviceId={device.id} />;
+  }
+  if (device.type.endsWith("Device")) {
+    return <DeviceActionLog deviceId={device.id} deviceType={device.type} />;
+  }
+  return null;
 };
 
 const getSettingsComponent = (device: DeviceResponse | null) => {
