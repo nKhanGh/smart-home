@@ -43,8 +43,18 @@ interface DeviceVoiceCommandParsed {
 }
 
 interface DeviceHistoryQuery {
+  page?: number;
+  size?: number;
   startDate?: string;
   endDate?: string;
+}
+
+interface PaginatedResponse<T> {
+  currentPage: number;
+  size: number;
+  totalPage: number;
+  totalElement: number;
+  items: T[];
 }
 
 interface DeviceActionLogItem {
@@ -63,4 +73,12 @@ interface DeviceDataLogItem {
   recordedAt: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+interface DeviceActionLogResponse extends PaginatedResponse<DeviceActionLogItem> {}
+
+interface DeviceDataLogResponse extends PaginatedResponse<DeviceDataLogItem> {
+  max: number | null;
+  min: number | null;
+  average: number | null;
 }

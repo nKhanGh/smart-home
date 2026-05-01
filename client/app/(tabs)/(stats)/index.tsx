@@ -48,6 +48,9 @@ type TrendPoint = {
   value: number;
 };
 
+const getSensorId = (sensor: DeviceResponse & { _id?: string }) =>
+  sensor.id || sensor._id || "";
+
 const formatValue = (value: number | null, unit = "") => {
   if (value === null || Number.isNaN(value)) {
     return "--";
@@ -71,11 +74,31 @@ export default function StatsScreen() {
       try {
         const response = await DeviceService.getSensorDevices();
         const sensorDevices = response.data;
+        console.log("🔍 Raw response:", JSON.stringify(sensorDevices, null, 2));
+        
+        // Check if response is array
+        if (!Array.isArray(sensorDevices)) {
+          console.error("❌ Response is not an array:", typeof sensorDevices);
+          setError("Response format không đúng");
+          return;
+        }
+        
+        console.log("✅ Sensors count:", sensorDevices.length);
+        sensorDevices.forEach((sensor, idx) => {
+          console.log(`  [${idx}] id: ${sensor.id}, _id: ${(sensor as DeviceResponse & { _id?: string })._id}, name: ${sensor.name}, roomId:`, sensor.roomId);
+        });
+        
         setSensors(sensorDevices);
         if (sensorDevices.length > 0) {
-          setSelectedSensorId(sensorDevices[0].id);
+          const firstSensorId = getSensorId(sensorDevices[0] as DeviceResponse & { _id?: string });
+          console.log("✅ Setting first sensor:", firstSensorId);
+          setSelectedSensorId(firstSensorId);
+        } else {
+          console.warn("⚠️ No sensors returned");
+          setError("Không có cảm biến nào");
         }
-      } catch {
+      } catch (err) {
+        console.error("❌ Error fetching sensors:", err);
         setError("Không thể tải danh sách cảm biến.");
       } finally {
         setLoadingSensors(false);
@@ -87,16 +110,21 @@ export default function StatsScreen() {
 
   useEffect(() => {
     if (!selectedSensorId) {
+      console.log("⚠️ No sensor selected, skipping fetch");
       return;
     }
+
+    console.log("📊 Fetching stats for sensor:", selectedSensorId, "period:", period);
 
     const fetchStats = async () => {
       setLoadingStats(true);
       setError("");
       try {
         const response = await StatisticService.getSensorStats(selectedSensorId, period);
+        console.log("✅ Stats received:", response.data);
         setStats(response.data);
-      } catch {
+      } catch (err) {
+        console.error("❌ Error fetching stats:", err);
         setError("Không thể tải dữ liệu thống kê.");
         setStats(null);
       } finally {
@@ -108,7 +136,7 @@ export default function StatsScreen() {
   }, [selectedSensorId, period]);
 
   const selectedSensor = useMemo(
-    () => sensors.find((sensor) => sensor.id === selectedSensorId),
+    () => sensors.find((sensor) => getSensorId(sensor as DeviceResponse & { _id?: string }) === selectedSensorId),
     [sensors, selectedSensorId],
   );
 
@@ -176,24 +204,36 @@ export default function StatsScreen() {
 
         <View style={styles.selectorCard}>
           <Text style={styles.label}>Chọn cảm biến</Text>
-          {loadingSensors ? (
+          {error ? (
+            <Text style={styles.errorText}>❌ {error}</Text>
+          ) : loadingSensors ? (
             <ActivityIndicator color="#22C55E" />
+          ) : sensors.length === 0 ? (
+            <Text style={styles.errorText}>Không có cảm biến nào</Text>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.sensorChipRow}>
                 {sensors.map((sensor) => {
-                  const active = sensor.id === selectedSensorId;
+                  const sensorId = getSensorId(sensor as DeviceResponse & { _id?: string });
+                  const active = sensorId === selectedSensorId;
+                  const roomName = typeof sensor.roomId === 'object' 
+                    ? sensor.roomId?.name 
+                    : sensor.roomId;
+                  
                   return (
                     <TouchableOpacity
-                      key={sensor.id}
+                      key={sensorId}
                       style={[styles.sensorChip, active && styles.sensorChipActive]}
-                      onPress={() => setSelectedSensorId(sensor.id)}
+                      onPress={() => {
+                        console.log("🖱️ Clicked sensor:", sensorId, "Current:", selectedSensorId);
+                        setSelectedSensorId(sensorId);
+                      }}
                     >
                       <Text style={[styles.sensorChipName, active && styles.sensorChipNameActive]}>
                         {sensor.name}
                       </Text>
                       <Text style={[styles.sensorChipRoom, active && styles.sensorChipRoomActive]}>
-                        {sensor.roomId.name}
+                        {roomName || "Phòng không xác định"}
                       </Text>
                     </TouchableOpacity>
                   );
