@@ -70,6 +70,10 @@ export default function UserChangePasswordModal({
       Toast.show({ type: "error", text1: "Lỗi", text2: "Vui lòng nhập mật khẩu mới" });
       return false;
     }
+    if (oldPassword === newPassword) {
+      Toast.show({ type: "error", text1: "Lỗi", text2: "Mật khẩu mới phải khác mật khẩu cũ" });
+      return false;
+    }
     if (newPassword.length < 8) {
       Toast.show({ type: "error", text1: "Lỗi", text2: "Mật khẩu mới phải ít nhất 8 ký tự" });
       return false;

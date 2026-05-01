@@ -5,8 +5,9 @@
  * Tự quản lý header (back, tên thiết bị), danh sách lịch motion watch, và modal tạo lịch.
  */
 
+import { useSocket } from "@/contexts/SocketContext";
+import { DeviceService } from "@/service/device.service";
 import { ScheduleService } from "@/service/schedule.service";
-import { router } from "expo-router";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,6 +24,60 @@ import Icon from "react-native-vector-icons/FontAwesome5";
 import MotionWatchScheduleModal from "../modals/MotionWatchScheduleModal";
 
 const SCREEN_W = Dimensions.get("window").width;
+
+// ── Motion Status Card ────────────────────────────────────────────────────────
+const MotionStatusCard = ({
+  motionDetected,
+  dataFresh,
+  loading,
+}: {
+  motionDetected: boolean;
+  dataFresh: boolean;
+  loading: boolean;
+}) => {
+  const bgColor = motionDetected && dataFresh ? "#FEF2F2" : "#F0FDF4";
+  const color = motionDetected && dataFresh ? "#DC2626" : "#16A34A";
+  const statusText =
+    motionDetected && dataFresh
+      ? "Phát hiện chuyển động"
+      : "Không có chuyển động";
+  const iconName =
+    motionDetected && dataFresh ? "exclamation-circle" : "check-circle";
+
+  return (
+    <View style={[mc.card, { backgroundColor: bgColor }]}>
+      <View style={[mc.iconWrap, { backgroundColor: color + "22" }]}>
+        {loading ? (
+          <ActivityIndicator size="small" color={color} />
+        ) : (
+          <Icon name={iconName} size={16} color={color} />
+        )}
+      </View>
+      <Text style={mc.label}>Trạng thái</Text>
+      <Text style={[mc.status, { color }]}>{statusText}</Text>
+    </View>
+  );
+};
+
+const mc = StyleSheet.create({
+  card: {
+    borderRadius: 18,
+    padding: 16,
+    gap: 8,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  iconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  label: { fontSize: 12, fontWeight: "600", color: "#6B7280" },
+  status: { fontSize: 18, fontWeight: "800", letterSpacing: -0.3 },
+});
 
 // ── Day helpers ───────────────────────────────────────────────────────────────
 const DAY_LABELS: Record<string, string> = {
@@ -330,6 +385,67 @@ export default function MotionSensorComponent({ device }: Readonly<Props>) {
     useState<MotionWatchScheduleResponse | null>(null);
   const [menuScheduleId, setMenuScheduleId] = useState<string | null>(null);
 
+  // Motion detection state
+  const [motionData, setMotionData] = useState<string | number | null>(null);
+  const [motionTimestamp, setMotionTimestamp] = useState<number | null>(null);
+  const [loadingMotionData, setLoadingMotionData] = useState(true);
+
+  const { subscribe } = useSocket();
+
+  // Fetch initial motion data
+  useEffect(() => {
+    const fetchMotionData = async () => {
+      setLoadingMotionData(true);
+      try {
+        const res = await DeviceService.getCurrentData(device.id);
+        setMotionData(res.data?.value ?? null);
+        setMotionTimestamp(
+          res.data?.timestamp ? new Date(res.data.timestamp).getTime() : null,
+        );
+      } catch {
+        console.error("Failed to fetch motion data");
+      } finally {
+        setLoadingMotionData(false);
+      }
+    };
+    fetchMotionData();
+  }, [device.id]);
+
+  // Subscribe to real-time motion updates
+  useEffect(() => {
+    const unsubData = subscribe("sensor:data", (data: any) => {
+      if (data.deviceId === device.id) {
+        setMotionData(data.value);
+        setMotionTimestamp(Date.now());
+      }
+    });
+    return () => {
+      unsubData();
+    };
+  }, [subscribe, device.id]);
+
+  // Auto-reset motion after 5 seconds of no update
+  useEffect(() => {
+    if (!motionTimestamp) return;
+
+    const timeoutId = setTimeout(() => {
+      setMotionData(null);
+      setMotionTimestamp(null);
+    }, 5000);
+
+    return () => clearTimeout(timeoutId);
+  }, [motionTimestamp]);
+
+  // Check if motion data is fresh (within 5 seconds)
+  const isDataFresh = () => {
+    if (!motionTimestamp) return false;
+    const now = Date.now();
+    return now - motionTimestamp < 5000; // 5 seconds
+  };
+
+  const motionDetected = motionData !== null && String(motionData) === "1";
+  const dataFresh = isDataFresh();
+
   const loadSchedules = useCallback(
     async (silent = false) => {
       if (!silent) setLoading(true);
@@ -454,7 +570,6 @@ export default function MotionSensorComponent({ device }: Readonly<Props>) {
 
   return (
     <View style={s.root}>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={s.scroll}
@@ -470,6 +585,12 @@ export default function MotionSensorComponent({ device }: Readonly<Props>) {
           />
         }
       >
+        {/* ── Motion Status ── */}
+        <MotionStatusCard
+          motionDetected={motionDetected}
+          dataFresh={dataFresh}
+          loading={loadingMotionData}
+        />
 
         {/* ── Stats ── */}
         <View style={s.statsGrid}>
