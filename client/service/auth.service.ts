@@ -13,11 +13,11 @@ export const authService = {
     return AxiosInstance.post("/auth/refresh", { token: refreshToken });
   },
 
-  logout: () => {
-    return AxiosInstance.post("/auth/logout");
+  logout: (pushToken?: string | null) => {
+    return AxiosInstance.post("/auth/logout", { pushToken });
   },
 
   getMe: () => {
     return AxiosInstance.get<UserResponse>("/auth/me");
-  }
+  },
 };
