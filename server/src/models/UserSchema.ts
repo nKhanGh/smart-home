@@ -9,6 +9,7 @@ export interface IUserDoc extends Document {
   isActive: boolean;
   avatarColor: string;
   avatarInitials: string;
+  pushTokens: string[];
 }
 
 const UserSchema = new Schema<IUserDoc>(
@@ -20,6 +21,7 @@ const UserSchema = new Schema<IUserDoc>(
     isActive: { type: Boolean, default: true },
     avatarColor: { type: String, default: "#000000" },
     avatarInitials: { type: String, default: "" },
+    pushTokens: { type: [String], default: [] },
   },
   { timestamps: true },
 );
@@ -78,5 +80,11 @@ export const UpdateProfileSchema = z.object({
 });
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
+
+export const PushTokenSchema = z.object({
+  token: z.string().trim().min(1, "Push token không được để trống."),
+});
+
+export type PushTokenInput = z.infer<typeof PushTokenSchema>;
 
 export default model<IUserDoc>("User", UserSchema);

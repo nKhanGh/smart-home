@@ -143,6 +143,20 @@ export class UserService {
     await user.save();
     return { code: "200", msg: "Cập nhật hồ sơ thành công." };
   }
+
+  async addPushToken(userId: string, token: string) {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { pushTokens: token } },
+      { new: true, select: "_id pushTokens" },
+    );
+
+    if (!user) {
+      throw new ServiceError(404, "User not found.");
+    }
+
+    return { code: "200", msg: "Thêm push token thành công." };
+  }
   
   async inactivateUser(userId: string, targetUserId: string) {
     const user = await User.findById(targetUserId);

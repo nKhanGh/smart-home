@@ -4,6 +4,7 @@ import validate from "../middleware/validateMiddleware";
 import {
   AddUserSchema,
   ChangePasswordSchema,
+  PushTokenSchema,
   UpdateProfileSchema,
 } from "../models/UserSchema";
 import userController from "../controllers/user.controller";
@@ -162,6 +163,43 @@ router.put(
   verifyToken,
   validate(UpdateProfileSchema),
   userController.updateProfile,
+);
+
+/**
+ * @swagger
+ * /api/users/push-token:
+ *   post:
+ *     summary: Thêm push token notification cho người dùng hiện tại
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
+ *     responses:
+ *       200:
+ *         description: Thêm push token thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ *       401:
+ *         description: Token không hợp lệ hoặc hết hạn
+ *       404:
+ *         description: User not found
+ */
+router.post(
+  "/push-token",
+  verifyToken,
+  validate(PushTokenSchema),
+  userController.addPushToken,
 );
 
 /**
