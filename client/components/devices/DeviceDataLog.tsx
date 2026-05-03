@@ -164,7 +164,7 @@ const DeviceDataLog = ({ deviceId }: { deviceId: string }) => {
     return [...logs]
       .sort(
         (a, b) =>
-          new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime(),
+          new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime(),
       )
       .map((item) => {
         const numericValue = Number(item.value);
