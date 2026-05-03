@@ -12,6 +12,7 @@ import "../global.css";
 import AuthProvider from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { usePushNotification } from "@/hooks/usePushNotification";
 
 // export const unstable_settings = {
 //   anchor: "(tabs)",
@@ -19,6 +20,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  usePushNotification();
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>

@@ -1,20 +1,15 @@
 // app/login.tsx
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useAuth } from "@/contexts/AuthContext";
+import { registerPushToken } from "@/hooks/usePushNotification";
 import { authService } from "@/service/auth.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  Image,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import { styles } from "../styles/login.styles";
-import { useAuth } from "@/contexts/AuthContext";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Toast from 'react-native-toast-message';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -22,7 +17,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const {fetchUserInfo} = useAuth();
+  const { fetchUserInfo } = useAuth();
 
   const handleLogin = async () => {
     setLoading(true);
@@ -34,20 +29,21 @@ export default function LoginScreen() {
         const { token, refreshToken } = response.data;
         await AsyncStorage.setItem("smart-home-access-token", token);
         await AsyncStorage.setItem("smart-home-refresh-token", refreshToken);
+        await registerPushToken();
       }
       await fetchUserInfo();
       router.replace("/(tabs)");
       Toast.show({
         type: "success",
         text1: "Đăng nhập thành công",
-        text2: `Chào mừng ${username}!`
+        text2: `Chào mừng ${username}!`,
       });
     } catch (error) {
       console.error("Login error:", error);
       Toast.show({
         type: "error",
         text1: "Đăng nhập thất bại",
-        text2: "Vui lòng kiểm tra lại tên đăng nhập và mật khẩu."
+        text2: "Vui lòng kiểm tra lại tên đăng nhập và mật khẩu.",
       });
     } finally {
       setLoading(false);
@@ -59,7 +55,7 @@ export default function LoginScreen() {
       <View style={styles.header}>
         <View style={styles.logoBox}>
           <Image
-            source={require("@/assets/images/smart-home.png")}
+            source={require("@/assets/images/icon.png")}
             style={styles.logoImage}
           />
         </View>
@@ -99,8 +95,11 @@ export default function LoginScreen() {
           onPress={handleLogin}
           activeOpacity={0.85}
         >
-          {loading ? <LoadingSpinner size={24} color="#FFFFFF" variant="spinner" /> :
-          <Text style={styles.buttonText}>ĐĂNG NHẬP</Text> }
+          {loading ? (
+            <LoadingSpinner size={24} color="#FFFFFF" variant="spinner" />
+          ) : (
+            <Text style={styles.buttonText}>ĐĂNG NHẬP</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

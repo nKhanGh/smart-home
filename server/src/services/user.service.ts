@@ -2,6 +2,7 @@ import { ServiceError } from "../errors/service.error";
 import User, { AddUserInput } from "../models/UserSchema";
 import bcrypt from "bcryptjs";
 import homeDisplayService from "./homeDisplay.service";
+import Expo from "expo-server-sdk";
 
 export class UserService {
   async addUser(payload: AddUserInput) {
@@ -142,6 +143,23 @@ export class UserService {
 
     await user.save();
     return { code: "200", msg: "Cập nhật hồ sơ thành công." };
+  }
+
+  async addPushToken(userId: string, token: string) {
+    if (!Expo.isExpoPushToken(token)) {
+      throw new ServiceError(400, "Token không hợp lệ."); // Kiểm tra định dạng token
+    }
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { pushTokens: token } },
+      { new: true, select: "_id pushTokens" },
+    );
+
+    if (!user) {
+      throw new ServiceError(404, "User not found.");
+    }
+
+    return { code: "200", msg: "Thêm push token thành công." };
   }
   
   async inactivateUser(userId: string, targetUserId: string) {

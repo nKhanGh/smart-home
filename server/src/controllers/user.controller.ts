@@ -1,4 +1,4 @@
-import { AddUserInput } from "../models/UserSchema";
+import { AddUserInput, PushTokenInput } from "../models/UserSchema";
 import userService, { UserService } from "../services/user.service";
 import { AuthRequest } from "../types";
 import handleControllerError from "../utils/handleControllerError";
@@ -87,6 +87,16 @@ export class UserController {
       res.status(200).json(result);
     } catch (err) {
       handleControllerError(err, res, "Error updating profile:");
+    }
+  };
+
+  addPushToken = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { token } = req.body as PushTokenInput;
+      const result = await this.service.addPushToken(req.user?.id || "", token);
+      res.status(200).json(result);
+    } catch (err) {
+      handleControllerError(err, res, "Error adding push token:");
     }
   };
 

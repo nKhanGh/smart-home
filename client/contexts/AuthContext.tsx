@@ -9,6 +9,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { Platform } from "react-native";
 import { authEvents } from "./auth-events";
 
 interface AuthContextType {
@@ -39,9 +40,26 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const router = useRouter();
 
-  const logout = useCallback(async () => {
+  const getCurrentPushToken = useCallback(async () => {
+    if (Platform.OS === "web") return null;
     try {
-      await authService.logout();
+      const Constants = (await import("expo-constants")).default;
+      const Notifications = await import("expo-notifications");
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId,
+      });
+      return tokenData.data;
+    } catch (error) {
+      console.error("Failed to get push token:", error);
+      return null;
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    const pushToken = await getCurrentPushToken();
+    try {
+      await authService.logout(pushToken);
     } catch (error) {
       console.error("Logout API error:", error);
     }
@@ -72,8 +90,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const handleLogout = async () => {
+      const pushToken = await getCurrentPushToken();
       try {
-        await authService.logout();
+        await authService.logout(pushToken);
       } catch (error) {
         console.error("Logout API error:", error);
       }
@@ -92,7 +111,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       authEvents.off("logout", handleLogout);
     };
-  }, []);
+  }, [getCurrentPushToken]);
 
   const value = useMemo(
     () => ({
@@ -105,7 +124,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAccessToken,
       logout,
     }),
-    [isLoggedIn, user, accessToken],
+    [isLoggedIn, user, accessToken, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

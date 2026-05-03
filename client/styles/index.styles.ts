@@ -48,10 +48,12 @@ export const styles = StyleSheet.create({
   },
 
   logoBox: {
-    backgroundColor: '#1FB858',
-    padding: 32,
+    // backgroundColor: '#1FB858',
+    // padding: 32,
     borderRadius: 40,
-    elevation: 10,
+    // elevation: 10,
+    width: 260,
+    height: 240,
   },
 
   homeIcon: {

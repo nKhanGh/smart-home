@@ -20,18 +20,14 @@ export const verifyToken = (
 
   return (async () => {
     const redis = await getRedisClient();
-    if (!redis) {
-      res
-        .status(503)
-        .json({ code: "503", msg: "Redis chưa sẵn sàng để xác thực token." });
-      return;
+    if (redis) {
+      const isBlacklisted = await redis.exists(`auth:blacklist:token:${token}`);
+      if (isBlacklisted) {
+        res.status(401).json({ code: "401", msg: "Token đã bị thu hồi." });
+        return;
+      }
     }
 
-    const isBlacklisted = await redis.exists(`auth:blacklist:token:${token}`);
-    if (isBlacklisted) {
-      res.status(401).json({ code: "401", msg: "Token đã bị thu hồi." });
-      return;
-    }
 
     try {
       req.user = jwt.verify(token, JWT_SECRET) as JwtPayload;

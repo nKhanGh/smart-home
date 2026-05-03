@@ -86,7 +86,7 @@ const SmartHomeOnboarding = () => {
         {/* Logo */}
         <Animated.View style={animatedLogoStyle}>
           <Image
-            source={require("@/assets/images/smart-home.png")}
+            source={require("@/assets/images/icon.png")}
             style={styles.logoBox}
           />
         </Animated.View>

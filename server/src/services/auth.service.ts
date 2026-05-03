@@ -1,10 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
-import User, {
-  AddUserInput,
-  LoginInput,
-  RegisterInput,
-} from "../models/UserSchema";
+import User, { LoginInput, RegisterInput } from "../models/UserSchema";
 import { ServiceError } from "../errors/service.error";
 import { getRedisClient } from "../config/redis";
 
@@ -77,7 +73,6 @@ export class AuthService {
       throw new ServiceError(401, "Sai tên đăng nhập hoặc mật khẩu.");
     }
 
-    
     if (!user.isActive) {
       throw new ServiceError(403, "Tài khoản đã bị vô hiệu hóa.");
     }
@@ -175,16 +170,27 @@ export class AuthService {
     }
   }
 
-  async logout(token: string) {
+  async logout(token: string, userId?: string, pushToken?: string) {
     const redis = await getRedisClient();
 
-    if (redis){
+    if (redis) {
       const key = this.getTokenBlacklistKey(token);
       const ttlSeconds = this.getTokenTtlSeconds(token);
       await redis.set(key, "1", { EX: ttlSeconds });
     }
 
     console.log("Token blacklisted:", token);
+
+    if (userId && pushToken) {
+      try {
+        await User.findByIdAndUpdate(userId, {
+          $pull: { pushTokens: pushToken },
+        }).exec();
+        console.log(`Removed push token for user ${userId}: ${pushToken}`);
+      } catch (err) {
+        console.error("Failed to remove push token on logout:", err);
+      }
+    }
 
     return { success: true };
   }

@@ -6,6 +6,7 @@ import {
   LoginSchema,
   RefreshTokenSchema,
   RegisterSchema,
+  LogoutSchema,
 } from "../models/UserSchema";
 import validate from "../middleware/validateMiddleware";
 
@@ -140,13 +141,28 @@ router.post("/login", validate(LoginSchema), authController.login);
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pushToken:
+ *                 type: string
+ *                 example: ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]
  *     responses:
  *       200:
  *         description: Đăng xuất thành công
  *       401:
  *         description: Token không hợp lệ hoặc hết hạn
  */
-router.post("/logout", verifyToken, authController.logout);
+router.post(
+  "/logout",
+  verifyToken,
+  validate(LogoutSchema),
+  authController.logout,
+);
 
 /**
  * @swagger
