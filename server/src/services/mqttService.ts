@@ -14,6 +14,8 @@ import Data from "../models/DataSchema";
 import Room from "../models/RoomSchema";
 import Threshold from "../models/ThresholdSchema";
 import SensorAlert from "../models/SensorAlertSchema";
+import User from "../models/UserSchema";
+import { sendPushNotification } from "./pushNotificaton.service";
 import { Server as SocketIOServer } from "socket.io";
 import deviceService from "./device.service";
 import { getRedisClient } from "../config/redis";
@@ -184,7 +186,11 @@ class MqttService {
     const cooldownSeconds = (schedule.cooldownMinutes ?? 10) * 60;
     const minSignalSeconds = schedule.minSignalIntervalSeconds ?? 8;
 
-    return Math.max(120, countWindowSeconds + cooldownSeconds, minSignalSeconds);
+    return Math.max(
+      120,
+      countWindowSeconds + cooldownSeconds,
+      minSignalSeconds,
+    );
   }
 
   private async getMotionWatchState(
@@ -256,7 +262,10 @@ class MqttService {
       try {
         await redis.del(key);
       } catch (err) {
-        console.error("[MQTT] Xóa motion-watch state trên Redis thất bại:", err);
+        console.error(
+          "[MQTT] Xóa motion-watch state trên Redis thất bại:",
+          err,
+        );
       }
     }
 
@@ -367,7 +376,7 @@ class MqttService {
       const text =
         `Phát hiện ${state.hitTimestamps.length}/${triggerCount} lần chuyển động ` +
         `trong ${schedule.countWindowMinutes ?? 5} phút (${schedule.startTime}-${schedule.endTime}).`;
-        console.log(`[MQTT] ${alert} - ${text}`);
+      console.log(`[MQTT] ${alert} - ${text}`);
       await SensorAlert.create({
         deviceId: device._id,
         value: String(state.hitTimestamps.length),
@@ -396,6 +405,27 @@ class MqttService {
         text,
       });
 
+      // Send push notifications to all users who have push tokens
+      try {
+        const usersWithTokens = await User.find(
+          { pushTokens: { $exists: true, $ne: [] } },
+          "pushTokens",
+        ).exec();
+        const tokens = usersWithTokens.flatMap((u: any) => u.pushTokens || []);
+        if (tokens.length > 0) {
+          await sendPushNotification({
+            tokens,
+            title: alert,
+            body: text,
+            data: { deviceId: device._id.toString() },
+          });
+        }
+      } catch (err) {
+        console.error(
+          "Failed to send push notifications for motion alert:",
+          err,
+        );
+      }
       state.lastAlertAt = nowMs;
       state.hitTimestamps = [];
       await this.saveMotionWatchState(scheduleId, schedule, state);
@@ -449,16 +479,37 @@ class MqttService {
     return sensorValue <= thresholdValue;
   }
 
-  private emitSensorNormal(device: any): void {
+  private async emitSensorNormal(device: any): Promise<void> {
+    const alert = getName(device.type) + " bình thường";
+    const text =
+      "Cảm biến ở " +
+      (device.roomId ? device.roomId.name : "") +
+      " đã trở lại bình thường";
+
     this.io?.emit("sensor:normal", {
       deviceId: device._id,
       type: device.type,
-      alert: getName(device.type) + " bình thường",
-      text:
-        "Cảm biến ở " +
-        (device.roomId ? device.roomId.name : "") +
-        " đã trở lại bình thường",
+      alert,
+      text,
     });
+
+    try {
+      const usersWithTokens = await User.find(
+        { pushTokens: { $exists: true, $ne: [] } },
+        "pushTokens",
+      ).exec();
+      const tokens = usersWithTokens.flatMap((u: any) => u.pushTokens || []);
+      if (tokens.length > 0) {
+        await sendPushNotification({
+          tokens,
+          title: alert,
+          body: text,
+          data: { deviceId: device._id.toString() },
+        });
+      }
+    } catch (err) {
+      console.error("Failed to send push notifications for normal state:", err);
+    }
   }
 
   private publishThresholdAction(
@@ -541,6 +592,29 @@ class MqttService {
           alert,
           text,
         });
+        // Send push notifications for threshold alerts
+        try {
+          const usersWithTokens = await User.find(
+            { pushTokens: { $exists: true, $ne: [] } },
+            "pushTokens",
+          ).exec();
+          const tokens = usersWithTokens.flatMap(
+            (u: any) => u.pushTokens || [],
+          );
+          if (tokens.length > 0) {
+            await sendPushNotification({
+              tokens,
+              title: alert,
+              body: text,
+              data: { deviceId: device._id.toString() },
+            });
+          }
+        } catch (err) {
+          console.error(
+            "Failed to send push notifications for threshold alert:",
+            err,
+          );
+        }
 
         this.publishThresholdAction(targetDevice, "alert");
       } else {
@@ -550,7 +624,7 @@ class MqttService {
 
     if (!isTriggered && wasTriggered && !targetDevice.type.endsWith("Device")) {
       if (threshold.action === "alert") {
-        this.emitSensorNormal(device);
+        await this.emitSensorNormal(device);
       } else {
         const targetDevice = threshold.deviceId;
         const revertAction = threshold.action === "on" ? "off" : "on";

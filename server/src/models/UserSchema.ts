@@ -87,4 +87,10 @@ export const PushTokenSchema = z.object({
 
 export type PushTokenInput = z.infer<typeof PushTokenSchema>;
 
+export const LogoutSchema = z.object({
+  pushToken: z.string().trim().min(1).optional(),
+});
+
+export type LogoutInput = z.infer<typeof LogoutSchema>;
+
 export default model<IUserDoc>("User", UserSchema);

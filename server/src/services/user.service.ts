@@ -2,6 +2,7 @@ import { ServiceError } from "../errors/service.error";
 import User, { AddUserInput } from "../models/UserSchema";
 import bcrypt from "bcryptjs";
 import homeDisplayService from "./homeDisplay.service";
+import Expo from "expo-server-sdk";
 
 export class UserService {
   async addUser(payload: AddUserInput) {
@@ -145,6 +146,9 @@ export class UserService {
   }
 
   async addPushToken(userId: string, token: string) {
+    if (!Expo.isExpoPushToken(token)) {
+      throw new ServiceError(400, "Token không hợp lệ."); // Kiểm tra định dạng token
+    }
     const user = await User.findByIdAndUpdate(
       userId,
       { $addToSet: { pushTokens: token } },

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../types";
 import authService, { AuthService } from "../services/auth.service";
-import { AddUserInput, LoginInput, RegisterInput } from "../models/UserSchema";
+import { LoginInput, RegisterInput } from "../models/UserSchema";
 import handleControllerError from "../utils/handleControllerError";
 
 export class AuthController {
@@ -52,14 +52,12 @@ export class AuthController {
     try {
       const result = await this.service.login(req.body as LoginInput);
       console.log("Login successful for user:", result);
-      res
-        .status(200)
-        .json({
-          code: "200",
-          token: result.token,
-          refreshToken: result.refreshToken,
-          user: result.user,
-        });
+      res.status(200).json({
+        code: "200",
+        token: result.token,
+        refreshToken: result.refreshToken,
+        user: result.user,
+      });
     } catch (err) {
       handleControllerError(err, res, "Error logging in:");
     }
@@ -74,7 +72,7 @@ export class AuthController {
     }
   };
 
-  logout = async (req: Request, res: Response): Promise<void> => {
+  logout = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const token = this.getBearerToken(req);
       if (!token) {
@@ -82,7 +80,8 @@ export class AuthController {
         return;
       }
 
-      await this.service.logout(token);
+      const pushToken = req.body?.pushToken as string | undefined;
+      await this.service.logout(token, req.user?.id, pushToken);
       res.status(200).json({ code: "200", msg: "Đăng xuất thành công." });
     } catch (err) {
       handleControllerError(err, res, "Error logging out:");
