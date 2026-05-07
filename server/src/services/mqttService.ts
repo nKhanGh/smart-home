@@ -64,6 +64,7 @@ class MqttService {
   private client: MqttClient | null = null;
   private readonly prefix: string;
   private io: SocketIOServer | null = null;
+  private readonly thresholdAlertStates = new Map<string, boolean>();
   private readonly motionWatchRuntimeFallback = new Map<
     string,
     MotionWatchRuntimeState
@@ -548,6 +549,85 @@ class MqttService {
       return;
     }
 
+    if (threshold.action === "alert") {
+      const alertKey = threshold?._id?.toString?.() ?? "";
+      const wasAlerting = alertKey
+        ? this.thresholdAlertStates.get(alertKey) === true
+        : false;
+      const isTriggered = this.isTriggeredByThreshold(
+        numericValue,
+        threshold.value,
+        threshold.when,
+      );
+
+      if (isTriggered && !wasAlerting) {
+        await SensorAlert.create({
+          deviceId: device?._id,
+          value: numericValue,
+          threshold: threshold.value,
+          createdAt: Date.now(),
+        });
+
+        const room = await Room.findById(device?.roomId);
+        const alert =
+          "Cảnh báo " + getName(device.type) + " bất thường - " + room?.name;
+        const text =
+          value +
+          getUnit(device.type) +
+          " vượt ngưỡng " +
+          threshold.when +
+          " " +
+          threshold.value +
+          getUnit(device.type);
+
+        this.io?.emit("sensor:alert", {
+          type: device.type,
+          deviceId: device._id,
+          alert,
+          text,
+        });
+
+        try {
+          const usersWithTokens = await User.find(
+            { pushTokens: { $exists: true, $ne: [] } },
+            "pushTokens",
+          ).exec();
+          const tokens = usersWithTokens.flatMap(
+            (u: any) => u.pushTokens || [],
+          );
+          if (tokens.length > 0) {
+            await sendPushNotification({
+              tokens,
+              title: alert,
+              body: text,
+              data: { deviceId: device._id.toString() },
+            });
+          }
+        } catch (err) {
+          console.error(
+            "Failed to send push notifications for threshold alert:",
+            err,
+          );
+        }
+
+        this.publishThresholdAction(threshold.deviceId, "alert");
+      }
+
+      if (!isTriggered && wasAlerting) {
+        await this.emitSensorNormal(device);
+        const targetDevice = threshold.deviceId;
+        if (targetDevice?.type === "lightDevice" && targetDevice?.key) {
+          this.publish(targetDevice.key, "0");
+        }
+      }
+
+      if (alertKey) {
+        this.thresholdAlertStates.set(alertKey, isTriggered);
+      }
+
+      return;
+    }
+
     const wasTriggered =
       lastValue === null
         ? false
@@ -622,11 +702,16 @@ class MqttService {
       }
     }
 
-    if (!isTriggered && wasTriggered && !targetDevice.type.endsWith("Device")) {
+    if (!isTriggered && wasTriggered) {
       if (threshold.action === "alert") {
         await this.emitSensorNormal(device);
-      } else {
-        const targetDevice = threshold.deviceId;
+        if (targetDevice?.type === "lightDevice" && targetDevice?.key) {
+          this.publish(targetDevice.key, "0");
+        }
+        return;
+      }
+
+      if (!targetDevice.type.endsWith("Device")) {
         const revertAction = threshold.action === "on" ? "off" : "on";
         this.publishThresholdAction(targetDevice, revertAction);
       }
