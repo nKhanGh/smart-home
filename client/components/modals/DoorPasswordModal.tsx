@@ -102,6 +102,11 @@ const DoorPasswordModal = ({
     }
     setPinLoading(true);
     try {
+      console.log("Sending command with PIN:", {
+        deviceId: pendingDoorDevice!.id,
+        action: pendingAction,
+        pin,
+      });
       const response = await DeviceService.sendCommand(pendingDoorDevice!.id, String(pendingAction), pin);
       if (response.data.code === 403) {
         Toast.show({
@@ -114,7 +119,7 @@ const DoorPasswordModal = ({
         setDoorModalVisible(false);
         Toast.show({
           type: "success",
-          text1: `Đã ${pendingAction === "1" ? "đóng" : "mở"} ${pendingDoorDevice?.name ?? "thiết bị"}.`,
+          text1: `Đã ${pendingAction === "1" ? "mở" : "đóng"} ${pendingDoorDevice?.name ?? "thiết bị"}.`,
         });
       }
     } catch {

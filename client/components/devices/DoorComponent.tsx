@@ -80,6 +80,11 @@ const DoorComponent = ({ device }: { device: DeviceResponse }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [changePassVisible, setChangePassVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<string>("0");
+  const [isOpen, setIsOpen] = useState(currentAction === "1");
+
+  useEffect(() => {
+    setIsOpen(currentAction === "1");
+  }, [currentAction]);
   const { user } = useAuth();
 
   const openAnim = useRef(
@@ -115,7 +120,6 @@ const DoorComponent = ({ device }: { device: DeviceResponse }) => {
     return () => unsubscribe();
   }, [subscribe, device.id]);
 
-  const isOpen = currentAction === "1";
 
   const handleToggle = () => {
     setPendingAction(isOpen ? "0" : "1");

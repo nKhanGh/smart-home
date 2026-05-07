@@ -256,7 +256,7 @@ export default function HomeScreen() {
   ) => {
     if (device.type === "doorDevice") {
       setPendingDoorDevice(device);
-      setPendingAction(currentAction);
+      setPendingAction(currentAction == "1" ? "0" : "1");
       setDoorModalVisible(true);
     } else {
       toggleDevice(device.id, currentAction);
