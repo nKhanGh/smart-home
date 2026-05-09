@@ -8,7 +8,7 @@ export interface IRoomDoc extends Document {
   backgroundName: string;
   createdBy: Types.ObjectId;
   createdAt: Date;
-}
+} 
 
 const RoomSchema = new Schema<IRoomDoc>({
   name   : { type: String, required: true, unique: true },

@@ -18,6 +18,8 @@ export class UserService {
       passwordHash: hash,
       fullName,
       role,
+      createdAt: new Date(),
+      updatedAt: new Date(),
       avatarColor:
         "#" +
         Math.floor(Math.random() * 16777215)
@@ -91,6 +93,7 @@ export class UserService {
     if (payload.role) {
       user.role = payload.role;
     }
+    user.updatedAt = new Date();
     await user.save();
     return { code: "200", msg: "Cập nhật người dùng thành công." };
   }
@@ -107,6 +110,7 @@ export class UserService {
 
     const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
     if (!isMatch) {
+      console.log(`Old password does not match for user ${user.username}`);
       throw new ServiceError(400, "Mật khẩu cũ không đúng.");
     }
 
@@ -140,7 +144,7 @@ export class UserService {
         .toUpperCase()
         .slice(0, 2);
     }
-
+    user.updatedAt = new Date();
     await user.save();
     return { code: "200", msg: "Cập nhật hồ sơ thành công." };
   }
@@ -173,6 +177,7 @@ export class UserService {
     }
 
     user.isActive = false;
+    user.inactiveAt = new Date();
     await user.save();
     return { code: "200", msg: "Vô hiệu hóa người dùng thành công." };
   }
@@ -184,6 +189,7 @@ export class UserService {
     }
 
     user.isActive = true;
+    user.inactiveAt = undefined;
     await user.save();
     return { code: "200", msg: "Kích hoạt lại người dùng thành công." };
   }

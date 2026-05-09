@@ -15,6 +15,7 @@ import Room from "../models/RoomSchema";
 import Threshold from "../models/ThresholdSchema";
 import SensorAlert from "../models/SensorAlertSchema";
 import User from "../models/UserSchema";
+import ActionLog from "../models/ActionLogSchema";
 import { sendPushNotification } from "./pushNotificaton.service";
 import { Server as SocketIOServer } from "socket.io";
 import deviceService from "./device.service";
@@ -611,6 +612,13 @@ class MqttService {
         }
 
         this.publishThresholdAction(threshold.deviceId, "alert");
+        ActionLog.create({
+          deviceId: threshold.deviceId?._id ?? threshold.deviceId,
+          action: "alert",
+          actor: "System",
+        }).catch((err) =>
+          console.error("[Log] Failed to log threshold alert:", err),
+        );
       }
 
       if (!isTriggered && wasAlerting) {
@@ -697,8 +705,22 @@ class MqttService {
         }
 
         this.publishThresholdAction(targetDevice, "alert");
+        ActionLog.create({
+          deviceId: targetDevice?._id ?? targetDevice,
+          action: "alert",
+          actor: "System",
+        }).catch((err) =>
+          console.error("[Log] Failed to log threshold alert:", err),
+        );
       } else {
         this.publishThresholdAction(targetDevice, threshold.action);
+        ActionLog.create({
+          deviceId: targetDevice?._id ?? targetDevice,
+          action: threshold.action,
+          actor: "System",
+        }).catch((err) =>
+          console.error("[Log] Failed to log threshold action:", err),
+        );
       }
     }
 

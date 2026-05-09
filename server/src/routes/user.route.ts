@@ -273,8 +273,8 @@ router.get("/:id", verifyToken, userController.getUserById);
  */
 router.put(
   "/:id",
-  authorizeRoles(["admin"]),
   verifyToken,
+  authorizeRoles(["admin"]),
   userController.updateUser,
 );
 

@@ -57,6 +57,6 @@ export const authorizeRoles =
         });
       return;
     }
-
+    console.log("User role passed:", req.user.role);
     next();
   };

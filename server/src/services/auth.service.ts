@@ -69,8 +69,11 @@ export class AuthService {
     const { username, password } = payload;
 
     const user = await User.findOne({ username });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      throw new ServiceError(401, "Sai tên đăng nhập hoặc mật khẩu.");
+    if (!user) {
+      throw new ServiceError(401, "Người dùng không tồn tại");
+    }
+    if (!await bcrypt.compare(password, user.passwordHash)) {
+      throw new ServiceError(401, "Sai  mật khẩu.");
     }
 
     if (!user.isActive) {

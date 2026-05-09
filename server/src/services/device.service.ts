@@ -415,9 +415,12 @@ export class DeviceService {
       }
       const isMatch = await bcrypt.compare(payload.password, device.password);
       if (!isMatch) {
+        console.log(`Incorrect password for device ${device._id} (${device.name}), provided: ${payload.password}`);
         throw new ServiceError(403, "Incorrect password.");
       }
     }
+
+    console.log("Publishing to MQTT:", { topic: device.key, message: payload.action });
 
     mqttService.publish(device.key, payload.action);
 
@@ -426,7 +429,7 @@ export class DeviceService {
       deviceId: device._id,
       deviceName: device.name,
       action: payload.action,
-      actor: user?.username ?? "App",
+      actor: user?.username ?? "System",
     }).catch((err) => console.error("[Log] Luu log that bai:", err));
 
     return { action: payload.action, deviceName: device.name };
