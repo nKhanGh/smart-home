@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Keyboard,
   KeyboardEvent,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Modal from "react-native-modal";
 import Toast from "react-native-toast-message";
 
 interface DeviceEditModalProps {
@@ -108,10 +108,13 @@ export default function DeviceEditModal({
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
+      isVisible={visible}
+      onBackButtonPress={handleClose}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      coverScreen={false}
+      style={{ margin: 0 }}
     >
       <Pressable style={s.backdrop} onPress={handleClose}>
         <Pressable

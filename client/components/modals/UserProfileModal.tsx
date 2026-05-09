@@ -1,4 +1,3 @@
-import { useAuth } from "@/contexts/AuthContext";
 import { userService } from "@/service/user.service";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
@@ -6,7 +5,6 @@ import {
   ActivityIndicator,
   Keyboard,
   KeyboardEvent,
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -15,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Modal from "react-native-modal";
 import Toast from "react-native-toast-message";
 
 interface UserProfileModalProps {
@@ -45,10 +44,13 @@ export default function UserProfileModal({
   }, [visible, initialFullName, initialUsername]);
 
   useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-    const onShow = (e: KeyboardEvent) => setKeyboardHeight(e.endCoordinates.height);
+    const onShow = (e: KeyboardEvent) =>
+      setKeyboardHeight(e.endCoordinates.height);
     const onHide = () => setKeyboardHeight(0);
 
     const sub1 = Keyboard.addListener(showEvent, onShow);
@@ -66,11 +68,19 @@ export default function UserProfileModal({
 
   const validate = () => {
     if (!fullName.trim()) {
-      Toast.show({ type: "error", text1: "Lỗi", text2: "Vui lòng nhập họ tên" });
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Vui lòng nhập họ tên",
+      });
       return false;
     }
     if (!username.trim()) {
-      Toast.show({ type: "error", text1: "Lỗi", text2: "Vui lòng nhập tên đăng nhập" });
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Vui lòng nhập tên đăng nhập",
+      });
       return false;
     }
     return true;
@@ -84,11 +94,16 @@ export default function UserProfileModal({
         fullName: fullName.trim(),
         username: username.trim(),
       });
-      Toast.show({ type: "success", text1: "Cập nhật thành công", text2: "Hồ sơ đã được cập nhật." });
+      Toast.show({
+        type: "success",
+        text1: "Cập nhật thành công",
+        text2: "Hồ sơ đã được cập nhật.",
+      });
       onSuccess?.();
       handleClose();
     } catch (error: any) {
-      const message = error?.response?.data?.message || "Không thể cập nhật hồ sơ";
+      const message =
+        error?.response?.data?.message || "Không thể cập nhật hồ sơ";
       Toast.show({ type: "error", text1: "Lỗi", text2: message });
     } finally {
       setLoading(false);
@@ -99,14 +114,20 @@ export default function UserProfileModal({
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
+      isVisible={visible}
+      onBackButtonPress={handleClose}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      coverScreen={false}
+      style={{ margin: 0 }}
     >
       <Pressable style={s.backdrop} onPress={handleClose}>
         <Pressable
-          style={[s.sheet, { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 40 }]}
+          style={[
+            s.sheet,
+            { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 40 },
+          ]}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={s.handle} />

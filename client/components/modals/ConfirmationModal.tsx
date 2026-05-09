@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Modal from "react-native-modal";
 import Toast from "react-native-toast-message";
 
 interface ConfirmationModalProps {
@@ -36,7 +36,7 @@ export default function ConfirmationModal({
   loading = false,
   onConfirm,
   onCancel,
-  notificationMessage
+  notificationMessage,
 }: ConfirmationModalProps) {
   const handleConfirm = async () => {
     await onConfirm();
@@ -49,7 +49,15 @@ export default function ConfirmationModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal
+      isVisible={visible}
+      onBackButtonPress={onCancel}
+      animationIn="fadeIn"
+      animationOut="fadeOut"
+      backdropOpacity={0}
+      coverScreen={false}
+      style={{ margin: 0 }}
+    >
       <Pressable style={s.backdrop} onPress={onCancel}>
         <Pressable style={s.center} onPress={(e) => e.stopPropagation()}>
           <View style={s.card}>

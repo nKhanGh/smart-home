@@ -3,7 +3,6 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { ThresholdService } from "@/service/threshold.service";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Modal,
   Pressable,
   StyleSheet,
   Switch,
@@ -11,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Modal from "react-native-modal";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import ConfirmationModal from "../modals/ConfirmationModal";
@@ -331,10 +331,13 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
 
       {/* Context Menu Modal */}
       <Modal
-        transparent
-        visible={Boolean(menuThreshold)}
-        animationType="fade"
-        onRequestClose={() => setMenuThreshold(null)}
+        isVisible={Boolean(menuThreshold)}
+        onBackButtonPress={() => setMenuThreshold(null)}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
+        backdropOpacity={0}
+        coverScreen={false}
+        style={{ margin: 0 }}
       >
         <Pressable
           style={styles.modalOverlay}

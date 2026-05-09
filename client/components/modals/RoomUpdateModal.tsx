@@ -3,17 +3,16 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Modal,
+  Image,
+  ImageSourcePropType,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
   View,
-  Alert,
-  ImageSourcePropType,
 } from "react-native";
+import Modal from "react-native-modal";
 import Toast from "react-native-toast-message";
 
 interface RoomBackground {
@@ -23,11 +22,19 @@ interface RoomBackground {
 
 import Icon from "react-native-vector-icons/FontAwesome5";
 
-
 const roomBackgrounds: RoomBackground[] = [
-  { name: "living-room.png", url: require("../../assets/images/living-room.png") },
-  { name: "living-room1.png", url: require("../../assets/images/living-room1.png") },
-  { name: "living-room2.png", url: require("../../assets/images/living-room2.png") },
+  {
+    name: "living-room.png",
+    url: require("../../assets/images/living-room.png"),
+  },
+  {
+    name: "living-room1.png",
+    url: require("../../assets/images/living-room1.png"),
+  },
+  {
+    name: "living-room2.png",
+    url: require("../../assets/images/living-room2.png"),
+  },
   { name: "bedroom.png", url: require("../../assets/images/bedroom.png") },
   { name: "bedroom1.png", url: require("../../assets/images/bedroom1.png") },
   { name: "bedroom2.png", url: require("../../assets/images/bedroom2.png") },
@@ -104,10 +111,13 @@ const RoomUpdateModal = ({
 
   return (
     <Modal
-      transparent
-      visible={visible}
-      animationType="slide"
-      onRequestClose={() => setVisible(false)}
+      isVisible={visible}
+      onBackButtonPress={() => setVisible(false)}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      coverScreen={false}
+      style={{ margin: 0 }}
     >
       <Pressable style={styles.backdrop} onPress={() => setVisible(false)}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
@@ -117,7 +127,9 @@ const RoomUpdateModal = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconWrap}>
-              <Text style={styles.iconText}><Icon name="door-open" /></Text>
+              <Text style={styles.iconText}>
+                <Icon name="door-open" />
+              </Text>
             </View>
             <Text style={styles.title}>Cập nhật phòng</Text>
             <Text style={styles.subtitle}>Cập nhật thông tin phòng</Text>
@@ -140,11 +152,18 @@ const RoomUpdateModal = ({
               const isSelected = backgroundName === item.name;
               return (
                 <TouchableOpacity
-                  style={[styles.roomGroup, isSelected && styles.roomGroupSelected]}
+                  style={[
+                    styles.roomGroup,
+                    isSelected && styles.roomGroupSelected,
+                  ]}
                   onPress={() => setBackgroundName(item.name)}
                   activeOpacity={0.8}
                 >
-                  <Image source={item.url as ImageSourcePropType} style={styles.roomImage} resizeMode="cover" />
+                  <Image
+                    source={item.url as ImageSourcePropType}
+                    style={styles.roomImage}
+                    resizeMode="cover"
+                  />
                   {isSelected && (
                     <View style={styles.selectedBadge}>
                       <Text style={styles.selectedBadgeText}>✓</Text>
@@ -156,7 +175,10 @@ const RoomUpdateModal = ({
           />
 
           <TouchableOpacity
-            style={[styles.confirmBtn, name?.trim() ? styles.confirmBtnActive : null]}
+            style={[
+              styles.confirmBtn,
+              name?.trim() ? styles.confirmBtnActive : null,
+            ]}
             onPress={handleSave}
             disabled={loading || !name?.trim()}
             activeOpacity={0.8}

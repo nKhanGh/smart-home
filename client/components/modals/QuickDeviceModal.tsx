@@ -1,25 +1,31 @@
+import { DeviceService } from "@/service/device.service";
+import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
-  Modal,
+  FlatList,
   Pressable,
+  StyleSheet,
+  Text,
   TouchableOpacity,
   View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
 } from "react-native";
-import { useEffect, useRef, useState } from "react";
-import { DeviceService } from "@/service/device.service";
+import Modal from "react-native-modal";
 
 const getDeviceIcon = (type: string) => {
   switch (type) {
-    case "airConditionerDevice": return "❄️";
-    case "heaterDevice": return "🔥";
-    case "lightDevice": return "💡";
-    case "fanDevice": return "🌀";
-    case "doorDevice": return "🚪";
-    default: return "🔌";
+    case "airConditionerDevice":
+      return "❄️";
+    case "heaterDevice":
+      return "🔥";
+    case "lightDevice":
+      return "💡";
+    case "fanDevice":
+      return "🌀";
+    case "doorDevice":
+      return "🚪";
+    default:
+      return "🔌";
   }
 };
 
@@ -40,18 +46,20 @@ const QuickDeviceModal = ({
   const [allDevices, setAllDevices] = useState<DeviceResponse[]>([]);
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-
   useEffect(() => {
     const fetchDevices = async () => {
       try {
         const response = await DeviceService.getAll();
-        setAllDevices(response.data.filter(d => d.type.endsWith("Device")));
+        setAllDevices(response.data.filter((d) => d.type.endsWith("Device")));
       } catch (err) {
         console.error("Failed to fetch devices:", err);
       }
     };
     if (visible) {
-      console.log("QuickDeviceModal opened with selectedDevices:", selectedDevices);
+      console.log(
+        "QuickDeviceModal opened with selectedDevices:",
+        selectedDevices,
+      );
       setChosen(selectedDevices.map((d) => d.id));
       setError("");
       fetchDevices();
@@ -61,11 +69,31 @@ const QuickDeviceModal = ({
   const triggerShake = () => {
     shakeAnim.setValue(0);
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -6, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true }),
+      Animated.timing(shakeAnim, {
+        toValue: 8,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -8,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 6,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -6,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 0,
+        duration: 40,
+        useNativeDriver: true,
+      }),
     ]).start();
   };
 
@@ -96,23 +124,28 @@ const QuickDeviceModal = ({
   };
 
   // Group theo phòng
-  const grouped = allDevices.reduce<Record<string, DeviceResponse[]>>((acc, device) => {
-    const roomName = device.roomId.name;
-    if (!acc[roomName]) acc[roomName] = [];
-    acc[roomName].push(device);
-    return acc;
-  }, {});
+  const grouped = allDevices.reduce<Record<string, DeviceResponse[]>>(
+    (acc, device) => {
+      const roomName = device.roomId.name;
+      if (!acc[roomName]) acc[roomName] = [];
+      acc[roomName].push(device);
+      return acc;
+    },
+    {},
+  );
 
   return (
     <Modal
-      transparent
-      visible={visible}
-      animationType="slide"
-      onRequestClose={() => setVisible(false)}
+      isVisible={visible}
+      onBackButtonPress={() => setVisible(false)}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      coverScreen={false}
+      style={{ margin: 0 }}
     >
       <Pressable style={styles.backdrop} onPress={() => setVisible(false)}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-
           {/* Handle */}
           <View style={styles.handle} />
 
@@ -123,28 +156,33 @@ const QuickDeviceModal = ({
             </View>
             <Text style={styles.title}>Chọn thiết bị nhanh</Text>
             <Text style={styles.subtitle}>
-              Đã chọn{" "}
-              <Text style={styles.countHighlight}>{chosen.length}</Text>
+              Đã chọn <Text style={styles.countHighlight}>{chosen.length}</Text>
               /4 thiết bị
             </Text>
           </View>
 
           {/* Slot indicators */}
-          <Animated.View style={[styles.slotRow, { transform: [{ translateX: shakeAnim }] }]}>
+          <Animated.View
+            style={[styles.slotRow, { transform: [{ translateX: shakeAnim }] }]}
+          >
             {[0, 1, 2, 3].map((i) => (
-  <View
-    key={`slot-${i}`}   // ✅ dùng string prefix để tránh nhầm với key khác
-    style={[styles.slot, i < chosen.length && styles.slotFilled]}
-  >
-    {i < chosen.length ? (
-      <Text key="icon" style={styles.slotIcon}>
-        {getDeviceIcon(allDevices.find((d) => d.id === chosen[i])?.type ?? "")}
-      </Text>
-    ) : (
-      <Text key="plus" style={styles.slotPlus}>+</Text>
-    )}
-  </View>
-))}
+              <View
+                key={`slot-${i}`} // ✅ dùng string prefix để tránh nhầm với key khác
+                style={[styles.slot, i < chosen.length && styles.slotFilled]}
+              >
+                {i < chosen.length ? (
+                  <Text key="icon" style={styles.slotIcon}>
+                    {getDeviceIcon(
+                      allDevices.find((d) => d.id === chosen[i])?.type ?? "",
+                    )}
+                  </Text>
+                ) : (
+                  <Text key="plus" style={styles.slotPlus}>
+                    +
+                  </Text>
+                )}
+              </View>
+            ))}
           </Animated.View>
 
           {/* Error */}
@@ -174,17 +212,36 @@ const QuickDeviceModal = ({
                       activeOpacity={0.7}
                       disabled={isDisabled}
                     >
-                      <View style={[styles.deviceIconWrap, isSelected && styles.deviceIconWrapSelected]}>
-                        <Text style={styles.deviceIcon}>{getDeviceIcon(device.type)}</Text>
+                      <View
+                        style={[
+                          styles.deviceIconWrap,
+                          isSelected && styles.deviceIconWrapSelected,
+                        ]}
+                      >
+                        <Text style={styles.deviceIcon}>
+                          {getDeviceIcon(device.type)}
+                        </Text>
                       </View>
                       <View style={styles.deviceInfo}>
-                        <Text style={[styles.deviceName, isDisabled && styles.deviceNameDisabled]}>
+                        <Text
+                          style={[
+                            styles.deviceName,
+                            isDisabled && styles.deviceNameDisabled,
+                          ]}
+                        >
                           {device.name}
                         </Text>
-                        <Text style={styles.deviceDesc}>{device.description || device.type}</Text>
+                        <Text style={styles.deviceDesc}>
+                          {device.description || device.type}
+                        </Text>
                       </View>
                       {/* Checkbox */}
-                      <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                      <View
+                        style={[
+                          styles.checkbox,
+                          isSelected && styles.checkboxSelected,
+                        ]}
+                      >
                         {isSelected && <Text style={styles.checkmark}>✓</Text>}
                       </View>
                     </TouchableOpacity>
@@ -196,7 +253,10 @@ const QuickDeviceModal = ({
 
           {/* Confirm */}
           <TouchableOpacity
-            style={[styles.confirmBtn, chosen.length > 0 && styles.confirmBtnActive]}
+            style={[
+              styles.confirmBtn,
+              chosen.length > 0 && styles.confirmBtnActive,
+            ]}
             onPress={handleConfirm}
             disabled={loading || chosen.length === 0}
             activeOpacity={0.8}
@@ -210,10 +270,12 @@ const QuickDeviceModal = ({
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setVisible(false)} style={styles.cancelBtn}>
+          <TouchableOpacity
+            onPress={() => setVisible(false)}
+            style={styles.cancelBtn}
+          >
             <Text style={styles.cancelText}>Huỷ bỏ</Text>
           </TouchableOpacity>
-
         </Pressable>
       </Pressable>
     </Modal>

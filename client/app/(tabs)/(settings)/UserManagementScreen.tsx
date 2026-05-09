@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   Text,
@@ -18,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Modal from "react-native-modal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -118,26 +118,46 @@ function UserFormModal({
 
   const handleSave = async () => {
     if (!fullName.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập họ tên");
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Vui lòng nhập họ tên",
+      });
       return;
     }
     if (!username.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập tên đăng nhập");
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Vui lòng nhập tên đăng nhập",
+      });
       return;
     }
     if (mode === "add" && !password.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập mật khẩu");
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Vui lòng nhập mật khẩu",
+      });
       return;
     }
     if (mode === "add" && password.trim().length < 8) {
-      Alert.alert("Lỗi", "Mật khẩu phải có ít nhất 8 ký tự");
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Mật khẩu phải có ít nhất 8 ký tự",
+      });
       return;
     }
     const isDuplicate = existingUsernames
       .filter((u) => (mode === "edit" ? u !== initial?.username : true))
       .includes(username.trim().toLowerCase());
     if (isDuplicate) {
-      Alert.alert("Lỗi", "Tên đăng nhập này đã tồn tại");
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Tên đăng nhập này đã tồn tại",
+      });
       return;
     }
     setSaving(true);
@@ -156,10 +176,14 @@ function UserFormModal({
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      isVisible={visible}
+      onBackdropPress={onClose}
+      onBackButtonPress={onClose}
+      animationIn="fadeIn"
+      animationOut="fadeOut"
+      backdropOpacity={0}
+      coverScreen={false}
+      style={{ margin: 0 }}
     >
       <KeyboardAvoidingView
         style={styles.modalOverlay}
@@ -599,9 +623,11 @@ export default function UserManagementScreen() {
           closeConfirm();
         }}
         onCancel={closeConfirm}
-        notificationMessage={confirmType === "reactivate"
-          ? "Người dùng đã được kích hoạt lại"
-          : "Người dùng đã bị vô hiệu hóa"}
+        notificationMessage={
+          confirmType === "reactivate"
+            ? "Người dùng đã được kích hoạt lại"
+            : "Người dùng đã bị vô hiệu hóa"
+        }
       />
     </SafeAreaView>
   );

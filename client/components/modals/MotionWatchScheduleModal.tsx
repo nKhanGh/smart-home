@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Keyboard,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Modal from "react-native-modal";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import LoadingSpinner from "../ui/LoadingSpinner";
@@ -331,10 +331,13 @@ export default function MotionWatchScheduleModal({
 
   return (
     <Modal
-      transparent
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
+      isVisible={visible}
+      onBackButtonPress={onClose}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      coverScreen={false}
+      style={{ margin: 0 }}
     >
       <Pressable style={s.backdrop} onPress={onClose}>
         <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>

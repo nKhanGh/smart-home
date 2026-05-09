@@ -1,7 +1,7 @@
+import { DeviceService } from "@/service/device.service";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -9,9 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import LoadingSpinner from "../ui/LoadingSpinner";
-import { DeviceService } from "@/service/device.service";
+import Modal from "react-native-modal";
 import Toast from "react-native-toast-message";
+import LoadingSpinner from "../ui/LoadingSpinner";
 
 const DoorPasswordModal = ({
   doorModalVisible,
@@ -107,7 +107,11 @@ const DoorPasswordModal = ({
         action: pendingAction,
         pin,
       });
-      const response = await DeviceService.sendCommand(pendingDoorDevice!.id, String(pendingAction), pin);
+      const response = await DeviceService.sendCommand(
+        pendingDoorDevice!.id,
+        String(pendingAction),
+        pin,
+      );
       if (response.data.code === 403) {
         Toast.show({
           type: "error",
@@ -133,10 +137,13 @@ const DoorPasswordModal = ({
 
   return (
     <Modal
-      transparent
-      visible={doorModalVisible}
-      animationType="fade"
-      onRequestClose={() => setDoorModalVisible(false)}
+      isVisible={doorModalVisible}
+      onBackButtonPress={() => setDoorModalVisible(false)}
+      animationIn="fadeIn"
+      animationOut="fadeOut"
+      backdropOpacity={0}
+      coverScreen={false}
+      style={{ margin: 0 }}
     >
       <Pressable
         style={modalStyles.backdrop}
