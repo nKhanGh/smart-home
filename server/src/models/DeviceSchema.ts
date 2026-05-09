@@ -5,7 +5,6 @@ export interface IDeviceDoc extends Document {
   name: string;
   description: string;
   key: string;
-  mode: "auto" | "manual";
   roomId: Types.ObjectId;
   type:
     | "lightSensor"
@@ -27,7 +26,6 @@ const DeviceSchema = new Schema<IDeviceDoc>(
     name: { type: String, required: true },
     key: { type: String, required: true, unique: true },
     description: { type: String, default: "" },
-    mode: { type: String, enum: ["auto", "manual"], default: "manual" },
     roomId: { type: Schema.Types.ObjectId, ref: "Room", required: true },
     type: {
       type: String,

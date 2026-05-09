@@ -1,10 +1,10 @@
+import { Toast } from "@/components/ui/Toast";
 import { DeviceService } from "@/service/device.service";
 import { ThresholdService } from "@/service/threshold.service";
 import { getUnit } from "@/utils/devices.util";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
+import Modal from "react-native-modal";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import LoadingSpinner from "../ui/LoadingSpinner";
 
@@ -339,10 +339,12 @@ const ThresholdModal = ({
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <Modal
-      transparent
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
+      isVisible={visible}
+      onBackButtonPress={onClose}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      style={{ margin: 0 }}
     >
       <Pressable style={s.backdrop} onPress={onClose}>
         <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>

@@ -10,6 +10,9 @@ export interface IUserDoc extends Document {
   avatarColor: string;
   avatarInitials: string;
   pushTokens: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  inactiveAt?: Date;
 }
 
 const UserSchema = new Schema<IUserDoc>(
@@ -22,6 +25,9 @@ const UserSchema = new Schema<IUserDoc>(
     avatarColor: { type: String, default: "#000000" },
     avatarInitials: { type: String, default: "" },
     pushTokens: { type: [String], default: [] },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+    inactiveAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

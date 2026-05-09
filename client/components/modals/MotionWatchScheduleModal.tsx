@@ -1,9 +1,9 @@
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { ScheduleService } from "@/service/schedule.service";
 import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Keyboard,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
+import Modal from "react-native-modal";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import LoadingSpinner from "../ui/LoadingSpinner";
 
@@ -207,6 +207,16 @@ export default function MotionWatchScheduleModal({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [keyboardInset, setKeyboardInset] = useState(0);
 
+    const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+    // Hàm show toast nội bộ
+    const showToast = (type: ToastType, text1: string, text2?: string) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ type, text1, text2 });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
+
   useEffect(() => {
     const handleShow = (e: any) => {
       const nextInset = e?.endCoordinates?.height ?? 0;
@@ -270,18 +280,12 @@ export default function MotionWatchScheduleModal({
     const normalizedEndTime = normalizeTimeInput(endTime);
 
     if (!normalizedStartTime || !normalizedEndTime) {
-      Toast.show({
-        type: "error",
-        text1: "Vui lòng nhập giờ đúng định dạng HH:mm.",
-      });
+      showToast("error", "Vui lòng nhập giờ đúng định dạng HH:mm");
       return;
     }
 
     if (normalizedStartTime === normalizedEndTime) {
-      Toast.show({
-        type: "error",
-        text1: "Giờ bắt đầu và kết thúc không được trùng nhau.",
-      });
+      showToast("error", "Giờ bắt đầu và kết thúc không được trùng nhau.");
       return;
     }
 
@@ -331,11 +335,21 @@ export default function MotionWatchScheduleModal({
 
   return (
     <Modal
-      transparent
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
+      isVisible={visible}
+      onBackButtonPress={onClose}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      style={{ margin: 0 }}
     >
+      {toast && (
+              <ToastBanner
+                type={toast.type}
+                text1={toast.text1}
+                text2={toast.text2}
+                onDismiss={() => setToast(null)}
+              />
+            )}
       <Pressable style={s.backdrop} onPress={onClose}>
         <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={s.handle} />

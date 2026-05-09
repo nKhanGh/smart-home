@@ -34,6 +34,10 @@ axiosInstance.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    if (originalRequest.skipAuth) {
+    throw error;
+  }
+
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -63,7 +67,7 @@ axiosInstance.interceptors.response.use(
         await AsyncStorage.removeItem("smart-home-access-token");
         await AsyncStorage.removeItem("smart-home-refresh-token");
 
-        authEvents.emit("logout");
+        // authEvents.emit("logout");
 
         throw refreshError;
       }

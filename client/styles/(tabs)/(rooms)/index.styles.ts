@@ -1,8 +1,8 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F0FAF2", marginBottom: -24 },
-  scroll: { padding: 16, gap: 20 },
+  safe: { flex: 1, backgroundColor: "#F0FAF2" },
+  scroll: { padding: 16, paddingBottom: 100, gap: 20 },
 
   // Header
   header: {

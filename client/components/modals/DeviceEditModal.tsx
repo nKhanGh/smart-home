@@ -1,11 +1,11 @@
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { DeviceService } from "@/service/device.service";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
   KeyboardEvent,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -15,7 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
+import Modal from "react-native-modal";
 
 interface DeviceEditModalProps {
   readonly visible: boolean;
@@ -34,6 +34,16 @@ export default function DeviceEditModal({
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+    const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+    // Hàm show toast nội bộ
+    const showToast = (type: ToastType, text1: string, text2?: string) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ type, text1, text2 });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
 
   useEffect(() => {
     if (visible && device) {
@@ -67,11 +77,7 @@ export default function DeviceEditModal({
 
   const validate = () => {
     if (!name.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập tên thiết bị",
-      });
+      showToast("error", "Lỗi", "Vui lòng nhập tên thiết bị");
       return false;
     }
     return true;
@@ -94,7 +100,7 @@ export default function DeviceEditModal({
       handleClose();
     } catch (error: any) {
       const message =
-        error?.response?.data?.message ||
+        error?.response?.data?.msg ||
         "Không thể cập nhật thông tin thiết bị";
       Toast.show({ type: "error", text1: "Lỗi", text2: message });
     } finally {
@@ -108,11 +114,21 @@ export default function DeviceEditModal({
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
+      isVisible={visible}
+      onBackButtonPress={handleClose}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      style={{ margin: 0 }}
     >
+      {toast && (
+              <ToastBanner
+                type={toast.type}
+                text1={toast.text1}
+                text2={toast.text2}
+                onDismiss={() => setToast(null)}
+              />
+            )}
       <Pressable style={s.backdrop} onPress={handleClose}>
         <Pressable
           style={[

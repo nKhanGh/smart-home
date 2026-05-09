@@ -1,5 +1,6 @@
 // app/login.tsx
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Toast } from "@/components/ui/Toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { registerPushToken } from "@/hooks/usePushNotification";
 import { authService } from "@/service/auth.service";
@@ -8,7 +9,6 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 import { styles } from "../styles/login.styles";
 
 export default function LoginScreen() {
@@ -38,12 +38,12 @@ export default function LoginScreen() {
         text1: "Đăng nhập thành công",
         text2: `Chào mừng ${username}!`,
       });
-    } catch (error) {
-      console.error("Login error:", error);
+    } catch (error: any) {
+      console.error("Login error:", error.response);
       Toast.show({
         type: "error",
         text1: "Đăng nhập thất bại",
-        text2: "Vui lòng kiểm tra lại tên đăng nhập và mật khẩu.",
+        text2: error.response?.data?.msg || "Vui lòng kiểm tra lại thông tin đăng nhập",
       });
     } finally {
       setLoading(false);

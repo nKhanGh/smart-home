@@ -1,6 +1,7 @@
 import { styles } from "@/styles/(tabs)/index.styles";
 import { useState } from "react";
-import { FlatList, Modal, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import Modal from "react-native-modal";
 
 const getDeviceId = (device: DeviceResponse) =>
   device.id || (device as DeviceResponse & { _id?: string })._id || "";
@@ -26,10 +27,12 @@ const RoomBadge = ({
         <Text style={styles.dropdownArrow}>▼</Text>
       </TouchableOpacity>
       <Modal
-        transparent
-        animationType="fade"
-        visible={visible}
-        onRequestClose={() => setVisible(false)}
+        isVisible={visible}
+        onBackButtonPress={() => setVisible(false)}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
+        backdropOpacity={0}
+        style={{ margin: 0 }}
       >
         <TouchableOpacity
           style={{

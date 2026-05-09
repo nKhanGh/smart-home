@@ -1,11 +1,11 @@
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { userService } from "@/service/user.service";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
   KeyboardEvent,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -15,7 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
+import Modal from "react-native-modal";
 
 interface UserChangePasswordModalProps {
   readonly visible: boolean;
@@ -35,11 +35,24 @@ export default function UserChangePasswordModal({
   const [loading, setLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+  const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+    // Hàm show toast nội bộ
+    const showToast = (type: ToastType, text1: string, text2?: string) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ type, text1, text2 });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
 
-    const onShow = (e: KeyboardEvent) => setKeyboardHeight(e.endCoordinates.height);
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const onShow = (e: KeyboardEvent) =>
+      setKeyboardHeight(e.endCoordinates.height);
     const onHide = () => setKeyboardHeight(0);
 
     const sub1 = Keyboard.addListener(showEvent, onShow);
@@ -63,23 +76,23 @@ export default function UserChangePasswordModal({
 
   const validate = () => {
     if (!oldPassword.trim()) {
-      Toast.show({ type: "error", text1: "Lỗi", text2: "Vui lòng nhập mật khẩu cũ" });
+      showToast("error", "Lỗi", "Vui lòng nhập mật khẩu cũ");
       return false;
     }
     if (!newPassword.trim()) {
-      Toast.show({ type: "error", text1: "Lỗi", text2: "Vui lòng nhập mật khẩu mới" });
+      showToast("error", "Lỗi", "Vui lòng nhập mật khẩu mới");
       return false;
     }
     if (oldPassword === newPassword) {
-      Toast.show({ type: "error", text1: "Lỗi", text2: "Mật khẩu mới phải khác mật khẩu cũ" });
+      showToast("error", "Lỗi", "Mật khẩu mới phải khác mật khẩu cũ");
       return false;
     }
     if (newPassword.length < 8) {
-      Toast.show({ type: "error", text1: "Lỗi", text2: "Mật khẩu mới phải ít nhất 8 ký tự" });
+      showToast("error", "Lỗi", "Mật khẩu mới phải ít nhất 8 ký tự");
       return false;
     }
     if (newPassword !== confirmPassword) {
-      Toast.show({ type: "error", text1: "Lỗi", text2: "Mật khẩu xác nhận không trùng khớp" });
+      showToast("error", "Lỗi", "Mật khẩu xác nhận không trùng khớp");
       return false;
     }
     return true;
@@ -90,11 +103,17 @@ export default function UserChangePasswordModal({
     setLoading(true);
     try {
       await userService.changePassword(oldPassword, newPassword);
-      Toast.show({ type: "success", text1: "Thành công", text2: "Đã thay đổi mật khẩu thành công." });
+      Toast.show({
+        type: "success",
+        text1: "Thành công",
+        text2: "Đã thay đổi mật khẩu thành công.",
+      });
       handleClose();
     } catch (error: any) {
-      const message = error?.response?.data?.message || "Không thể đổi mật khẩu";
-      Toast.show({ type: "error", text1: "Lỗi", text2: message });
+      const message =
+        error?.response?.data?.msg || "Không thể đổi mật khẩu";
+      showToast("error", "Lỗi", message);
+      console.log("Change password error:", error.response);
     } finally {
       setLoading(false);
     }
@@ -107,14 +126,27 @@ export default function UserChangePasswordModal({
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
+      isVisible={visible}
+      onBackButtonPress={handleClose}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      style={{ margin: 0 }}
     >
+      {toast && (
+        <ToastBanner
+          type={toast.type}
+          text1={toast.text1}
+          text2={toast.text2}
+          onDismiss={() => setToast(null)}
+        />
+      )}
       <Pressable style={s.backdrop} onPress={handleClose}>
         <Pressable
-          style={[s.sheet, { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 40 }]}
+          style={[
+            s.sheet,
+            { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 40 },
+          ]}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={s.handle} />
@@ -130,7 +162,9 @@ export default function UserChangePasswordModal({
                 <Ionicons name="lock-closed" size={28} color="#22C55E" />
               </View>
               <Text style={s.title}>Đổi mật khẩu</Text>
-              <Text style={s.subtitle}>Cập nhật mật khẩu tài khoản của bạn</Text>
+              <Text style={s.subtitle}>
+                Cập nhật mật khẩu tài khoản của bạn
+              </Text>
             </View>
 
             <Text style={s.label}>Mật khẩu cũ</Text>
@@ -144,7 +178,11 @@ export default function UserChangePasswordModal({
                 onChangeText={setOldPassword}
               />
               <TouchableOpacity onPress={() => setShowOld(!showOld)}>
-                <Ionicons name={showOld ? "eye" : "eye-off"} size={20} color="#A0A0A0" />
+                <Ionicons
+                  name={showOld ? "eye" : "eye-off"}
+                  size={20}
+                  color="#A0A0A0"
+                />
               </TouchableOpacity>
             </View>
 
@@ -159,7 +197,11 @@ export default function UserChangePasswordModal({
                 onChangeText={setNewPassword}
               />
               <TouchableOpacity onPress={() => setShowNew(!showNew)}>
-                <Ionicons name={showNew ? "eye" : "eye-off"} size={20} color="#A0A0A0" />
+                <Ionicons
+                  name={showNew ? "eye" : "eye-off"}
+                  size={20}
+                  color="#A0A0A0"
+                />
               </TouchableOpacity>
             </View>
 
@@ -174,7 +216,11 @@ export default function UserChangePasswordModal({
                 onChangeText={setConfirmPassword}
               />
               <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
-                <Ionicons name={showConfirm ? "eye" : "eye-off"} size={20} color="#A0A0A0" />
+                <Ionicons
+                  name={showConfirm ? "eye" : "eye-off"}
+                  size={20}
+                  color="#A0A0A0"
+                />
               </TouchableOpacity>
             </View>
 

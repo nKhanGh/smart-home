@@ -1,9 +1,10 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F0FAF2", marginBottom: -24 },
+  safe: { flex: 1, backgroundColor: "#F0FAF2" },
   scroll: {
     paddingHorizontal: 20,
+    paddingBottom: 100,
     // paddingTop: 16,
     // paddingBottom: 20,
     gap: 16,

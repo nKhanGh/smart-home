@@ -1,12 +1,11 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { userService } from "@/service/user.service";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
   KeyboardEvent,
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -15,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
+import Modal from "react-native-modal";
 
 interface UserProfileModalProps {
   readonly visible: boolean;
@@ -37,6 +36,16 @@ export default function UserProfileModal({
   const [loading, setLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+  const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+    // Hàm show toast nội bộ
+    const showToast = (type: ToastType, text1: string, text2?: string) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ type, text1, text2 });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
+
   useEffect(() => {
     if (visible) {
       setFullName(initialFullName);
@@ -45,10 +54,13 @@ export default function UserProfileModal({
   }, [visible, initialFullName, initialUsername]);
 
   useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-    const onShow = (e: KeyboardEvent) => setKeyboardHeight(e.endCoordinates.height);
+    const onShow = (e: KeyboardEvent) =>
+      setKeyboardHeight(e.endCoordinates.height);
     const onHide = () => setKeyboardHeight(0);
 
     const sub1 = Keyboard.addListener(showEvent, onShow);
@@ -66,11 +78,12 @@ export default function UserProfileModal({
 
   const validate = () => {
     if (!fullName.trim()) {
-      Toast.show({ type: "error", text1: "Lỗi", text2: "Vui lòng nhập họ tên" });
+      showToast("error", "Lỗi", "Vui lòng nhập họ tên");
       return false;
+
     }
     if (!username.trim()) {
-      Toast.show({ type: "error", text1: "Lỗi", text2: "Vui lòng nhập tên đăng nhập" });
+      showToast("error", "Lỗi", "Vui lòng nhập tên đăng nhập");
       return false;
     }
     return true;
@@ -84,11 +97,17 @@ export default function UserProfileModal({
         fullName: fullName.trim(),
         username: username.trim(),
       });
-      Toast.show({ type: "success", text1: "Cập nhật thành công", text2: "Hồ sơ đã được cập nhật." });
+      Toast.show({
+
+        type: "success",
+        text1: "Cập nhật thành công",
+        text2: "Hồ sơ đã được cập nhật.",
+      });
       onSuccess?.();
       handleClose();
     } catch (error: any) {
-      const message = error?.response?.data?.message || "Không thể cập nhật hồ sơ";
+      const message =
+        error?.response?.data?.msg || "Không thể cập nhật hồ sơ";
       Toast.show({ type: "error", text1: "Lỗi", text2: message });
     } finally {
       setLoading(false);
@@ -99,14 +118,27 @@ export default function UserProfileModal({
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
+      isVisible={visible}
+      onBackButtonPress={handleClose}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      style={{ margin: 0 }}
     >
+      {toast && (
+              <ToastBanner
+                type={toast.type}
+                text1={toast.text1}
+                text2={toast.text2}
+                onDismiss={() => setToast(null)}
+              />
+            )}
       <Pressable style={s.backdrop} onPress={handleClose}>
         <Pressable
-          style={[s.sheet, { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 40 }]}
+          style={[
+            s.sheet,
+            { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 40 },
+          ]}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={s.handle} />

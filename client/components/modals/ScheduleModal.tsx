@@ -1,9 +1,9 @@
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { ScheduleService } from "@/service/schedule.service";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
-  Modal,
   PanResponder,
   Platform,
   Pressable,
@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
+import Modal from "react-native-modal";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import LoadingSpinner from "../ui/LoadingSpinner";
 
@@ -343,6 +343,16 @@ const ScheduleModal = ({
   const [repeatDays, setRepeatDays] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
+    const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+    // Hàm show toast nội bộ
+    const showToast = (type: ToastType, text1: string, text2?: string) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ type, text1, text2 });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
+
   useEffect(() => {
     if (!visible) return;
     if (editingSchedule) {
@@ -382,11 +392,7 @@ const ScheduleModal = ({
       repeatDays,
     };
     if (payload.repeatDays.length === 0) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng chọn ngày lặp lại.",
-      });
+      showToast("error", "Lỗi", "Vui lòng chọn ngày lặp lại.");
       return;
     }
     setSubmitting(true);
@@ -409,11 +415,21 @@ const ScheduleModal = ({
 
   return (
     <Modal
-      transparent
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
+      isVisible={visible}
+      onBackButtonPress={onClose}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      style={{ margin: 0 }}
     >
+      {toast && (
+              <ToastBanner
+                type={toast.type}
+                text1={toast.text1}
+                text2={toast.text2}
+                onDismiss={() => setToast(null)}
+              />
+            )}
       <Pressable style={s.backdrop} onPress={onClose}>
         <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={s.handle} />

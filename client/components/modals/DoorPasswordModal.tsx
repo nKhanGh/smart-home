@@ -1,7 +1,8 @@
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
+import { DeviceService } from "@/service/device.service";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -9,9 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Modal from "react-native-modal";
 import LoadingSpinner from "../ui/LoadingSpinner";
-import { DeviceService } from "@/service/device.service";
-import Toast from "react-native-toast-message";
 
 const DoorPasswordModal = ({
   doorModalVisible,
@@ -36,6 +36,16 @@ const DoorPasswordModal = ({
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
+
+    const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+    // Hàm show toast nội bộ
+    const showToast = (type: ToastType, text1: string, text2?: string) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ type, text1, text2 });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
 
   useEffect(() => {
     setPinDigits(["", "", "", "", "", ""]);
@@ -107,12 +117,13 @@ const DoorPasswordModal = ({
         action: pendingAction,
         pin,
       });
-      const response = await DeviceService.sendCommand(pendingDoorDevice!.id, String(pendingAction), pin);
+      const response = await DeviceService.sendCommand(
+        pendingDoorDevice!.id,
+        String(pendingAction),
+        pin,
+      );
       if (response.data.code === 403) {
-        Toast.show({
-          type: "error",
-          text1: "Mật khẩu không đúng. Vui lòng thử lại.",
-        });
+        showToast("error", "Mật khẩu không đúng. Vui lòng thử lại.");
         setPinError("Mật khẩu không đúng. Thử lại.");
         inputRefs.current[0]?.focus();
       } else {
@@ -133,11 +144,22 @@ const DoorPasswordModal = ({
 
   return (
     <Modal
-      transparent
-      visible={doorModalVisible}
-      animationType="fade"
-      onRequestClose={() => setDoorModalVisible(false)}
+      isVisible={doorModalVisible}
+      onBackdropPress={() => setDoorModalVisible(false)}
+      onBackButtonPress={() => setDoorModalVisible(false)}
+      // animationIn="fadeIn"
+      animationOut="slideOutDown"
+      backdropOpacity={0}
+      style={{ margin: 0 }}
     >
+      {toast && (
+              <ToastBanner
+                type={toast.type}
+                text1={toast.text1}
+                text2={toast.text2}
+                onDismiss={() => setToast(null)}
+              />
+            )}
       <Pressable
         style={modalStyles.backdrop}
         onPress={() => setDoorModalVisible(false)}

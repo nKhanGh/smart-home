@@ -6,6 +6,7 @@ import StatusCard from "@/components/home/StatusCard";
 import DoorPasswordModal from "@/components/modals/DoorPasswordModal";
 import QuickDeviceModal from "@/components/modals/QuickDeviceModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Toast } from "@/components/ui/Toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
@@ -16,7 +17,6 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SOCKET_URL ?? "http://localhost:3000";
@@ -341,7 +341,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}

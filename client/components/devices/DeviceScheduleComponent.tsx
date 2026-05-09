@@ -1,9 +1,9 @@
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Toast } from "@/components/ui/Toast";
 import { ScheduleService } from "@/service/schedule.service";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Modal,
   Pressable,
   StyleSheet,
   Switch,
@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
+import Modal from "react-native-modal";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import ScheduleModal from "../modals/ScheduleModal";
 
@@ -322,10 +322,12 @@ const DeviceScheduleComponent = ({ device }: { device: DeviceResponse }) => {
 
       {/* ── Context Menu Modal ── */}
       <Modal
-        transparent
-        visible={Boolean(menuSchedule)}
-        animationType="slide"
-        onRequestClose={() => setMenuSchedule(null)}
+        isVisible={Boolean(menuSchedule)}
+        onBackButtonPress={() => setMenuSchedule(null)}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropOpacity={0}
+        style={{ margin: 0 }}
       >
         <Pressable style={s.modalOverlay} onPress={() => setMenuSchedule(null)}>
           <Pressable style={s.menuSheet} onPress={(e) => e.stopPropagation()}>

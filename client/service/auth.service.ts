@@ -2,7 +2,7 @@ import AxiosInstance from "../utils/axios";
 
 export const authService = {
   login: (username: string, password: string) => {
-    return AxiosInstance.post("/auth/login", { username, password });
+    return AxiosInstance.post("/auth/login", { username, password }, {skipAuth: true });
   },
 
   introspect: (token: string) => {
