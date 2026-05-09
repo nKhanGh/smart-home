@@ -1,3 +1,4 @@
+import { Toast } from "@/components/ui/Toast";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
@@ -9,7 +10,6 @@ import {
   View,
 } from "react-native";
 import Modal from "react-native-modal";
-import Toast from "react-native-toast-message";
 
 interface ConfirmationModalProps {
   readonly visible: boolean;
@@ -55,7 +55,6 @@ export default function ConfirmationModal({
       animationIn="fadeIn"
       animationOut="fadeOut"
       backdropOpacity={0}
-      coverScreen={false}
       style={{ margin: 0 }}
     >
       <Pressable style={s.backdrop} onPress={onCancel}>

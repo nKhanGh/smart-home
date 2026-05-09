@@ -1,3 +1,4 @@
+import { Toast } from "@/components/ui/Toast";
 import React, {
   createContext,
   useContext,
@@ -5,7 +6,6 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import Toast from "react-native-toast-message";
 import { io, Socket } from "socket.io-client";
 
 type EventHandler = (data: any) => void;
@@ -43,7 +43,7 @@ const SOCKET_TOASTS: Record<string, SocketToastResolver> = {
       text1: data.alert,
       text2: data.text,
     };
-  }
+  },
 };
 
 interface SocketContextType {

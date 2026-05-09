@@ -1,3 +1,4 @@
+import { Toast } from "@/components/ui/Toast";
 import { DeviceService } from "@/service/device.service";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -14,7 +15,6 @@ import {
   View,
 } from "react-native";
 import Modal from "react-native-modal";
-import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome5";
 
 interface DoorPasswordModalProps {
@@ -267,7 +267,7 @@ export default function DoorChangePasswordModal({
       });
       setVisible(false);
     } catch (err: any) {
-      const msg: string = err?.response?.data?.message ?? "";
+      const msg: string = err?.response?.data?.msg || "Không thể đổi mật khẩu";
       if (/password|incorrect|wrong|invalid/i.test(msg)) {
         setErrors({ old: "Mật khẩu cũ không đúng." });
         triggerShake(shakeOld);
@@ -295,7 +295,6 @@ export default function DoorChangePasswordModal({
       animationIn="slideInUp"
       animationOut="slideOutDown"
       backdropOpacity={0}
-      coverScreen={false}
       style={{ margin: 0 }}
     >
       <KeyboardAvoidingView

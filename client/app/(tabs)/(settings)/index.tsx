@@ -18,8 +18,7 @@ export default function SettingsScreen() {
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const {fetchUserInfo} = useAuth();
-  
+  const { fetchUserInfo } = useAuth();
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -34,7 +33,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}

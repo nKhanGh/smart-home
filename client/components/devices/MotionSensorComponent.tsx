@@ -5,6 +5,7 @@
  * Tự quản lý header (back, tên thiết bị), danh sách lịch motion watch, và modal tạo lịch.
  */
 
+import { Toast } from "@/components/ui/Toast";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import { ScheduleService } from "@/service/schedule.service";
@@ -19,7 +20,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import MotionWatchScheduleModal from "../modals/MotionWatchScheduleModal";
 

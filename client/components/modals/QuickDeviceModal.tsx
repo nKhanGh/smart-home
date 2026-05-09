@@ -141,7 +141,6 @@ const QuickDeviceModal = ({
       animationIn="slideInUp"
       animationOut="slideOutDown"
       backdropOpacity={0}
-      coverScreen={false}
       style={{ margin: 0 }}
     >
       <Pressable style={styles.backdrop} onPress={() => setVisible(false)}>

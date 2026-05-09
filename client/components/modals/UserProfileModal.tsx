@@ -1,6 +1,7 @@
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { userService } from "@/service/user.service";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -14,7 +15,6 @@ import {
   View,
 } from "react-native";
 import Modal from "react-native-modal";
-import Toast from "react-native-toast-message";
 
 interface UserProfileModalProps {
   readonly visible: boolean;
@@ -35,6 +35,16 @@ export default function UserProfileModal({
   const [username, setUsername] = useState(initialUsername);
   const [loading, setLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+    // Hàm show toast nội bộ
+    const showToast = (type: ToastType, text1: string, text2?: string) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ type, text1, text2 });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
 
   useEffect(() => {
     if (visible) {
@@ -68,19 +78,12 @@ export default function UserProfileModal({
 
   const validate = () => {
     if (!fullName.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập họ tên",
-      });
+      showToast("error", "Lỗi", "Vui lòng nhập họ tên");
       return false;
+
     }
     if (!username.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập tên đăng nhập",
-      });
+      showToast("error", "Lỗi", "Vui lòng nhập tên đăng nhập");
       return false;
     }
     return true;
@@ -95,6 +98,7 @@ export default function UserProfileModal({
         username: username.trim(),
       });
       Toast.show({
+
         type: "success",
         text1: "Cập nhật thành công",
         text2: "Hồ sơ đã được cập nhật.",
@@ -103,7 +107,7 @@ export default function UserProfileModal({
       handleClose();
     } catch (error: any) {
       const message =
-        error?.response?.data?.message || "Không thể cập nhật hồ sơ";
+        error?.response?.data?.msg || "Không thể cập nhật hồ sơ";
       Toast.show({ type: "error", text1: "Lỗi", text2: message });
     } finally {
       setLoading(false);
@@ -119,9 +123,16 @@ export default function UserProfileModal({
       animationIn="slideInUp"
       animationOut="slideOutDown"
       backdropOpacity={0}
-      coverScreen={false}
       style={{ margin: 0 }}
     >
+      {toast && (
+              <ToastBanner
+                type={toast.type}
+                text1={toast.text1}
+                text2={toast.text2}
+                onDismiss={() => setToast(null)}
+              />
+            )}
       <Pressable style={s.backdrop} onPress={handleClose}>
         <Pressable
           style={[

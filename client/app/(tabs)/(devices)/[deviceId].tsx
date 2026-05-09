@@ -1,6 +1,4 @@
-import DeviceActionLog from "../../../components/devices/DeviceActionLog";
 import DeviceAutoComponent from "@/components/devices/DeviceAutoComponent";
-import DeviceDataLog from "../../../components/devices/DeviceDataLog";
 import DeviceScheduleComponent from "@/components/devices/DeviceScheduleComponent";
 import DoorComponent from "@/components/devices/DoorComponent";
 import FanComponent from "@/components/devices/FanComponent";
@@ -14,12 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
 import { styles } from "@/styles/(tabs)/(devices)/[deviceId].styles";
-import {
-  getAction,
-  getDeviceIcon,
-  getUnit,
-  isSensor,
-} from "@/utils/devices.util";
+import { getDeviceIcon, isSensor } from "@/utils/devices.util";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -32,6 +25,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/FontAwesome5";
+import DeviceActionLog from "../../../components/devices/DeviceActionLog";
+import DeviceDataLog from "../../../components/devices/DeviceDataLog";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Motion sensor có màn hình riêng — không dùng tab Lịch sử / Cài đặt chung
@@ -181,7 +176,7 @@ const DeviceDetailScreen = () => {
 
   // ── Layout chung cho các thiết bị còn lại ──
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -223,7 +218,8 @@ const DeviceDetailScreen = () => {
                   <Text style={styles.roomInfoText}>{device?.roomId.name}</Text>
                 </View>
                 <Text style={styles.deviceDescription}>
-                  {device?.description || "Không có mô tả nào cho thiết bị này."}
+                  {device?.description ||
+                    "Không có mô tả nào cho thiết bị này."}
                 </Text>
                 {/* {device?.type !== "motionSensor" &&
                   (isSensor(device?.type || "") ? (

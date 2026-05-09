@@ -1,11 +1,12 @@
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { userService } from "@/service/user.service";
 import { styles } from "@/styles/(tabs)/(settings)/user-management.styles";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,7 +20,6 @@ import {
 } from "react-native";
 import Modal from "react-native-modal";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 
 interface User {
   id?: string;
@@ -107,6 +107,16 @@ function UserFormModal({
   const [role, setRole] = useState<"admin" | "user">("user");
   const [saving, setSaving] = useState(false);
 
+  const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hàm show toast nội bộ
+  const showToast = (type: ToastType, text1: string, text2?: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ type, text1, text2 });
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  };
+
   useEffect(() => {
     if (visible) {
       setFullName(initial?.fullName || "");
@@ -118,46 +128,26 @@ function UserFormModal({
 
   const handleSave = async () => {
     if (!fullName.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập họ tên",
-      });
+      showToast("error", "Lỗi", "Vui lòng nhập họ tên");
       return;
     }
     if (!username.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập tên đăng nhập",
-      });
+      showToast("error", "Lỗi", "Vui lòng nhập tên đăng nhập");
       return;
     }
     if (mode === "add" && !password.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập mật khẩu",
-      });
+      showToast("error", "Lỗi", "Vui lòng nhập mật khẩu");
       return;
     }
     if (mode === "add" && password.trim().length < 8) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Mật khẩu phải có ít nhất 8 ký tự",
-      });
+      showToast("error", "Lỗi", "Mật khẩu phải có ít nhất 8 ký tự");
       return;
     }
     const isDuplicate = existingUsernames
       .filter((u) => (mode === "edit" ? u !== initial?.username : true))
       .includes(username.trim().toLowerCase());
     if (isDuplicate) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Tên đăng nhập này đã tồn tại",
-      });
+      showToast("error", "Lỗi", "Tên đăng nhập này đã tồn tại");
       return;
     }
     setSaving(true);
@@ -182,9 +172,16 @@ function UserFormModal({
       animationIn="fadeIn"
       animationOut="fadeOut"
       backdropOpacity={0}
-      coverScreen={false}
       style={{ margin: 0 }}
     >
+      {toast && (
+        <ToastBanner
+          type={toast.type}
+          text1={toast.text1}
+          text2={toast.text2}
+          onDismiss={() => setToast(null)}
+        />
+      )}
       <KeyboardAvoidingView
         style={styles.modalOverlay}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -345,13 +342,21 @@ export default function UserManagementScreen() {
       }
       setModalVisible(false);
       fetchUsers();
+      Toast.show({
+        type: "success",
+        text1: modalMode === "add" ? "Thêm thành công" : "Cập nhật thành công",
+        text2:          modalMode === "add"
+          ? "Người dùng mới đã được thêm vào hộ gia đình."
+          : "Thông tin người dùng đã được cập nhật.",
+      });
     } catch {
-      Alert.alert(
-        "Lỗi",
-        modalMode === "add"
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: modalMode === "add"
           ? "Không thể thêm người dùng"
           : "Không thể cập nhật người dùng",
-      );
+      });
       throw new Error("save failed");
     }
   };
@@ -404,7 +409,10 @@ export default function UserManagementScreen() {
   });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#F7FAF9" }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: "#F7FAF9" }}
+      edges={["top", "left", "right"]}
+    >
       <ScrollView contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 }}>
         {/* Header */}
         <View style={styles.headerRow}>

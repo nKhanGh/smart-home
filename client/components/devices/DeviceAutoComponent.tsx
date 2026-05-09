@@ -1,5 +1,6 @@
 import ThresholdModal from "@/components/modals/ThresholdModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Toast } from "@/components/ui/Toast";
 import { ThresholdService } from "@/service/threshold.service";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -11,7 +12,6 @@ import {
   View,
 } from "react-native";
 import Modal from "react-native-modal";
-import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import ConfirmationModal from "../modals/ConfirmationModal";
 
@@ -336,7 +336,6 @@ const DeviceAutoComponent = ({ device }: { device: DeviceResponse }) => {
         animationIn="fadeIn"
         animationOut="fadeOut"
         backdropOpacity={0}
-        coverScreen={false}
         style={{ margin: 0 }}
       >
         <Pressable

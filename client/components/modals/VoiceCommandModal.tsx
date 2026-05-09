@@ -316,7 +316,6 @@ const VoiceCommandModal = ({ visible, onClose }: VoiceModalProps) => {
       animationIn="slideInUp"
       animationOut="slideOutDown"
       backdropOpacity={0}
-      coverScreen={false}
       style={{ margin: 0 }}
     >
       <Pressable style={s.backdrop} onPress={onClose}>

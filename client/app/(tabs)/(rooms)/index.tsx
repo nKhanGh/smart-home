@@ -13,6 +13,7 @@ import {
 import DoorPasswordModal from "@/components/modals/DoorPasswordModal";
 import RoomUpdateModal from "@/components/modals/RoomUpdateModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Toast } from "@/components/ui/Toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { DeviceService } from "@/service/device.service";
@@ -21,7 +22,6 @@ import { styles } from "@/styles/(tabs)/(rooms)/index.styles";
 import { getAction, getDeviceIcon, getNextAction } from "@/utils/devices.util";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome6";
 
 const images: Record<string, any> = {
@@ -156,7 +156,8 @@ const DeviceRow = ({
             ]}
           >
             {sensor ? "" : getAction(device.type, device.currentAction ?? "0")}
-            {sensor && device.type !== "motionSensor" &&
+            {sensor &&
+              device.type !== "motionSensor" &&
               `Ngưỡng cảnh báo: ${device.threshold + getUnit(device.type)}`}
           </Text>
           {/* {!sensor && (
@@ -181,37 +182,38 @@ const DeviceRow = ({
         </View>
       </View>
 
-      {device.type !== "motionSensor" &&(sensor ? (
-        <View style={[styles.sensorValue, sensorStyles[device.type]]}>
-          <Text
-            style={[
-              styles.sensorValueText,
-              { color: sensorTextColor[device.type] },
-            ]}
+      {device.type !== "motionSensor" &&
+        (sensor ? (
+          <View style={[styles.sensorValue, sensorStyles[device.type]]}>
+            <Text
+              style={[
+                styles.sensorValueText,
+                { color: sensorTextColor[device.type] },
+              ]}
+            >
+              {device.currentData} {getUnit(device.type)}
+            </Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => onClickDevice(device, device.currentAction ?? "0")}
           >
-            {device.currentData} {getUnit(device.type)}
-          </Text>
-        </View>
-      ) : (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => onClickDevice(device, device.currentAction ?? "0")}
-        >
-          <Switch
-            value={device.currentAction != "0"}
-            onValueChange={() =>
-              onClickDevice(device, device.currentAction ?? "0")
-            }
-            trackColor={{ false: "#D1D5DB", true: "#86EFAC" }}
-            thumbColor={
-              device.currentAction === "0" || device.currentAction === 0
-                ? "#F9FAFB"
-                : "#22C55E"
-            }
-            ios_backgroundColor="#D1D5DB"
-          />
-        </TouchableOpacity>
-      ))}
+            <Switch
+              value={device.currentAction != "0"}
+              onValueChange={() =>
+                onClickDevice(device, device.currentAction ?? "0")
+              }
+              trackColor={{ false: "#D1D5DB", true: "#86EFAC" }}
+              thumbColor={
+                device.currentAction === "0" || device.currentAction === 0
+                  ? "#F9FAFB"
+                  : "#22C55E"
+              }
+              ios_backgroundColor="#D1D5DB"
+            />
+          </TouchableOpacity>
+        ))}
     </TouchableOpacity>
   );
 };
@@ -227,7 +229,7 @@ const RoomCard = ({
     device: DeviceResponse,
     currentAction: string | number,
   ) => void;
-  user: UserResponse | null,
+  user: UserResponse | null;
   onEditRoom: (roomId: string) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -464,7 +466,7 @@ const RoomsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}

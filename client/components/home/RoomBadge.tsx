@@ -32,7 +32,6 @@ const RoomBadge = ({
         animationIn="fadeIn"
         animationOut="fadeOut"
         backdropOpacity={0}
-        coverScreen={false}
         style={{ margin: 0 }}
       >
         <TouchableOpacity

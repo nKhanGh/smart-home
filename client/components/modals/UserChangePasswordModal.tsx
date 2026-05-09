@@ -1,6 +1,7 @@
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { userService } from "@/service/user.service";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -15,7 +16,6 @@ import {
   View,
 } from "react-native";
 import Modal from "react-native-modal";
-import Toast from "react-native-toast-message";
 
 interface UserChangePasswordModalProps {
   readonly visible: boolean;
@@ -34,6 +34,16 @@ export default function UserChangePasswordModal({
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+    // Hàm show toast nội bộ
+    const showToast = (type: ToastType, text1: string, text2?: string) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ type, text1, text2 });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
 
   useEffect(() => {
     const showEvent =
@@ -66,43 +76,23 @@ export default function UserChangePasswordModal({
 
   const validate = () => {
     if (!oldPassword.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập mật khẩu cũ",
-      });
+      showToast("error", "Lỗi", "Vui lòng nhập mật khẩu cũ");
       return false;
     }
     if (!newPassword.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập mật khẩu mới",
-      });
+      showToast("error", "Lỗi", "Vui lòng nhập mật khẩu mới");
       return false;
     }
     if (oldPassword === newPassword) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Mật khẩu mới phải khác mật khẩu cũ",
-      });
+      showToast("error", "Lỗi", "Mật khẩu mới phải khác mật khẩu cũ");
       return false;
     }
     if (newPassword.length < 8) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Mật khẩu mới phải ít nhất 8 ký tự",
-      });
+      showToast("error", "Lỗi", "Mật khẩu mới phải ít nhất 8 ký tự");
       return false;
     }
     if (newPassword !== confirmPassword) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Mật khẩu xác nhận không trùng khớp",
-      });
+      showToast("error", "Lỗi", "Mật khẩu xác nhận không trùng khớp");
       return false;
     }
     return true;
@@ -121,8 +111,9 @@ export default function UserChangePasswordModal({
       handleClose();
     } catch (error: any) {
       const message =
-        error?.response?.data?.message || "Không thể đổi mật khẩu";
-      Toast.show({ type: "error", text1: "Lỗi", text2: message });
+        error?.response?.data?.msg || "Không thể đổi mật khẩu";
+      showToast("error", "Lỗi", message);
+      console.log("Change password error:", error.response);
     } finally {
       setLoading(false);
     }
@@ -140,9 +131,16 @@ export default function UserChangePasswordModal({
       animationIn="slideInUp"
       animationOut="slideOutDown"
       backdropOpacity={0}
-      coverScreen={false}
       style={{ margin: 0 }}
     >
+      {toast && (
+        <ToastBanner
+          type={toast.type}
+          text1={toast.text1}
+          text2={toast.text2}
+          onDismiss={() => setToast(null)}
+        />
+      )}
       <Pressable style={s.backdrop} onPress={handleClose}>
         <Pressable
           style={[

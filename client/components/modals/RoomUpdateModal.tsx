@@ -1,5 +1,6 @@
+import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { RoomService } from "@/service/room.service";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -13,7 +14,6 @@ import {
   View,
 } from "react-native";
 import Modal from "react-native-modal";
-import Toast from "react-native-toast-message";
 
 interface RoomBackground {
   name: string;
@@ -57,7 +57,15 @@ const RoomUpdateModal = ({
   const [backgroundName, setBackgroundName] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  console.log("RoomUpdateModal rendered with room:", room);
+    const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+    // Hàm show toast nội bộ
+    const showToast = (type: ToastType, text1: string, text2?: string) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({ type, text1, text2 });
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
 
   useEffect(() => {
     if (visible) {
@@ -68,19 +76,11 @@ const RoomUpdateModal = ({
 
   const handleSave = async () => {
     if (!name?.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Tên phòng không được để trống.",
-      });
+      showToast("error", "Lỗi", "Tên phòng không được để trống.");
       return;
     }
     if (!backgroundName) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng chọn hình nền cho phòng.",
-      });
+      showToast("error", "Lỗi", "Vui lòng chọn hình nền cho phòng.");
       return;
     }
 
@@ -99,11 +99,7 @@ const RoomUpdateModal = ({
         text2: `Thông tin phòng đã được cập nhật.`,
       });
     } catch (error: any) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: error.message || "Đã xảy ra lỗi khi cập nhật phòng.",
-      });
+      showToast("error", "Lỗi", error?.response?.data?.msg || "Đã xảy ra lỗi khi cập nhật phòng.");
     } finally {
       setLoading(false);
     }
@@ -116,9 +112,16 @@ const RoomUpdateModal = ({
       animationIn="slideInUp"
       animationOut="slideOutDown"
       backdropOpacity={0}
-      coverScreen={false}
       style={{ margin: 0 }}
     >
+      {toast && (
+              <ToastBanner
+                type={toast.type}
+                text1={toast.text1}
+                text2={toast.text2}
+                onDismiss={() => setToast(null)}
+              />
+            )}
       <Pressable style={styles.backdrop} onPress={() => setVisible(false)}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           {/* Handle */}
