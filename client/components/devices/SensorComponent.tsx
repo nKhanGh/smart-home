@@ -389,7 +389,7 @@ const SensorComponent = ({ device }: { device: DeviceResponse }) => {
         </View>
       </View>
 
-      {/* ── Threshold section ── */}
+      {/* ── Threshold section ──
       <View style={s.thresholdCard}>
         <View style={s.thresholdHeader}>
           <View style={s.thresholdTitleRow}>
@@ -444,7 +444,7 @@ const SensorComponent = ({ device }: { device: DeviceResponse }) => {
             <Text style={s.thresholdHint}>Hệ thống sẽ cảnh báo khi vượt ngưỡng này</Text>
           </View>
         )}
-      </View>
+      </View> */}
     </View>
   );
 };
