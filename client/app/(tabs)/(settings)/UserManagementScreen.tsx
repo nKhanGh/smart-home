@@ -106,8 +106,13 @@ function UserFormModal({
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "user">("user");
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    text1: string;
+    text2?: string;
+  } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Hàm show toast nội bộ
@@ -123,6 +128,7 @@ function UserFormModal({
       setUsername(initial?.username || "");
       setPassword("");
       setRole(initial?.role || "user");
+      setShowPassword(false);
     }
   }, [visible, initial]);
 
@@ -133,6 +139,10 @@ function UserFormModal({
     }
     if (!username.trim()) {
       showToast("error", "Lỗi", "Vui lòng nhập tên đăng nhập");
+      return;
+    }
+    if (username.trim().length < 6) {
+      showToast("error", "Lỗi", "Tên đăng nhập phải có ít nhất 6 ký tự");
       return;
     }
     if (mode === "add" && !password.trim()) {
@@ -218,14 +228,28 @@ function UserFormModal({
           {mode === "add" && (
             <>
               <Text style={styles.inputLabel}>Mật khẩu</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Tối thiểu 8 ký tự"
-                placeholderTextColor="#C0C0C0"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
+              <View style={styles.passwordWrap}>
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="Tối thiểu 8 ký tự"
+                  placeholderTextColor="#C0C0C0"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword((prev) => !prev)}
+                  style={styles.passwordToggle}
+                  activeOpacity={0.7}
+                  hitSlop={8}
+                >
+                  <Ionicons
+                    name={!showPassword ? "eye-off" : "eye"}
+                    size={20}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
+              </View>
             </>
           )}
 
@@ -345,17 +369,19 @@ export default function UserManagementScreen() {
       Toast.show({
         type: "success",
         text1: modalMode === "add" ? "Thêm thành công" : "Cập nhật thành công",
-        text2:          modalMode === "add"
-          ? "Người dùng mới đã được thêm vào hộ gia đình."
-          : "Thông tin người dùng đã được cập nhật.",
+        text2:
+          modalMode === "add"
+            ? "Người dùng mới đã được thêm vào hộ gia đình."
+            : "Thông tin người dùng đã được cập nhật.",
       });
     } catch {
       Toast.show({
         type: "error",
         text1: "Lỗi",
-        text2: modalMode === "add"
-          ? "Không thể thêm người dùng"
-          : "Không thể cập nhật người dùng",
+        text2:
+          modalMode === "add"
+            ? "Không thể thêm người dùng"
+            : "Không thể cập nhật người dùng",
       });
       throw new Error("save failed");
     }

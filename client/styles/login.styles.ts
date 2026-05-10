@@ -3,13 +3,13 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#fff',
-    width: '100%',
+    backgroundColor: "#fff",
+    width: "100%",
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 20,
     gap: 14,
@@ -34,13 +34,13 @@ export const styles = StyleSheet.create({
   },
   logoTitle: {
     fontSize: 30,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   logoGreen: {
-    color: '#22C55E',
+    color: "#22C55E",
   },
   logoBlack: {
-    color: '#111827',
+    color: "#111827",
   },
 
   // ── Form ────────────────────────────────────────
@@ -51,8 +51,8 @@ export const styles = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    fontWeight: '800',
-    color: '#111827',
+    fontWeight: "800",
+    color: "#111827",
     marginBottom: 36,
     letterSpacing: 0.5,
   },
@@ -61,19 +61,33 @@ export const styles = StyleSheet.create({
     marginBottom: 28,
   },
   input: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: "#F3F4F6",
     borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: 18,
     fontSize: 16,
-    color: '#111827',
+    color: "#111827",
+  },
+  passwordWrap: {
+    position: "relative",
+    justifyContent: "center",
+  },
+  passwordInput: {
+    paddingRight: 48,
+  },
+  passwordToggle: {
+    position: "absolute",
+    right: 14,
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   button: {
-    backgroundColor: '#22C55E',
+    backgroundColor: "#22C55E",
     borderRadius: 14,
     paddingVertical: 18,
-    alignItems: 'center',
-    shadowColor: '#22C55E',
+    alignItems: "center",
+    shadowColor: "#22C55E",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -81,26 +95,26 @@ export const styles = StyleSheet.create({
     marginBottom: 24,
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: '700',
+    color: "#fff",
+    fontWeight: "700",
     fontSize: 16,
     letterSpacing: 1.5,
   },
 
   // ── Register ────────────────────────────────────
   registerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
   registerText: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 15,
   },
   registerLink: {
-    color: '#22C55E',
+    color: "#22C55E",
     fontSize: 15,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });

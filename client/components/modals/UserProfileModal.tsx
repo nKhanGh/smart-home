@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
-  KeyboardEvent,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
@@ -34,17 +34,20 @@ export default function UserProfileModal({
   const [fullName, setFullName] = useState(initialFullName);
   const [username, setUsername] = useState(initialUsername);
   const [loading, setLoading] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
-    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-    // Hàm show toast nội bộ
-    const showToast = (type: ToastType, text1: string, text2?: string) => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({ type, text1, text2 });
-      toastTimer.current = setTimeout(() => setToast(null), 3000);
-    };
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    text1: string;
+    text2?: string;
+  } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hàm show toast nội bộ
+  const showToast = (type: ToastType, text1: string, text2?: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ type, text1, text2 });
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     if (visible) {
@@ -52,24 +55,6 @@ export default function UserProfileModal({
       setUsername(initialUsername);
     }
   }, [visible, initialFullName, initialUsername]);
-
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const onShow = (e: KeyboardEvent) =>
-      setKeyboardHeight(e.endCoordinates.height);
-    const onHide = () => setKeyboardHeight(0);
-
-    const sub1 = Keyboard.addListener(showEvent, onShow);
-    const sub2 = Keyboard.addListener(hideEvent, onHide);
-    return () => {
-      sub1.remove();
-      sub2.remove();
-    };
-  }, []);
 
   const handleClose = () => {
     Keyboard.dismiss();
@@ -80,10 +65,14 @@ export default function UserProfileModal({
     if (!fullName.trim()) {
       showToast("error", "Lỗi", "Vui lòng nhập họ tên");
       return false;
-
     }
     if (!username.trim()) {
       showToast("error", "Lỗi", "Vui lòng nhập tên đăng nhập");
+      return false;
+    }
+
+    if (username.trim().length < 6) {
+      showToast("error", "Lỗi", "Tên đăng nhập phải có ít nhất 6 ký tự");
       return false;
     }
     return true;
@@ -98,7 +87,6 @@ export default function UserProfileModal({
         username: username.trim(),
       });
       Toast.show({
-
         type: "success",
         text1: "Cập nhật thành công",
         text2: "Hồ sơ đã được cập nhật.",
@@ -106,9 +94,8 @@ export default function UserProfileModal({
       onSuccess?.();
       handleClose();
     } catch (error: any) {
-      const message =
-        error?.response?.data?.msg || "Không thể cập nhật hồ sơ";
-      Toast.show({ type: "error", text1: "Lỗi", text2: message });
+      const message = error?.response?.data?.msg || "Không thể cập nhật hồ sơ";
+      showToast("error", "Lỗi", message);
     } finally {
       setLoading(false);
     }
@@ -126,67 +113,66 @@ export default function UserProfileModal({
       style={{ margin: 0 }}
     >
       {toast && (
-              <ToastBanner
-                type={toast.type}
-                text1={toast.text1}
-                text2={toast.text2}
-                onDismiss={() => setToast(null)}
-              />
-            )}
+        <ToastBanner
+          type={toast.type}
+          text1={toast.text1}
+          text2={toast.text2}
+          onDismiss={() => setToast(null)}
+        />
+      )}
       <Pressable style={s.backdrop} onPress={handleClose}>
-        <Pressable
-          style={[
-            s.sheet,
-            { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 40 },
-          ]}
-          onPress={(e) => e.stopPropagation()}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={s.keyboardAvoid}
         >
-          <View style={s.handle} />
+          <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={s.handle} />
 
-          <View style={s.header}>
-            <View style={s.iconWrap}>
-              <Ionicons name="person" size={28} color="#22C55E" />
+            <View style={s.header}>
+              <View style={s.iconWrap}>
+                <Ionicons name="person" size={28} color="#22C55E" />
+              </View>
+              <Text style={s.title}>Cập nhật hồ sơ</Text>
+              <Text style={s.subtitle}>Cập nhật thông tin cá nhân của bạn</Text>
             </View>
-            <Text style={s.title}>Cập nhật hồ sơ</Text>
-            <Text style={s.subtitle}>Cập nhật thông tin cá nhân của bạn</Text>
-          </View>
 
-          <Text style={s.label}>Họ và tên</Text>
-          <TextInput
-            style={s.input}
-            placeholder="VD: Nguyễn Văn A"
-            placeholderTextColor="#9CA3AF"
-            value={fullName}
-            onChangeText={setFullName}
-          />
+            <Text style={s.label}>Họ và tên</Text>
+            <TextInput
+              style={s.input}
+              placeholder="VD: Nguyễn Văn A"
+              placeholderTextColor="#9CA3AF"
+              value={fullName}
+              onChangeText={setFullName}
+            />
 
-          <Text style={s.label}>Tên đăng nhập</Text>
-          <TextInput
-            style={s.input}
-            placeholder="VD: nguyenvana"
-            placeholderTextColor="#9CA3AF"
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-          />
+            <Text style={s.label}>Tên đăng nhập</Text>
+            <TextInput
+              style={s.input}
+              placeholder="VD: nguyenvana"
+              placeholderTextColor="#9CA3AF"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
 
-          <TouchableOpacity
-            style={[s.submitBtn, isValid && s.submitBtnActive]}
-            onPress={handleSubmit}
-            disabled={loading || !isValid}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={s.submitText}>Lưu thay đổi</Text>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.submitBtn, isValid && s.submitBtnActive]}
+              onPress={handleSubmit}
+              disabled={loading || !isValid}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={s.submitText}>Lưu thay đổi</Text>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleClose} style={s.cancelBtn}>
-            <Text style={s.cancelText}>Huỷ bỏ</Text>
-          </TouchableOpacity>
-        </Pressable>
+            <TouchableOpacity onPress={handleClose} style={s.cancelBtn}>
+              <Text style={s.cancelText}>Huỷ bỏ</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </KeyboardAvoidingView>
       </Pressable>
     </Modal>
   );
@@ -209,6 +195,10 @@ const s = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 20,
     elevation: 24,
+  },
+  keyboardAvoid: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
   handle: {
     width: 40,

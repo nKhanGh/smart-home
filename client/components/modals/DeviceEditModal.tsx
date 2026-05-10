@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
-  KeyboardEvent,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -33,17 +33,20 @@ export default function DeviceEditModal({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-    const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
-    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-    // Hàm show toast nội bộ
-    const showToast = (type: ToastType, text1: string, text2?: string) => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({ type, text1, text2 });
-      toastTimer.current = setTimeout(() => setToast(null), 3000);
-    };
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    text1: string;
+    text2?: string;
+  } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hàm show toast nội bộ
+  const showToast = (type: ToastType, text1: string, text2?: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ type, text1, text2 });
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     if (visible && device) {
@@ -51,24 +54,6 @@ export default function DeviceEditModal({
       setDescription(device.description || "");
     }
   }, [visible, device]);
-
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const onShow = (e: KeyboardEvent) =>
-      setKeyboardHeight(e.endCoordinates.height);
-    const onHide = () => setKeyboardHeight(0);
-
-    const sub1 = Keyboard.addListener(showEvent, onShow);
-    const sub2 = Keyboard.addListener(hideEvent, onHide);
-    return () => {
-      sub1.remove();
-      sub2.remove();
-    };
-  }, []);
 
   const handleClose = () => {
     Keyboard.dismiss();
@@ -100,8 +85,7 @@ export default function DeviceEditModal({
       handleClose();
     } catch (error: any) {
       const message =
-        error?.response?.data?.msg ||
-        "Không thể cập nhật thông tin thiết bị";
+        error?.response?.data?.msg || "Không thể cập nhật thông tin thiết bị";
       Toast.show({ type: "error", text1: "Lỗi", text2: message });
     } finally {
       setLoading(false);
@@ -122,73 +106,72 @@ export default function DeviceEditModal({
       style={{ margin: 0 }}
     >
       {toast && (
-              <ToastBanner
-                type={toast.type}
-                text1={toast.text1}
-                text2={toast.text2}
-                onDismiss={() => setToast(null)}
-              />
-            )}
+        <ToastBanner
+          type={toast.type}
+          text1={toast.text1}
+          text2={toast.text2}
+          onDismiss={() => setToast(null)}
+        />
+      )}
       <Pressable style={s.backdrop} onPress={handleClose}>
-        <Pressable
-          style={[
-            s.sheet,
-            { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 40 },
-          ]}
-          onPress={(e) => e.stopPropagation()}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={s.keyboardAvoid}
         >
-          <View style={s.handle} />
+          <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={s.handle} />
 
-          <View style={s.header}>
-            <View style={s.iconWrap}>
-              <Ionicons name="settings" size={28} color="#22C55E" />
+            <View style={s.header}>
+              <View style={s.iconWrap}>
+                <Ionicons name="settings" size={28} color="#22C55E" />
+              </View>
+              <Text style={s.title}>Chỉnh sửa thiết bị</Text>
+              <Text style={s.subtitle}>Cập nhật thông tin thiết bị</Text>
             </View>
-            <Text style={s.title}>Chỉnh sửa thiết bị</Text>
-            <Text style={s.subtitle}>Cập nhật thông tin thiết bị</Text>
-          </View>
 
-          <ScrollView
-            contentContainerStyle={s.scrollContainer}
-            keyboardShouldPersistTaps="handled"
-          >
-            <Text style={s.label}>Tên thiết bị</Text>
-            <TextInput
-              style={s.input}
-              placeholder="VD: Đèn phòng khách"
-              placeholderTextColor="#9CA3AF"
-              value={name}
-              onChangeText={setName}
-            />
+            <ScrollView
+              contentContainerStyle={s.scrollContainer}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={s.label}>Tên thiết bị</Text>
+              <TextInput
+                style={s.input}
+                placeholder="VD: Đèn phòng khách"
+                placeholderTextColor="#9CA3AF"
+                value={name}
+                onChangeText={setName}
+              />
 
-            <Text style={s.label}>Mô tả</Text>
-            <TextInput
-              style={[s.input, s.textArea]}
-              placeholder="VD: Đèn LED RGB ở góc phòng khách"
-              placeholderTextColor="#9CA3AF"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={4}
-            />
-          </ScrollView>
+              <Text style={s.label}>Mô tả</Text>
+              <TextInput
+                style={[s.input, s.textArea]}
+                placeholder="VD: Đèn LED RGB ở góc phòng khách"
+                placeholderTextColor="#9CA3AF"
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={4}
+              />
+            </ScrollView>
 
-          <TouchableOpacity
-            style={[s.submitBtn, isValid && hasChanges && s.submitBtnActive]}
-            onPress={handleSubmit}
-            disabled={loading || !isValid || !hasChanges}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={s.submitText}>Lưu thay đổi</Text>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.submitBtn, isValid && hasChanges && s.submitBtnActive]}
+              onPress={handleSubmit}
+              disabled={loading || !isValid || !hasChanges}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={s.submitText}>Lưu thay đổi</Text>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleClose} style={s.cancelBtn}>
-            <Text style={s.cancelText}>Huỷ bỏ</Text>
-          </TouchableOpacity>
-        </Pressable>
+            <TouchableOpacity onPress={handleClose} style={s.cancelBtn}>
+              <Text style={s.cancelText}>Huỷ bỏ</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </KeyboardAvoidingView>
       </Pressable>
     </Modal>
   );
@@ -212,6 +195,10 @@ const s = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 20,
     elevation: 24,
+  },
+  keyboardAvoid: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
   handle: {
     width: 40,

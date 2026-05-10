@@ -3,7 +3,8 @@ import { ScheduleService } from "@/service/schedule.service";
 import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
-  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -205,7 +206,6 @@ export default function MotionWatchScheduleModal({
   const [cooldownMinutes, setCooldownMinutes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [keyboardInset, setKeyboardInset] = useState(0);
 
   const [toast, setToast] = useState<{
     type: ToastType;
@@ -220,22 +220,6 @@ export default function MotionWatchScheduleModal({
     setToast({ type, text1, text2 });
     toastTimer.current = setTimeout(() => setToast(null), 3000);
   };
-
-  useEffect(() => {
-    const handleShow = (e: any) => {
-      const nextInset = e?.endCoordinates?.height ?? 0;
-      setKeyboardInset(nextInset);
-    };
-    const handleHide = () => setKeyboardInset(0);
-
-    const showSub = Keyboard.addListener("keyboardDidShow", handleShow);
-    const hideSub = Keyboard.addListener("keyboardDidHide", handleHide);
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
 
   useEffect(() => {
     if (!visible) return;
@@ -351,180 +335,182 @@ export default function MotionWatchScheduleModal({
         />
       )}
       <Pressable style={s.backdrop} onPress={onClose}>
-        <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={s.handle} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={s.keyboardAvoid}
+        >
+          <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={s.handle} />
 
-          {/* Header */}
-          <View style={s.header}>
-            <View style={s.headerIconWrap}>
-              <Icon name="satellite-dish" size={14} color="#16A34A" />
+            {/* Header */}
+            <View style={s.header}>
+              <View style={s.headerIconWrap}>
+                <Icon name="satellite-dish" size={14} color="#16A34A" />
+              </View>
+              <Text style={s.headerTitle}>
+                {initialSchedule
+                  ? "Chỉnh sửa lịch theo dõi"
+                  : "Lịch theo dõi chuyển động"}
+              </Text>
+              <TouchableOpacity
+                style={s.closeBtn}
+                onPress={onClose}
+                activeOpacity={0.7}
+              >
+                <Icon name="times" size={13} color="#6B7280" />
+              </TouchableOpacity>
             </View>
-            <Text style={s.headerTitle}>
-              {initialSchedule
-                ? "Chỉnh sửa lịch theo dõi"
-                : "Lịch theo dõi chuyển động"}
-            </Text>
-            <TouchableOpacity
-              style={s.closeBtn}
-              onPress={onClose}
-              activeOpacity={0.7}
+
+            <ScrollView
+              ref={scrollRef}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={s.scrollContent}
+              bounces={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
             >
-              <Icon name="times" size={13} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            ref={scrollRef}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={[
-              s.scrollContent,
-              { paddingBottom: 40 + keyboardInset },
-            ]}
-            bounces={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-          >
-            {/* ── Time range ── */}
-            <View style={s.card}>
-              <View style={s.cardHeader}>
-                <Icon name="clock" size={13} color="#374151" />
-                <Text style={s.cardTitle}>Khung giờ theo dõi</Text>
-              </View>
-              <View style={s.timeInputRow}>
-                <TimeInputRow
-                  label="Bắt đầu"
-                  icon="play"
-                  value={startTime}
-                  onChange={setStartTime}
-                />
-                <TimeInputRow
-                  label="Kết thúc"
-                  icon="stop"
-                  value={endTime}
-                  onChange={setEndTime}
-                />
-              </View>
-            </View>
-
-            {/* ── Repeat days ── */}
-            <View style={s.card}>
-              <View style={s.cardHeader}>
-                <Icon name="redo" size={13} color="#374151" />
-                <Text style={s.cardTitle}>Lặp lại — {getRepeatText()}</Text>
-              </View>
-              <View style={s.dayRow}>
-                {DAY_LIST.map((d) => {
-                  const active = repeatDays.includes(d.key);
-                  return (
-                    <TouchableOpacity
-                      key={d.key}
-                      style={[s.dayBtn, active && s.dayBtnActive]}
-                      onPress={() => toggleDay(d.key)}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[s.dayBtnText, active && s.dayBtnTextActive]}
-                      >
-                        {d.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* ── Advanced toggle ── */}
-            <TouchableOpacity
-              style={s.advancedToggle}
-              onPress={() => setShowAdvanced((v) => !v)}
-              activeOpacity={0.7}
-            >
-              <Icon name="sliders-h" size={13} color="#6B7280" />
-              <Text style={s.advancedToggleText}>Cài đặt nâng cao</Text>
-              <Icon
-                name={showAdvanced ? "chevron-up" : "chevron-down"}
-                size={11}
-                color="#9CA3AF"
-                style={{ marginLeft: "auto" as any }}
-              />
-            </TouchableOpacity>
-
-            {showAdvanced && (
+              {/* ── Time range ── */}
               <View style={s.card}>
-                <NumInput
-                  icon="bolt"
-                  iconColor="#D97706"
-                  label="Số lần kích hoạt"
-                  sublabel="Số lần phát hiện để trigger"
-                  value={triggerCount}
-                  onChange={setTriggerCount}
-                  min={1}
-                  max={20}
-                  unit="lần"
-                />
-                <View style={s.divider} />
-                <NumInput
-                  icon="window-restore"
-                  iconColor="#2563EB"
-                  label="Cửa sổ đếm"
-                  sublabel="Thời gian đếm số lần kích"
-                  value={countWindowMinutes}
-                  onChange={setCountWindowMinutes}
-                  min={1}
-                  max={120}
-                  unit="phút"
-                />
-                <View style={s.divider} />
-                <NumInput
-                  icon="filter"
-                  iconColor="#7C3AED"
-                  label="Khoảng cách tín hiệu tối thiểu"
-                  sublabel="Bỏ qua tín hiệu quá gần nhau"
-                  value={minSignalIntervalSeconds}
-                  onChange={setMinSignalIntervalSeconds}
-                  min={0}
-                  max={300}
-                  unit="giây"
-                />
-                <View style={s.divider} />
-                <NumInput
-                  icon="hourglass-half"
-                  iconColor="#EF4444"
-                  label="Thời gian hồi phục"
-                  sublabel="Chờ sau khi trigger xong"
-                  value={cooldownMinutes}
-                  onChange={setCooldownMinutes}
-                  min={0}
-                  max={720}
-                  unit="phút"
-                />
+                <View style={s.cardHeader}>
+                  <Icon name="clock" size={13} color="#374151" />
+                  <Text style={s.cardTitle}>Khung giờ theo dõi</Text>
+                </View>
+                <View style={s.timeInputRow}>
+                  <TimeInputRow
+                    label="Bắt đầu"
+                    icon="play"
+                    value={startTime}
+                    onChange={setStartTime}
+                  />
+                  <TimeInputRow
+                    label="Kết thúc"
+                    icon="stop"
+                    value={endTime}
+                    onChange={setEndTime}
+                  />
+                </View>
               </View>
-            )}
 
-            {/* ── Submit ── */}
-            <TouchableOpacity
-              style={[
-                s.submitBtn,
-                submitting && s.submitBtnLoading,
-                repeatDays.length === 0 && s.submitBtnDisabled,
-              ]}
-              onPress={handleSubmit}
-              disabled={submitting || repeatDays.length === 0}
-              activeOpacity={0.85}
-            >
-              {submitting ? (
-                <LoadingSpinner variant="wave" color="#fff" size={22} />
-              ) : (
-                <>
-                  <Icon name="check" size={14} color="#fff" />
-                  <Text style={s.submitBtnText}>
-                    {initialSchedule ? "CẬP NHẬT" : "TẠO LỊCH"}
-                  </Text>
-                </>
+              {/* ── Repeat days ── */}
+              <View style={s.card}>
+                <View style={s.cardHeader}>
+                  <Icon name="redo" size={13} color="#374151" />
+                  <Text style={s.cardTitle}>Lặp lại — {getRepeatText()}</Text>
+                </View>
+                <View style={s.dayRow}>
+                  {DAY_LIST.map((d) => {
+                    const active = repeatDays.includes(d.key);
+                    return (
+                      <TouchableOpacity
+                        key={d.key}
+                        style={[s.dayBtn, active && s.dayBtnActive]}
+                        onPress={() => toggleDay(d.key)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[s.dayBtnText, active && s.dayBtnTextActive]}
+                        >
+                          {d.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* ── Advanced toggle ── */}
+              <TouchableOpacity
+                style={s.advancedToggle}
+                onPress={() => setShowAdvanced((v) => !v)}
+                activeOpacity={0.7}
+              >
+                <Icon name="sliders-h" size={13} color="#6B7280" />
+                <Text style={s.advancedToggleText}>Cài đặt nâng cao</Text>
+                <Icon
+                  name={showAdvanced ? "chevron-up" : "chevron-down"}
+                  size={11}
+                  color="#9CA3AF"
+                  style={{ marginLeft: "auto" as any }}
+                />
+              </TouchableOpacity>
+
+              {showAdvanced && (
+                <View style={s.card}>
+                  <NumInput
+                    icon="bolt"
+                    iconColor="#D97706"
+                    label="Số lần kích hoạt"
+                    sublabel="Số lần phát hiện để trigger"
+                    value={triggerCount}
+                    onChange={setTriggerCount}
+                    min={1}
+                    max={20}
+                    unit="lần"
+                  />
+                  <View style={s.divider} />
+                  <NumInput
+                    icon="window-restore"
+                    iconColor="#2563EB"
+                    label="Cửa sổ đếm"
+                    sublabel="Thời gian đếm số lần kích"
+                    value={countWindowMinutes}
+                    onChange={setCountWindowMinutes}
+                    min={1}
+                    max={120}
+                    unit="phút"
+                  />
+                  <View style={s.divider} />
+                  <NumInput
+                    icon="filter"
+                    iconColor="#7C3AED"
+                    label="Khoảng cách tín hiệu tối thiểu"
+                    sublabel="Bỏ qua tín hiệu quá gần nhau"
+                    value={minSignalIntervalSeconds}
+                    onChange={setMinSignalIntervalSeconds}
+                    min={0}
+                    max={300}
+                    unit="giây"
+                  />
+                  <View style={s.divider} />
+                  <NumInput
+                    icon="hourglass-half"
+                    iconColor="#EF4444"
+                    label="Thời gian hồi phục"
+                    sublabel="Chờ sau khi trigger xong"
+                    value={cooldownMinutes}
+                    onChange={setCooldownMinutes}
+                    min={0}
+                    max={720}
+                    unit="phút"
+                  />
+                </View>
               )}
-            </TouchableOpacity>
-          </ScrollView>
-        </Pressable>
+
+              {/* ── Submit ── */}
+              <TouchableOpacity
+                style={[
+                  s.submitBtn,
+                  submitting && s.submitBtnLoading,
+                  repeatDays.length === 0 && s.submitBtnDisabled,
+                ]}
+                onPress={handleSubmit}
+                disabled={submitting || repeatDays.length === 0}
+                activeOpacity={0.85}
+              >
+                {submitting ? (
+                  <LoadingSpinner variant="wave" color="#fff" size={22} />
+                ) : (
+                  <>
+                    <Icon name="check" size={14} color="#fff" />
+                    <Text style={s.submitBtnText}>
+                      {initialSchedule ? "CẬP NHẬT" : "TẠO LỊCH"}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </Pressable>
+        </KeyboardAvoidingView>
       </Pressable>
     </Modal>
   );
@@ -546,6 +532,10 @@ const s = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 24,
+  },
+  keyboardAvoid: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
   handle: {
     width: 36,

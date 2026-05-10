@@ -1,11 +1,11 @@
 import { Toast, ToastBanner, ToastType } from "@/components/ui/Toast";
 import { userService } from "@/service/user.service";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
-  KeyboardEvent,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -33,35 +33,20 @@ export default function UserChangePasswordModal({
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
-    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-    // Hàm show toast nội bộ
-    const showToast = (type: ToastType, text1: string, text2?: string) => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({ type, text1, text2 });
-      toastTimer.current = setTimeout(() => setToast(null), 3000);
-    };
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    text1: string;
+    text2?: string;
+  } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const onShow = (e: KeyboardEvent) =>
-      setKeyboardHeight(e.endCoordinates.height);
-    const onHide = () => setKeyboardHeight(0);
-
-    const sub1 = Keyboard.addListener(showEvent, onShow);
-    const sub2 = Keyboard.addListener(hideEvent, onHide);
-    return () => {
-      sub1.remove();
-      sub2.remove();
-    };
-  }, []);
+  // Hàm show toast nội bộ
+  const showToast = (type: ToastType, text1: string, text2?: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ type, text1, text2 });
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  };
 
   const handleClose = () => {
     Keyboard.dismiss();
@@ -110,8 +95,7 @@ export default function UserChangePasswordModal({
       });
       handleClose();
     } catch (error: any) {
-      const message =
-        error?.response?.data?.msg || "Không thể đổi mật khẩu";
+      const message = error?.response?.data?.msg || "Không thể đổi mật khẩu";
       showToast("error", "Lỗi", message);
       console.log("Change password error:", error.response);
     } finally {
@@ -142,106 +126,105 @@ export default function UserChangePasswordModal({
         />
       )}
       <Pressable style={s.backdrop} onPress={handleClose}>
-        <Pressable
-          style={[
-            s.sheet,
-            { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 40 },
-          ]}
-          onPress={(e) => e.stopPropagation()}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={s.keyboardAvoid}
         >
-          <View style={s.handle} />
+          <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={s.handle} />
 
-          {/* ScrollView để cuộn khi bàn phím che input cuối */}
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
-            <View style={s.header}>
-              <View style={s.iconWrap}>
-                <Ionicons name="lock-closed" size={28} color="#22C55E" />
-              </View>
-              <Text style={s.title}>Đổi mật khẩu</Text>
-              <Text style={s.subtitle}>
-                Cập nhật mật khẩu tài khoản của bạn
-              </Text>
-            </View>
-
-            <Text style={s.label}>Mật khẩu cũ</Text>
-            <View style={s.inputWrapper}>
-              <TextInput
-                style={s.input}
-                placeholder="Nhập mật khẩu cũ"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showOld}
-                value={oldPassword}
-                onChangeText={setOldPassword}
-              />
-              <TouchableOpacity onPress={() => setShowOld(!showOld)}>
-                <Ionicons
-                  name={showOld ? "eye" : "eye-off"}
-                  size={20}
-                  color="#A0A0A0"
-                />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={s.label}>Mật khẩu mới</Text>
-            <View style={s.inputWrapper}>
-              <TextInput
-                style={s.input}
-                placeholder="Nhập mật khẩu mới (ít nhất 8 ký tự)"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showNew}
-                value={newPassword}
-                onChangeText={setNewPassword}
-              />
-              <TouchableOpacity onPress={() => setShowNew(!showNew)}>
-                <Ionicons
-                  name={showNew ? "eye" : "eye-off"}
-                  size={20}
-                  color="#A0A0A0"
-                />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={s.label}>Xác nhận mật khẩu mới</Text>
-            <View style={s.inputWrapper}>
-              <TextInput
-                style={s.input}
-                placeholder="Nhập lại mật khẩu mới"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showConfirm}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-              />
-              <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
-                <Ionicons
-                  name={showConfirm ? "eye" : "eye-off"}
-                  size={20}
-                  color="#A0A0A0"
-                />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[s.submitBtn, isValid && s.submitBtnActive]}
-              onPress={handleSubmit}
-              disabled={loading || !isValid}
-              activeOpacity={0.8}
+            {/* ScrollView để cuộn khi bàn phím che input cuối */}
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
             >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={s.submitText}>Đổi mật khẩu</Text>
-              )}
-            </TouchableOpacity>
+              <View style={s.header}>
+                <View style={s.iconWrap}>
+                  <Ionicons name="lock-closed" size={28} color="#22C55E" />
+                </View>
+                <Text style={s.title}>Đổi mật khẩu</Text>
+                <Text style={s.subtitle}>
+                  Cập nhật mật khẩu tài khoản của bạn
+                </Text>
+              </View>
 
-            <TouchableOpacity onPress={handleClose} style={s.cancelBtn}>
-              <Text style={s.cancelText}>Huỷ bỏ</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </Pressable>
+              <Text style={s.label}>Mật khẩu cũ</Text>
+              <View style={s.inputWrapper}>
+                <TextInput
+                  style={s.input}
+                  placeholder="Nhập mật khẩu cũ"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showOld}
+                  value={oldPassword}
+                  onChangeText={setOldPassword}
+                />
+                <TouchableOpacity onPress={() => setShowOld(!showOld)}>
+                  <Ionicons
+                    name={showOld ? "eye" : "eye-off"}
+                    size={20}
+                    color="#A0A0A0"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={s.label}>Mật khẩu mới</Text>
+              <View style={s.inputWrapper}>
+                <TextInput
+                  style={s.input}
+                  placeholder="Nhập mật khẩu mới (ít nhất 8 ký tự)"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showNew}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                />
+                <TouchableOpacity onPress={() => setShowNew(!showNew)}>
+                  <Ionicons
+                    name={showNew ? "eye" : "eye-off"}
+                    size={20}
+                    color="#A0A0A0"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={s.label}>Xác nhận mật khẩu mới</Text>
+              <View style={s.inputWrapper}>
+                <TextInput
+                  style={s.input}
+                  placeholder="Nhập lại mật khẩu mới"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showConfirm}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                />
+                <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
+                  <Ionicons
+                    name={showConfirm ? "eye" : "eye-off"}
+                    size={20}
+                    color="#A0A0A0"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={[s.submitBtn, isValid && s.submitBtnActive]}
+                onPress={handleSubmit}
+                disabled={loading || !isValid}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={s.submitText}>Đổi mật khẩu</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={handleClose} style={s.cancelBtn}>
+                <Text style={s.cancelText}>Huỷ bỏ</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </Pressable>
+        </KeyboardAvoidingView>
       </Pressable>
     </Modal>
   );
@@ -265,6 +248,10 @@ const s = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 20,
     elevation: 24,
+  },
+  keyboardAvoid: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
   handle: {
     width: 40,
