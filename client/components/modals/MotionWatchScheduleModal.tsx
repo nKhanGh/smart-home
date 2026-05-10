@@ -207,15 +207,19 @@ export default function MotionWatchScheduleModal({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [keyboardInset, setKeyboardInset] = useState(0);
 
-    const [toast, setToast] = useState<{ type: ToastType; text1: string; text2?: string } | null>(null);
-    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-    // Hàm show toast nội bộ
-    const showToast = (type: ToastType, text1: string, text2?: string) => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({ type, text1, text2 });
-      toastTimer.current = setTimeout(() => setToast(null), 3000);
-    };
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    text1: string;
+    text2?: string;
+  } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hàm show toast nội bộ
+  const showToast = (type: ToastType, text1: string, text2?: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ type, text1, text2 });
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const handleShow = (e: any) => {
@@ -270,7 +274,7 @@ export default function MotionWatchScheduleModal({
     );
 
   const getRepeatText = () => {
-    if (repeatDays.length === 0) return "Chỉ một lần";
+    if (repeatDays.length === 0) return "Chọn ngày lặp lại";
     if (repeatDays.length === 7) return "Mỗi ngày";
     return `Mỗi ${repeatDays.map((d) => DAY_LIST.find((x) => x.key === d)?.label).join(", ")}`;
   };
@@ -280,12 +284,16 @@ export default function MotionWatchScheduleModal({
     const normalizedEndTime = normalizeTimeInput(endTime);
 
     if (!normalizedStartTime || !normalizedEndTime) {
-      showToast("error", "Vui lòng nhập giờ đúng định dạng HH:mm");
+      showToast("error", "Lỗi", "Vui lòng nhập giờ đúng định dạng HH:mm");
       return;
     }
 
     if (normalizedStartTime === normalizedEndTime) {
-      showToast("error", "Giờ bắt đầu và kết thúc không được trùng nhau.");
+      showToast(
+        "error",
+        "Lỗi",
+        "Giờ bắt đầu và kết thúc không được trùng nhau.",
+      );
       return;
     }
 
@@ -325,14 +333,6 @@ export default function MotionWatchScheduleModal({
     }
   };
 
-  const focusNumericInput = () => {
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        scrollRef.current?.scrollToEnd({ animated: true });
-      }, 120);
-    });
-  };
-
   return (
     <Modal
       isVisible={visible}
@@ -343,13 +343,13 @@ export default function MotionWatchScheduleModal({
       style={{ margin: 0 }}
     >
       {toast && (
-              <ToastBanner
-                type={toast.type}
-                text1={toast.text1}
-                text2={toast.text2}
-                onDismiss={() => setToast(null)}
-              />
-            )}
+        <ToastBanner
+          type={toast.type}
+          text1={toast.text1}
+          text2={toast.text2}
+          onDismiss={() => setToast(null)}
+        />
+      )}
       <Pressable style={s.backdrop} onPress={onClose}>
         <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={s.handle} />
@@ -458,7 +458,6 @@ export default function MotionWatchScheduleModal({
                   sublabel="Số lần phát hiện để trigger"
                   value={triggerCount}
                   onChange={setTriggerCount}
-                  onFocus={focusNumericInput}
                   min={1}
                   max={20}
                   unit="lần"
@@ -471,7 +470,6 @@ export default function MotionWatchScheduleModal({
                   sublabel="Thời gian đếm số lần kích"
                   value={countWindowMinutes}
                   onChange={setCountWindowMinutes}
-                  onFocus={focusNumericInput}
                   min={1}
                   max={120}
                   unit="phút"
@@ -484,7 +482,6 @@ export default function MotionWatchScheduleModal({
                   sublabel="Bỏ qua tín hiệu quá gần nhau"
                   value={minSignalIntervalSeconds}
                   onChange={setMinSignalIntervalSeconds}
-                  onFocus={focusNumericInput}
                   min={0}
                   max={300}
                   unit="giây"
@@ -497,7 +494,6 @@ export default function MotionWatchScheduleModal({
                   sublabel="Chờ sau khi trigger xong"
                   value={cooldownMinutes}
                   onChange={setCooldownMinutes}
-                  onFocus={focusNumericInput}
                   min={0}
                   max={720}
                   unit="phút"
@@ -507,9 +503,13 @@ export default function MotionWatchScheduleModal({
 
             {/* ── Submit ── */}
             <TouchableOpacity
-              style={[s.submitBtn, submitting && s.submitBtnLoading]}
+              style={[
+                s.submitBtn,
+                submitting && s.submitBtnLoading,
+                repeatDays.length === 0 && s.submitBtnDisabled,
+              ]}
               onPress={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || repeatDays.length === 0}
               activeOpacity={0.85}
             >
               {submitting ? (
@@ -669,5 +669,8 @@ const s = StyleSheet.create({
     fontWeight: "700",
     color: "#fff",
     letterSpacing: 1.2,
+  },
+  submitBtnDisabled: {
+    backgroundColor: "#A7F3D0",
   },
 });

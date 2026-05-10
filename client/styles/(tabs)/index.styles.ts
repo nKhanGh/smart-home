@@ -70,6 +70,17 @@ export const styles = StyleSheet.create({
   alertIconText: { fontSize: 18 },
   alertBold: { fontWeight: "700", color: "#EF4444", fontSize: 13 },
   alertText: { color: "#6B7280", fontSize: 12, marginTop: 1 },
+  alertCloseBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  alertCloseText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
 
   // Sensor Row
   sensorRow: {

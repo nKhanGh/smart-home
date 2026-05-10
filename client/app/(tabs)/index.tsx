@@ -378,6 +378,11 @@ export default function HomeScreen() {
             alert={alert.alert}
             text={alert.text}
             type={alert.type}
+            onClose={() =>
+              setAlerts((prev) =>
+                prev.filter((item) => item.deviceId !== alert.deviceId),
+              )
+            }
           />
         ))}
 
