@@ -7,6 +7,7 @@ import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Tab config
 const TAB_CONFIGS = [
@@ -98,6 +99,8 @@ const CustomTabBar = ({
   navigation,
   onMicPress,
 }: BottomTabBarProps & { onMicPress: () => void }) => {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 12) + 12;
   const navigate = (route: (typeof state.routes)[0]) => {
     navigation.emit({
       type: "tabPress",
@@ -133,7 +136,7 @@ const CustomTabBar = ({
   };
 
   return (
-    <View style={styles.tabBar}>
+    <View style={[styles.tabBar, { paddingBottom: bottomPadding }]}>
       {left.map(renderTab)}
       <MicButton onPress={onMicPress} />
       {right.map(renderTab)}
