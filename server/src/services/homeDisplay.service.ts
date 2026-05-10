@@ -146,12 +146,9 @@ export class HomeDisplayService {
       ...input,
       updatedAt: new Date(),
     };
+    console.log("Updating home display with data:", updateData);
 
-    if (input.instantControl != null && input.instantControl.length > 0) {
-      updateData.instantControl = input.instantControl;
-    } else {
-      delete updateData.instantControl;
-    }
+    updateData.instantControl = input.instantControl;
 
     const homeDisplay = await HomeDisplay.findOneAndUpdate(
       { userId },
