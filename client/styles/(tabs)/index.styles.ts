@@ -70,6 +70,17 @@ export const styles = StyleSheet.create({
   alertIconText: { fontSize: 18 },
   alertBold: { fontWeight: "700", color: "#EF4444", fontSize: 13 },
   alertText: { color: "#6B7280", fontSize: 12, marginTop: 1 },
+  alertCloseBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  alertCloseText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
 
   // Sensor Row
   sensorRow: {
@@ -231,6 +242,34 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
+  },
+  devicesEmpty: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+    alignItems: "center",
+  },
+  devicesEmptyIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  devicesEmptyText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#374151",
+  },
+  devicesEmptySubtext: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 4,
   },
   deviceItem: {
     flex: 1,

@@ -13,6 +13,7 @@ import { DeviceService } from "@/service/device.service";
 import { HomeDisplayService } from "@/service/homeDisplay.service";
 import { styles } from "@/styles/(tabs)/index.styles";
 import { getAction, getNextAction } from "@/utils/devices.util";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -303,28 +304,37 @@ export default function HomeScreen() {
       await HomeDisplayService.updateHomeDisplayData({
         instantControl: deviceIds,
       });
-      setDevices((prev) => prev.filter((d) => deviceIds.includes(d.id)));
-      if (deviceIds.length > devices.length) {
-        deviceIds.forEach(async (id) => {
-          if (!devices.some((d) => d.id === id)) {
-            try {
-              const response = await DeviceService.getDeviceById(id);
-              const data = response.data;
-              const newDevice: DeviceInstantControl = {
-                id,
-                name: data.name,
-                roomName: data.roomId.name,
-                roomId: data.roomId._id,
-                type: data.type,
-                currentAction: data.currentAction || "0",
-              };
-              setDevices((prev) => [...prev, newDevice]);
-            } catch (error) {
-              console.error("Error fetching device by ID:", error);
-            }
+      const currentMap = new Map(devices.map((d) => [d.id, d]));
+      const missingIds = deviceIds.filter((id) => !currentMap.has(id));
+      const fetched = await Promise.all(
+        missingIds.map(async (id) => {
+          try {
+            const response = await DeviceService.getDeviceById(id);
+            const data = response.data;
+            return {
+              id,
+              name: data.name,
+              roomName: data.roomId.name,
+              roomId: data.roomId._id,
+              type: data.type,
+              currentAction: data.currentAction || "0",
+            } as DeviceInstantControl;
+          } catch (error) {
+            console.error("Error fetching device by ID:", error);
+            return null;
           }
-        });
-      }
+        }),
+      );
+
+      const fetchedMap = new Map(
+        fetched.filter(Boolean).map((d) => [d!.id, d!]),
+      );
+
+      const nextDevices = deviceIds
+        .map((id) => currentMap.get(id) ?? fetchedMap.get(id))
+        .filter(Boolean) as DeviceInstantControl[];
+
+      setDevices(nextDevices);
       Toast.show({
         type: "success",
         text1: "Cập nhật thiết bị nhanh",
@@ -378,6 +388,11 @@ export default function HomeScreen() {
             alert={alert.alert}
             text={alert.text}
             type={alert.type}
+            onClose={() =>
+              setAlerts((prev) =>
+                prev.filter((item) => item.deviceId !== alert.deviceId),
+              )
+            }
           />
         ))}
 
@@ -470,6 +485,22 @@ export default function HomeScreen() {
           </View>
           {initialLoading ? (
             <LoadingSpinner size={48} color="#22C55E" variant="wave" />
+          ) : devices.length === 0 ? (
+            <View style={styles.devicesEmpty}>
+              <View style={styles.devicesEmptyIcon}>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={22}
+                  color="#9CA3AF"
+                />
+              </View>
+              <Text style={styles.devicesEmptyText}>
+                Chưa có thiết bị nhanh nào.
+              </Text>
+              <Text style={styles.devicesEmptySubtext}>
+                Nhấn “Đổi thiết bị nhanh” để thêm.
+              </Text>
+            </View>
           ) : (
             <View style={styles.devicesGrid}>
               {devices.map((device) => (

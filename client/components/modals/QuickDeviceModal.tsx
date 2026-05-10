@@ -254,10 +254,10 @@ const QuickDeviceModal = ({
           <TouchableOpacity
             style={[
               styles.confirmBtn,
-              chosen.length > 0 && styles.confirmBtnActive,
+              styles.confirmBtnActive,
             ]}
             onPress={handleConfirm}
-            disabled={loading || chosen.length === 0}
+            disabled={loading}
             activeOpacity={0.8}
           >
             {loading ? (

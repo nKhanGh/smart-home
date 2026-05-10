@@ -258,6 +258,20 @@ export const styles = StyleSheet.create({
   },
   permissionRowBorder: { borderBottomWidth: 1, borderBottomColor: "#F3F4F6" },
   permissionLabel: { flex: 1, fontSize: 15, color: "#6B7280" },
+  passwordWrap: {
+    position: "relative",
+    justifyContent: "center",
+  },
+  passwordInput: {
+    paddingRight: 46,
+  },
+  passwordToggle: {
+    position: "absolute",
+    right: 14,
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   permissionIconCell: {
     width: 60,
     alignItems: "center",

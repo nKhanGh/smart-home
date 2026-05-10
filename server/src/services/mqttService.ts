@@ -484,7 +484,7 @@ class MqttService {
   private async emitSensorNormal(device: any): Promise<void> {
     const alert = getName(device.type) + " bình thường";
     const text =
-      "Cảm biến ở " +
+      device.name + " " +
       (device.roomId ? device.roomId.name : "") +
       " đã trở lại bình thường";
 
@@ -571,12 +571,14 @@ class MqttService {
 
         const room = await Room.findById(device?.roomId);
         const alert =
-          "Cảnh báo " + getName(device.type) + " bất thường - " + room?.name;
+          "Cảnh báo " + getName(device.type) + " bất thường";
         const text =
+          device.name + " - " +
+          room?.name + ": " +
           value +
           getUnit(device.type) +
           " vượt ngưỡng " +
-          threshold.when +
+          (threshold.when === "above" ? "trên" : "dưới") +
           " " +
           threshold.value +
           getUnit(device.type);
@@ -666,10 +668,12 @@ class MqttService {
         const alert =
           "Cảnh báo " + getName(device.type) + " bất thường - " + room?.name;
         const text =
+            device.name + " - " +
+            (room?.name ? room.name + ": " : "") +
           value +
           getUnit(device.type) +
           " vượt ngưỡng " +
-          threshold.when +
+          (threshold.when === "above" ? "trên" : "dưới") +
           " " +
           threshold.value +
           getUnit(device.type);

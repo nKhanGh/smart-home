@@ -25,12 +25,12 @@ const VISIBLE = SIDE_ITEMS * 2 + 1; // 3
 const PICKER_H = ITEM_H * VISIBLE; // 174
 
 const DAY_LIST = [
-  { key: "Mon", label: "2" },
-  { key: "Tue", label: "3" },
-  { key: "Wed", label: "4" },
-  { key: "Thu", label: "5" },
-  { key: "Fri", label: "6" },
-  { key: "Sat", label: "7" },
+  { key: "Mon", label: "T2" },
+  { key: "Tue", label: "T3" },
+  { key: "Wed", label: "T4" },
+  { key: "Thu", label: "T5" },
+  { key: "Fri", label: "T6" },
+  { key: "Sat", label: "T7" },
   { key: "Sun", label: "CN" },
 ];
 
@@ -377,7 +377,7 @@ const ScheduleModal = ({
   };
 
   const getRepeatText = () => {
-    if (repeatDays.length === 0) return "Chỉ một lần";
+    if (repeatDays.length === 0) return "Chọn ngày lặp lại";
     if (repeatDays.length === 7) return "Mỗi ngày";
     return `Mỗi ${repeatDays
       .map((d) => DAY_LIST.find((x) => x.key === d)?.label)
