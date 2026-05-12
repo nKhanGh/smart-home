@@ -5,6 +5,7 @@ export interface JwtPayload {
   id    : string;
   username: string;
   role  : "admin" | "user";
+  isActive: boolean;
 }
 
 export interface AuthRequest extends Request {

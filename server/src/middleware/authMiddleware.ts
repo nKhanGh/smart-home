@@ -2,6 +2,7 @@ import { Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AuthRequest, JwtPayload } from "../types";
 import { getRedisClient } from "../config/redis";
+import User from "../models/UserSchema";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -28,9 +29,20 @@ export const verifyToken = (
       }
     }
 
-
     try {
       req.user = jwt.verify(token, JWT_SECRET) as JwtPayload;
+      const user = await User.findById(req.user.id).select("isActive");
+      if (!user) {
+        res.status(401).json({ code: "401", msg: "Người dùng không tồn tại." });
+        return;
+      }
+      if (!user.isActive) {
+        res
+          .status(403)
+          .json({ code: "403", msg: "Tài khoản của bạn đã bị vô hiệu hóa." });
+        return;
+      }
+      req.user.isActive = user.isActive;
       next();
     } catch {
       res
@@ -42,21 +54,26 @@ export const verifyToken = (
 
 export const authorizeRoles =
   (allowedRoles: Array<"admin" | "user">) =>
-  (req: AuthRequest, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       res.status(401).json({ code: "401", msg: "Không có token." });
       return;
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
-      res
-        .status(403)
-        .json({
-          code: "403",
-          msg: "Bạn không có quyền thực hiện hành động này.",
-        });
+    const user = await User.findById(req.user.id).select("role");
+    if (!user) {
+      res.status(401).json({ code: "401", msg: "Người dùng không tồn tại." });
       return;
     }
-    console.log("User role passed:", req.user.role);
+
+    if (!allowedRoles.includes(user.role)) {
+      res.status(403).json({
+        code: "403",
+        msg: "Bạn không có quyền thực hiện hành động này.",
+      });
+      return;
+    }
+    req.user.role = user.role;
+    console.log("User role passed:", user.role);
     next();
   };
